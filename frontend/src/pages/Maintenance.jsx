@@ -220,19 +220,19 @@ export default function Maintenance() {
 
       {/* Notifications */}
       {initialError && (
-        <div className="bg-red-950/80 border border-red-900 text-red-200 px-4 py-3 rounded-lg text-xs">
+        <div className="bg-red-950/20 border border-red-900/30 text-red-200 px-4 py-3 rounded-lg text-xs backdrop-blur-md">
           ⚠️ {initialError}
         </div>
       )}
 
       {toast && (
-        <div className={`border px-4 py-3 rounded-lg flex items-center justify-between text-xs transition-all animate-fadeIn ${
+        <div className={`border px-4 py-3 rounded-lg flex items-center justify-between text-xs transition-all animate-fadeIn backdrop-blur-md ${
           toast.type === 'success' 
-            ? 'bg-stone-900 border-asset-green text-asset-light' 
-            : 'bg-red-950/80 border-red-900 text-red-200'
+            ? 'bg-white/[0.02] border-glass-border text-emerald-450 shadow-accent-glow' 
+            : 'bg-red-950/20 border-red-900/30 text-red-200'
         }`}>
           <span className="flex items-center gap-2">
-            {toast.type === 'success' && <span className="h-1.5 w-1.5 rounded-full bg-asset-green"></span>}
+            {toast.type === 'success' && <span className="h-1.5 w-1.5 rounded-full bg-emerald-450 shadow-accent-glow animate-pulse"></span>}
             {toast.message}
           </span>
           <button onClick={() => setToast(null)} className="font-bold">×</button>
@@ -240,7 +240,7 @@ export default function Maintenance() {
       )}
 
       {/* Request Form Panel */}
-      <div className="bg-stone-950 border border-stone-850 p-6 rounded-lg space-y-4 shadow-md">
+      <div className="glass-panel p-6 space-y-4 border border-glass-border shadow-glass-glow">
         <h3 className="text-xs font-bold uppercase tracking-wider text-stone-300">Raise Maintenance Request</h3>
         
         <form onSubmit={handleRaiseRequestSubmit} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
@@ -248,7 +248,7 @@ export default function Maintenance() {
           <div>
             <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Asset *</label>
             {assets.length === 0 ? (
-              <div className="text-stone-500 text-xs py-2">No assets registered.</div>
+              <div className="text-stone-500 text-xs py-2 font-mono">No assets registered.</div>
             ) : (
               <select
                 value={raiseAssetId}
@@ -256,7 +256,7 @@ export default function Maintenance() {
                   setRaiseAssetId(e.target.value);
                   setFormValidationError('');
                 }}
-                className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
+                className="w-full bg-white/[0.03] border border-glass-border rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
                 required
               >
                 <option value="">-- Choose Asset --</option>
@@ -280,7 +280,7 @@ export default function Maintenance() {
                 setFormValidationError('');
               }}
               placeholder="e.g. Cracked display, faulty keyboard"
-              className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
+              className="w-full bg-white/[0.03] border border-glass-border rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
               required
             />
           </div>
@@ -291,7 +291,7 @@ export default function Maintenance() {
             <select
               value={raisePriority}
               onChange={(e) => setRaisePriority(e.target.value)}
-              className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
+              className="w-full bg-white/[0.03] border border-glass-border rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
               required
             >
               <option value="Low">Low</option>
@@ -308,7 +308,7 @@ export default function Maintenance() {
               value={raisePhotoNote}
               onChange={(e) => setRaisePhotoNote(e.target.value)}
               placeholder="Describe or paste note link..."
-              className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
+              className="w-full bg-white/[0.03] border border-glass-border rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
             />
           </div>
 
@@ -317,7 +317,7 @@ export default function Maintenance() {
             <button
               type="submit"
               disabled={actionPending || assets.length === 0}
-              className="bg-asset-green hover:bg-opacity-90 text-asset-light rounded px-5 py-2 text-xs font-bold uppercase tracking-wider transition-colors disabled:opacity-50"
+              className="bg-asset-green/35 border border-emerald-500/25 hover:bg-asset-green/45 hover:border-emerald-500/40 text-asset-light rounded px-5 py-2 text-xs font-bold uppercase tracking-wider transition-all duration-150 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 shadow-green-glow disabled:opacity-50"
             >
               {actionPending ? 'Submitting…' : 'Submit Request'}
             </button>
@@ -328,8 +328,8 @@ export default function Maintenance() {
 
       {/* KANBAN BOARD */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center h-96 gap-3 bg-stone-950 border border-stone-850 rounded-lg">
-          <span className="h-8 w-8 rounded-full border-4 border-stone-800 border-t-asset-green animate-spin"></span>
+        <div className="flex flex-col items-center justify-center h-96 gap-3 glass-panel border border-glass-border shadow-glass-glow">
+          <span className="h-8 w-8 rounded-full border-4 border-stone-850 border-t-emerald-500 animate-spin"></span>
           <p className="text-[10px] text-stone-500 font-mono tracking-wider uppercase">Loading Kanban Workspace...</p>
         </div>
       ) : (
@@ -340,12 +340,12 @@ export default function Maintenance() {
             {columns.map((colName) => {
               const colCards = activeRequests.filter(r => r.status === colName);
               return (
-                <div key={colName} className="flex-1 min-w-[240px] bg-stone-950/40 border border-stone-850 p-4 rounded-lg flex flex-col min-h-[500px]">
+                <div key={colName} className="flex-1 min-w-[240px] bg-white/[0.01] border border-glass-border p-4 rounded-xl flex flex-col min-h-[500px]">
                   
                   {/* Column Header */}
-                  <div className="flex justify-between items-center mb-4 pb-2 border-b border-stone-850">
+                  <div className="flex justify-between items-center mb-4 pb-2 border-b border-glass-border/30">
                     <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400">{colName}</span>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-stone-900 text-stone-500 font-mono">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-white/[0.02] text-stone-500 border border-glass-border/30 font-mono">
                       {colCards.length}
                     </span>
                   </div>
@@ -355,10 +355,10 @@ export default function Maintenance() {
                     {colCards.map((card) => (
                       <div
                         key={card.id}
-                        className={`bg-stone-900 border p-4 rounded-lg space-y-2.5 shadow-sm transition-all duration-150 ${
+                        className={`bg-white/[0.02] border p-4 rounded-lg space-y-2.5 shadow-sm transition-all duration-150 ${
                           card.status === 'Resolved' 
-                            ? 'border-emerald-950/80 bg-stone-900/60' 
-                            : 'border-stone-850'
+                            ? 'border-emerald-500/20 shadow-[0_0_8px_rgba(16,185,129,0.05)] bg-white/[0.02]/60' 
+                            : 'border-glass-border/60 hover:border-glass-border'
                         }`}
                       >
                         {/* Name & Tag */}
@@ -366,7 +366,7 @@ export default function Maintenance() {
                           <span className="text-[11px] font-bold text-asset-light tracking-wide truncate pr-2 max-w-[130px]" title={card.assetName}>
                             {card.assetName}
                           </span>
-                          <span className="text-[9px] font-mono text-emerald-400 font-bold shrink-0">{card.assetTag}</span>
+                          <span className="text-[9px] font-mono text-emerald-450 font-bold shrink-0">{card.assetTag}</span>
                         </div>
 
                         {/* Issue description */}
@@ -377,13 +377,13 @@ export default function Maintenance() {
                         {/* Badges / Meta row */}
                         <div className="flex justify-between items-center pt-1">
                           {card.priority === 'Low' && (
-                            <span className="px-1.5 py-0.5 rounded text-[8px] bg-stone-850 text-stone-500 border border-stone-800 uppercase font-bold tracking-wider">Low</span>
+                            <span className="px-1.5 py-0.5 rounded text-[8px] bg-white/[0.03] text-stone-500 border border-glass-border/40 uppercase font-bold tracking-wider">Low</span>
                           )}
                           {card.priority === 'Medium' && (
-                            <span className="px-1.5 py-0.5 rounded text-[8px] bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase font-bold tracking-wider">Medium</span>
+                            <span className="px-1.5 py-0.5 rounded text-[8px] bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase font-bold tracking-wider shadow-[0_0_8px_rgba(245,158,11,0.08)]">Medium</span>
                           )}
                           {card.priority === 'High' && (
-                            <span className="px-1.5 py-0.5 rounded text-[8px] bg-red-500/10 text-red-400 border border-red-500/20 uppercase font-bold tracking-wider">High</span>
+                            <span className="px-1.5 py-0.5 rounded text-[8px] bg-red-500/10 text-red-400 border border-red-500/20 uppercase font-bold tracking-wider shadow-[0_0_8px_rgba(239,68,68,0.08)]">High</span>
                           )}
                           {card.photoNote && (
                             <span className="text-[9px] text-stone-500 font-mono" title={card.photoNote}>📷 Note</span>
@@ -394,7 +394,7 @@ export default function Maintenance() {
                         
                         {/* Pending Actions */}
                         {card.status === 'Pending' && (
-                          <div className="pt-2 border-t border-stone-850/50">
+                          <div className="pt-2 border-t border-glass-border/30">
                             {currentUser?.role === 'AssetManager' ? (
                               rejectingId === card.id ? (
                                 <div className="space-y-1.5">
@@ -403,12 +403,12 @@ export default function Maintenance() {
                                     placeholder="Rejection reason..."
                                     value={rejectReason}
                                     onChange={(e) => setRejectReason(e.target.value)}
-                                    className="w-full bg-stone-950 border border-stone-850 rounded px-2 py-1 text-[10px] text-asset-light focus:outline-none focus:border-red-900"
+                                    className="w-full bg-white/[0.03] border border-glass-border rounded px-2 py-1 text-[10px] text-asset-light focus:outline-none focus:border-red-900 focus:ring-2 focus:ring-red-900/10 transition-all duration-150"
                                   />
                                   <div className="flex gap-2">
                                     <button
                                       onClick={() => handleConfirmReject(card.id)}
-                                      className="bg-red-950 hover:bg-red-900 text-red-400 border border-red-900 px-2 py-0.5 rounded text-[9px] uppercase font-bold"
+                                      className="bg-red-950/20 hover:bg-red-950/40 text-red-400 border border-red-900/30 px-2 py-0.5 rounded text-[9px] uppercase font-bold transition-all"
                                     >
                                       Confirm
                                     </button>
@@ -424,7 +424,7 @@ export default function Maintenance() {
                                 <div className="flex gap-2">
                                   <button
                                     onClick={() => handleApprove(card.id)}
-                                    className="flex-1 bg-asset-green/20 hover:bg-asset-green/45 text-emerald-400 border border-asset-green/30 py-1 rounded text-[10px] uppercase font-bold tracking-wider transition-all"
+                                    className="flex-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-450 border border-emerald-500/20 py-1 rounded text-[10px] uppercase font-bold tracking-wider transition-all"
                                   >
                                     Approve
                                   </button>
@@ -446,7 +446,7 @@ export default function Maintenance() {
 
                         {/* Approved Actions */}
                         {card.status === 'Approved' && (
-                          <div className="pt-2 border-t border-stone-850/50">
+                          <div className="pt-2 border-t border-glass-border/30">
                             {/* Any authenticated user can assign technician */}
                             {assigningId === card.id ? (
                               <div className="space-y-1.5">
@@ -455,12 +455,12 @@ export default function Maintenance() {
                                   placeholder="Technician name..."
                                   value={techName}
                                   onChange={(e) => setTechName(e.target.value)}
-                                  className="w-full bg-stone-950 border border-stone-800 rounded px-2 py-1 text-[10px] text-asset-light focus:outline-none focus:border-asset-green"
+                                  className="w-full bg-white/[0.03] border border-glass-border rounded px-2 py-1 text-[10px] text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 transition-all duration-150"
                                 />
                                 <div className="flex gap-2">
                                   <button
                                     onClick={() => handleConfirmAssign(card.id)}
-                                    className="bg-asset-green hover:bg-opacity-95 text-asset-light px-2 py-0.5 rounded text-[9px] uppercase font-bold"
+                                    className="bg-asset-green/35 border border-emerald-500/25 hover:bg-asset-green/45 hover:border-emerald-500/40 text-asset-light px-2 py-0.5 rounded text-[9px] uppercase font-bold transition-all duration-150 shadow-green-glow"
                                   >
                                     Assign
                                   </button>
@@ -475,7 +475,7 @@ export default function Maintenance() {
                             ) : (
                               <button
                                 onClick={() => { setAssigningId(card.id); setTechName(''); }}
-                                className="w-full bg-stone-950 border border-stone-800 hover:bg-stone-900 text-stone-400 hover:text-asset-light rounded py-1 text-[10px] uppercase font-bold tracking-wider transition-all"
+                                className="w-full bg-white/[0.03] border border-glass-border hover:bg-white/5 hover:border-white/20 text-stone-400 hover:text-asset-light rounded py-1 text-[10px] uppercase font-bold tracking-wider transition-all"
                               >
                                 Assign Technician
                               </button>
@@ -485,11 +485,11 @@ export default function Maintenance() {
 
                         {/* Technician Assigned Actions */}
                         {card.status === 'Technician Assigned' && (
-                          <div className="pt-2 border-t border-stone-850/50 space-y-2">
-                            <div className="text-[9px] text-stone-400">Assigned: <strong className="text-stone-300">{card.technicianName}</strong></div>
+                          <div className="pt-2 border-t border-glass-border/30 space-y-2">
+                            <div className="text-[9px] text-stone-400 font-sans">Assigned: <strong className="text-stone-300">{card.technicianName}</strong></div>
                             <button
                               onClick={() => handleStartWork(card.id)}
-                              className="w-full bg-sky-500/10 border border-sky-500/30 hover:bg-sky-500/20 text-sky-400 rounded py-1 text-[10px] uppercase font-bold tracking-wider transition-all"
+                              className="w-full bg-sky-500/10 border border-sky-500/20 hover:bg-sky-500/25 text-sky-400 rounded py-1 text-[10px] uppercase font-bold tracking-wider transition-all shadow-[0_0_8px_rgba(56,189,248,0.05)]"
                             >
                               Start Work
                             </button>
@@ -498,8 +498,8 @@ export default function Maintenance() {
 
                         {/* In Progress Actions */}
                         {card.status === 'In Progress' && (
-                          <div className="pt-2 border-t border-stone-850/50">
-                            <div className="text-[9px] text-stone-400 mb-2">Tech: <strong className="text-stone-300">{card.technicianName}</strong></div>
+                          <div className="pt-2 border-t border-glass-border/30">
+                            <div className="text-[9px] text-stone-400 mb-2 font-sans">Tech: <strong className="text-stone-300">{card.technicianName}</strong></div>
                             {resolvingId === card.id ? (
                               <div className="space-y-1.5">
                                 <textarea
@@ -507,12 +507,12 @@ export default function Maintenance() {
                                   value={resNotes}
                                   onChange={(e) => setResNotes(e.target.value)}
                                   rows="2"
-                                  className="w-full bg-stone-950 border border-stone-800 rounded px-2 py-1 text-[10px] text-asset-light focus:outline-none focus:border-asset-green"
+                                  className="w-full bg-white/[0.03] border border-glass-border rounded px-2 py-1 text-[10px] text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 transition-all duration-150"
                                 />
                                 <div className="flex gap-2">
                                   <button
                                     onClick={() => handleConfirmResolve(card.id)}
-                                    className="bg-asset-green hover:bg-opacity-95 text-asset-light px-2 py-0.5 rounded text-[9px] uppercase font-bold"
+                                    className="bg-asset-green/35 border border-emerald-500/25 hover:bg-asset-green/45 hover:border-emerald-500/40 text-asset-light px-2 py-0.5 rounded text-[9px] uppercase font-bold transition-all duration-150 shadow-green-glow"
                                   >
                                     Resolve
                                   </button>
@@ -527,7 +527,7 @@ export default function Maintenance() {
                             ) : (
                               <button
                                 onClick={() => { setResolvingId(card.id); setResNotes(''); }}
-                                className="w-full bg-asset-green/10 border border-asset-green/30 hover:bg-asset-green/20 text-emerald-400 rounded py-1 text-[10px] uppercase font-bold tracking-wider transition-all"
+                                className="w-full bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/25 text-emerald-450 rounded py-1 text-[10px] uppercase font-bold tracking-wider transition-all"
                               >
                                 Resolve
                               </button>
@@ -537,7 +537,7 @@ export default function Maintenance() {
 
                         {/* Resolved State Details */}
                         {card.status === 'Resolved' && (
-                          <div className="pt-2 border-t border-stone-850/50 space-y-1 text-[9px] text-stone-500 font-sans leading-relaxed">
+                          <div className="pt-2 border-t border-glass-border/30 space-y-1 text-[9px] text-stone-500 font-sans leading-relaxed">
                             <div>Tech: <strong className="text-stone-400">{card.technicianName}</strong></div>
                             <div>Resolved: <span className="font-semibold text-stone-400 font-mono">{card.resolvedDate}</span></div>
                             <div className="italic text-stone-300 mt-1">"{card.resolutionNotes}"</div>
@@ -547,7 +547,7 @@ export default function Maintenance() {
                       </div>
                     ))}
                     {colCards.length === 0 && (
-                      <div className="flex-grow flex items-center justify-center border border-dashed border-stone-850/40 rounded-lg py-12">
+                      <div className="flex-grow flex items-center justify-center border border-dashed border-glass-border/20 rounded-lg py-12">
                         <span className="text-[9px] text-stone-600 uppercase font-mono tracking-wider">No Items</span>
                       </div>
                     )}
@@ -566,17 +566,17 @@ export default function Maintenance() {
 
           {/* Terminal Rejected Cards Section */}
           {rejectedRequests.length > 0 && (
-            <div className="bg-stone-950 border border-stone-850 p-6 rounded-lg space-y-3 shadow-md mt-4">
+            <div className="glass-panel p-6 space-y-3 border border-glass-border shadow-glass-glow mt-4">
               <h4 className="text-xs font-bold uppercase tracking-wider text-red-400">Rejected Requests</h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {rejectedRequests.map((req) => (
-                  <div key={req.id} className="bg-stone-900 border border-red-950/40 p-4 rounded text-xs space-y-1.5">
+                  <div key={req.id} className="bg-white/[0.02] border border-red-950/20 p-4 rounded text-xs space-y-1.5 shadow-[0_0_8px_rgba(239,68,68,0.02)]">
                     <div className="flex justify-between items-start">
                       <strong className="text-stone-300 truncate max-w-[130px]">{req.assetName}</strong>
-                      <span className="px-1.5 py-0.5 rounded text-[8px] bg-red-950/20 text-red-400 border border-red-900/30 uppercase tracking-wider font-bold shrink-0">{req.assetTag}</span>
+                      <span className="px-1.5 py-0.5 rounded text-[8px] bg-red-950/20 text-red-400 border border-red-900/30 uppercase tracking-wider font-bold shrink-0 shadow-[0_0_8px_rgba(239,68,68,0.05)]">{req.assetTag}</span>
                     </div>
                     <p className="text-stone-400 leading-snug break-words">Issue: {req.issue}</p>
-                    <p className="text-stone-500 text-[10px] italic leading-normal border-t border-stone-850 pt-1.5">Rejection reason: "{req.rejectionReason}"</p>
+                    <p className="text-stone-500 text-[10px] italic leading-normal border-t border-glass-border/20 pt-1.5">Rejection reason: "{req.rejectionReason}"</p>
                   </div>
                 ))}
               </div>

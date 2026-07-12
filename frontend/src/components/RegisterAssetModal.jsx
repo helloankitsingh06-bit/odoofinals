@@ -127,9 +127,9 @@ export default function RegisterAssetModal({ isOpen, onClose, onSuccess }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-stone-950 border border-stone-850 rounded-lg max-w-lg w-full overflow-hidden shadow-2xl animate-fadeIn flex flex-col max-h-[90vh]">
+      <div className="glass-panel max-w-lg w-full overflow-hidden border border-glass-border shadow-glass-glow animate-fadeIn flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-stone-850 flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-glass-border flex items-center justify-between bg-white/[0.01]">
           <h2 className="text-sm font-bold uppercase tracking-wider text-asset-light">
             Register New Asset
           </h2>
@@ -144,7 +144,7 @@ export default function RegisterAssetModal({ isOpen, onClose, onSuccess }) {
         {/* Body Form */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
           {submitError && (
-            <div className="bg-red-950/80 border border-red-900 text-red-200 px-4 py-3 rounded text-xs">
+            <div className="bg-red-950/20 border border-red-900/30 text-red-200 px-4 py-3 rounded text-xs backdrop-blur-md">
               ⚠️ {submitError}
             </div>
           )}
@@ -160,7 +160,7 @@ export default function RegisterAssetModal({ isOpen, onClose, onSuccess }) {
               value={formData.name}
               onChange={handleChange}
               placeholder="e.g. MacBook Pro M3"
-              className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
+              className="w-full bg-white/[0.03] border border-glass-border rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
             />
             {errors.name && <p className="text-[10px] text-red-500 mt-1">{errors.name}</p>}
           </div>
@@ -182,7 +182,7 @@ export default function RegisterAssetModal({ isOpen, onClose, onSuccess }) {
                   name="category"
                   value={formData.category}
                   onChange={handleChange}
-                  className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
+                  className="w-full bg-white/[0.03] border border-glass-border rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
                 >
                   <option value="">Select a category</option>
                   {categories.map(cat => (
@@ -199,13 +199,13 @@ export default function RegisterAssetModal({ isOpen, onClose, onSuccess }) {
                       value={newCategoryName}
                       onChange={(e) => setNewCategoryName(e.target.value)}
                       placeholder="New category name"
-                      className="flex-1 bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
+                      className="flex-1 bg-white/[0.03] border border-glass-border rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
                     />
                     <button
                       type="button"
                       onClick={handleAddCategory}
                       disabled={creatingCategory}
-                      className="bg-asset-green hover:bg-opacity-90 text-asset-light rounded px-3 py-2 text-[10px] font-bold uppercase tracking-wider transition-colors disabled:opacity-50"
+                      className="bg-asset-green/35 border border-emerald-500/25 hover:bg-asset-green/45 hover:border-emerald-500/40 text-asset-light rounded px-3 py-2 text-[10px] font-bold uppercase tracking-wider transition-all duration-150 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 shadow-green-glow disabled:opacity-50"
                     >
                       {creatingCategory ? 'Adding…' : 'Add Category'}
                     </button>
@@ -228,7 +228,7 @@ export default function RegisterAssetModal({ isOpen, onClose, onSuccess }) {
               value={formData.serialNumber}
               onChange={handleChange}
               placeholder="e.g. C02X8123LVDG"
-              className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
+              className="w-full bg-white/[0.03] border border-glass-border rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
             />
             {errors.serialNumber && <p className="text-[10px] text-red-500 mt-1">{errors.serialNumber}</p>}
           </div>
@@ -245,7 +245,7 @@ export default function RegisterAssetModal({ isOpen, onClose, onSuccess }) {
                 name="acquisitionDate"
                 value={formData.acquisitionDate}
                 onChange={handleChange}
-                className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
+                className="w-full bg-white/[0.03] border border-glass-border rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
               />
               {errors.acquisitionDate && <p className="text-[10px] text-red-500 mt-1">{errors.acquisitionDate}</p>}
             </div>
@@ -263,7 +263,7 @@ export default function RegisterAssetModal({ isOpen, onClose, onSuccess }) {
                 min="0"
                 step="0.01"
                 placeholder="0.00"
-                className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
+                className="w-full bg-white/[0.03] border border-glass-border rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
               />
               {errors.acquisitionCost && <p className="text-[10px] text-red-500 mt-1">{errors.acquisitionCost}</p>}
             </div>
@@ -278,7 +278,7 @@ export default function RegisterAssetModal({ isOpen, onClose, onSuccess }) {
               name="condition"
               value={formData.condition}
               onChange={handleChange}
-              className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
+              className="w-full bg-white/[0.03] border border-glass-border rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
             >
               {conditions.map(cond => (
                 <option key={cond} value={cond}>
@@ -300,7 +300,7 @@ export default function RegisterAssetModal({ isOpen, onClose, onSuccess }) {
               value={formData.location}
               onChange={handleChange}
               placeholder="e.g. HQ - Room 402"
-              className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
+              className="w-full bg-white/[0.03] border border-glass-border rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
             />
             {errors.location && <p className="text-[10px] text-red-500 mt-1">{errors.location}</p>}
           </div>
@@ -313,7 +313,7 @@ export default function RegisterAssetModal({ isOpen, onClose, onSuccess }) {
               name="isShared"
               checked={formData.isShared}
               onChange={handleChange}
-              className="h-4 w-4 rounded border-stone-800 bg-stone-900 text-asset-green focus:ring-0 focus:ring-offset-0 mr-2"
+              className="h-4 w-4 rounded border-glass-border bg-white/[0.03] text-emerald-500 focus:ring-0 focus:ring-offset-0 mr-2 accent-emerald-500"
             />
             <label htmlFor="isShared" className="text-xs text-stone-300 font-medium select-none cursor-pointer">
               Mark as shared / bookable resource
@@ -321,19 +321,19 @@ export default function RegisterAssetModal({ isOpen, onClose, onSuccess }) {
           </div>
 
           {/* Footer inside Form */}
-          <div className="pt-4 border-t border-stone-850 flex justify-end gap-3">
+          <div className="pt-4 border-t border-glass-border flex justify-end gap-3 bg-white/[0.01]">
             <button
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="border border-stone-800 hover:bg-stone-900 text-stone-400 hover:text-asset-light rounded px-4 py-2 text-xs font-bold uppercase tracking-wider transition-colors disabled:opacity-50"
+              className="bg-white/[0.05] border border-glass-border hover:bg-white/10 text-stone-300 font-bold rounded px-4 py-2 text-xs uppercase tracking-wider transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="bg-asset-green hover:bg-opacity-90 text-asset-light rounded px-4 py-2 text-xs font-bold uppercase tracking-wider transition-colors disabled:opacity-50 min-w-[120px]"
+              className="bg-asset-green/35 border border-emerald-500/25 hover:bg-asset-green/45 hover:border-emerald-500/40 text-asset-light font-bold rounded px-4 py-2 text-xs uppercase tracking-wider transition-all duration-150 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 shadow-green-glow disabled:opacity-50 min-w-[120px]"
             >
               {submitting ? 'Registering…' : 'Register Asset'}
             </button>

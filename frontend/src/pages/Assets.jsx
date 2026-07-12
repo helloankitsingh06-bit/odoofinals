@@ -82,7 +82,7 @@ export default function Assets() {
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="bg-asset-green hover:bg-opacity-90 text-asset-light rounded px-4 py-2 text-xs font-bold uppercase tracking-wider transition-colors flex items-center gap-1.5 self-start md:self-auto"
+          className="bg-asset-green/35 border border-emerald-500/25 hover:bg-asset-green/45 hover:border-emerald-500/40 text-asset-light rounded px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all duration-150 shadow-green-glow flex items-center gap-1.5 self-start md:self-auto active:scale-[0.98]"
         >
           <span>+ Register Asset</span>
         </button>
@@ -90,14 +90,14 @@ export default function Assets() {
 
       {/* Error State Banner */}
       {error && (
-        <div className="bg-red-950/80 border border-red-900 text-red-200 px-4 py-3 rounded-lg flex items-center justify-between text-xs transition-all animate-fadeIn">
+        <div className="bg-red-950/20 border border-red-900/30 text-red-200 px-4 py-3 rounded-lg flex items-center justify-between text-xs backdrop-blur-md">
           <span>⚠️ {error}</span>
           <button onClick={() => setError(null)} className="text-red-400 hover:text-red-100 font-bold font-sans">×</button>
         </div>
       )}
 
       {/* Filter / Search Bar */}
-      <div className="bg-stone-950 border border-stone-850 p-4 rounded-lg grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="glass-panel p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 border border-glass-border shadow-glass-glow">
         {/* Search */}
         <div>
           <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Search</label>
@@ -106,7 +106,7 @@ export default function Assets() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by tag, serial..."
-            className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-1.5 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
+            className="w-full bg-white/[0.03] border border-glass-border rounded px-3 py-1.5 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
           />
         </div>
 
@@ -116,7 +116,7 @@ export default function Assets() {
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-1.5 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
+            className="w-full bg-white/[0.03] border border-glass-border rounded px-3 py-1.5 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
           >
             <option value="">All Categories</option>
             {categories.map((cat, index) => (
@@ -133,7 +133,7 @@ export default function Assets() {
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-1.5 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
+            className="w-full bg-white/[0.03] border border-glass-border rounded px-3 py-1.5 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
           >
             <option value="">All Statuses</option>
             {ASSET_STATUSES.map((stat) => (
@@ -150,7 +150,7 @@ export default function Assets() {
           <select
             value={department}
             onChange={(e) => setDepartment(e.target.value)}
-            className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-1.5 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
+            className="w-full bg-white/[0.03] border border-glass-border rounded px-3 py-1.5 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
           >
             <option value="">All Departments</option>
             {departments.map((dept, index) => (
@@ -164,26 +164,26 @@ export default function Assets() {
 
       {/* Main Content Area: Loading, Empty, or Table */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center h-64 gap-3 bg-stone-950 border border-stone-850 rounded-lg">
-          <span className="h-6 w-6 rounded-full border-2 border-stone-800 border-t-asset-green animate-spin"></span>
+        <div className="flex flex-col items-center justify-center h-64 gap-3 glass-panel border border-glass-border shadow-glass-glow">
+          <span className="h-6 w-6 rounded-full border-2 border-stone-850 border-t-emerald-500 animate-spin"></span>
           <p className="text-[10px] text-stone-500 font-mono tracking-wider uppercase">Loading Asset Registry...</p>
         </div>
       ) : assets.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-64 gap-3 bg-stone-950 border border-stone-850 rounded-lg p-6 text-center">
+        <div className="flex flex-col items-center justify-center h-64 gap-3 glass-panel p-6 text-center border border-glass-border shadow-glass-glow">
           <p className="text-xs text-stone-400">No assets found. Register the first one.</p>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="border border-stone-800 hover:bg-stone-900 text-stone-400 hover:text-asset-light rounded px-4 py-2 text-xs font-bold uppercase tracking-wider transition-colors mt-2"
+            className="bg-white/[0.02] border border-glass-border hover:bg-white/5 hover:border-white/20 text-stone-400 hover:text-asset-light rounded px-4 py-2 text-xs font-bold uppercase tracking-wider transition-colors mt-2"
           >
             Register Asset
           </button>
         </div>
       ) : (
-        <div className="bg-stone-950 border border-stone-850 rounded-lg overflow-hidden shadow-xl">
+        <div className="glass-panel overflow-hidden border border-glass-border shadow-glass-glow">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-stone-850 bg-stone-900/20">
+                <tr className="border-b border-glass-border bg-white/[0.01]">
                   <th className="py-3 px-4 text-[10px] font-bold uppercase tracking-wider text-stone-500">Tag</th>
                   <th className="py-3 px-4 text-[10px] font-bold uppercase tracking-wider text-stone-500">Name</th>
                   <th className="py-3 px-4 text-[10px] font-bold uppercase tracking-wider text-stone-500">Category</th>
@@ -196,9 +196,9 @@ export default function Assets() {
                   <tr
                     key={asset._id || asset.id || asset.assetTag || `${asset.name}-${index}`}
                     onClick={() => navigate(`/assets/${asset._id || asset.id}`)}
-                    className="border-b border-stone-850 hover:bg-stone-900/30 transition-colors cursor-pointer"
+                    className="border-b border-glass-border/40 hover:bg-white/[0.02] transition-colors cursor-pointer"
                   >
-                    <td className="py-3.5 px-4 text-xs font-mono text-emerald-400 font-bold">{asset.assetTag || asset.tag || '—'}</td>
+                    <td className="py-3.5 px-4 text-xs font-mono text-emerald-450 font-bold">{asset.assetTag || asset.tag || '—'}</td>
                     <td className="py-3.5 px-4 text-xs font-semibold text-asset-light">{asset.name}</td>
                     <td className="py-3.5 px-4 text-xs text-stone-400">{asset.category?.name || asset.category || '—'}</td>
                     <td className="py-3.5 px-4 text-xs">

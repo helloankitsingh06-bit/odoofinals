@@ -168,19 +168,19 @@ export default function ResourceBooking() {
 
       {/* Global Toast */}
       {initialError && (
-        <div className="bg-red-950/80 border border-red-900 text-red-200 px-4 py-3 rounded-lg text-xs font-sans">
+        <div className="bg-red-950/20 border border-red-900/30 text-red-200 px-4 py-3 rounded-lg text-xs font-sans backdrop-blur-md">
           ⚠️ {initialError}
         </div>
       )}
 
       {actionToast && (
-        <div className={`border px-4 py-3 rounded-lg flex items-center justify-between text-xs transition-all animate-fadeIn ${
+        <div className={`border px-4 py-3 rounded-lg flex items-center justify-between text-xs transition-all animate-fadeIn backdrop-blur-md ${
           actionToast.type === 'success' 
-            ? 'bg-stone-900 border-asset-green text-asset-light' 
-            : 'bg-red-950/80 border-red-900 text-red-200'
+            ? 'bg-white/[0.02] border-glass-border text-emerald-400 shadow-accent-glow' 
+            : 'bg-red-950/20 border-red-900/30 text-red-200'
         }`}>
           <span className="flex items-center gap-2">
-            {actionToast.type === 'success' && <span className="h-1.5 w-1.5 rounded-full bg-asset-green"></span>}
+            {actionToast.type === 'success' && <span className="h-1.5 w-1.5 rounded-full bg-emerald-450 shadow-accent-glow animate-pulse"></span>}
             {actionToast.message}
           </span>
           <button onClick={() => setActionToast(null)} className="font-bold">×</button>
@@ -188,7 +188,7 @@ export default function ResourceBooking() {
       )}
 
       {/* Selector Panel */}
-      <div className="bg-stone-950 border border-stone-850 p-6 rounded-lg grid grid-cols-1 sm:grid-cols-2 gap-6 shadow-md">
+      <div className="glass-panel p-6 grid grid-cols-1 sm:grid-cols-2 gap-6 border border-glass-border shadow-glass-glow">
         {/* Resource Picker */}
         <div>
           <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">
@@ -208,7 +208,7 @@ export default function ResourceBooking() {
                 setSubmitError(null);
                 setSubmitSuccess(false);
               }}
-              className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
+              className="w-full bg-white/[0.03] border border-glass-border rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
             >
               {resources.map((res) => (
                 <option key={res.id} value={res.id}>
@@ -232,7 +232,7 @@ export default function ResourceBooking() {
               setSubmitError(null);
               setSubmitSuccess(false);
             }}
-            className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
+            className="w-full bg-white/[0.03] border border-glass-border rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
           />
         </div>
       </div>
@@ -242,22 +242,22 @@ export default function ResourceBooking() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           {/* List of Existing Bookings (col-span-2) */}
-          <div className="lg:col-span-2 bg-stone-950 border border-stone-850 p-6 rounded-lg space-y-4 shadow-md">
+          <div className="glass-panel p-6 space-y-4 border border-glass-border shadow-glass-glow">
             <h3 className="text-sm font-bold uppercase tracking-wider text-asset-light">
               Existing Schedule: {getSelectedResourceName()} ({selectedDate})
             </h3>
             
             {loadingSchedule ? (
               <div className="flex flex-col items-center justify-center h-48 gap-3">
-                <span className="h-6 w-6 rounded-full border-2 border-stone-800 border-t-asset-green animate-spin"></span>
+                <span className="h-6 w-6 rounded-full border-2 border-stone-850 border-t-emerald-500 animate-spin"></span>
                 <p className="text-[10px] text-stone-500 font-mono tracking-wider uppercase">Loading schedule...</p>
               </div>
             ) : scheduleError ? (
-              <div className="bg-red-950/80 border border-red-900 text-red-200 px-4 py-3 rounded text-xs">
+              <div className="bg-red-950/20 border border-red-900/30 text-red-200 p-4 rounded text-xs backdrop-blur-md">
                 ⚠️ {scheduleError}
               </div>
             ) : bookings.length === 0 ? (
-              <div className="flex items-center justify-center h-48 border border-dashed border-stone-850 rounded-lg p-6">
+              <div className="flex items-center justify-center h-48 border border-dashed border-glass-border/30 rounded-lg p-6">
                 <p className="text-xs text-stone-500 font-mono uppercase">No reservations booked on this date</p>
               </div>
             ) : (
@@ -265,11 +265,11 @@ export default function ResourceBooking() {
                 {bookings.map((booking) => {
                   let badgeClass = "p-4 rounded border text-xs flex justify-between items-center transition-all ";
                   if (booking.status === 'Upcoming') {
-                    badgeClass += "bg-asset-green/10 text-emerald-400 border-asset-green/20";
+                    badgeClass += "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_8px_rgba(16,185,129,0.08)]";
                   } else if (booking.status === 'Ongoing') {
-                    badgeClass += "bg-sky-500/10 text-sky-400 border-sky-500/20";
+                    badgeClass += "bg-sky-500/10 text-sky-400 border-sky-500/20 shadow-[0_0_8px_rgba(56,189,248,0.08)]";
                   } else if (booking.status === 'Completed') {
-                    badgeClass += "bg-stone-900/60 text-stone-400 border-stone-850";
+                    badgeClass += "bg-white/[0.02] text-stone-400 border-glass-border/40";
                   } else if (booking.status === 'Cancelled') {
                     badgeClass += "bg-red-950/10 text-red-500 border-red-950/20 line-through opacity-50";
                   }
@@ -293,7 +293,7 @@ export default function ResourceBooking() {
                         <button
                           onClick={() => handleCancelBooking(booking.id)}
                           disabled={actionPending}
-                          className="bg-red-950/40 hover:bg-red-900/40 text-red-400 border border-red-900/50 px-2.5 py-1 rounded text-[10px] uppercase font-bold tracking-wider transition-colors disabled:opacity-50 shrink-0"
+                          className="bg-red-950/20 hover:bg-red-950/35 text-red-400 border border-red-900/30 px-2.5 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider transition-colors disabled:opacity-50 shrink-0 shadow-[0_0_8px_rgba(239,68,68,0.05)]"
                         >
                           Cancel
                         </button>
@@ -306,19 +306,19 @@ export default function ResourceBooking() {
           </div>
 
           {/* Book a Slot Form (col-span-1) */}
-          <div className="bg-stone-950 border border-stone-850 p-6 rounded-lg space-y-4 shadow-md self-start">
+          <div className="glass-panel p-6 space-y-4 border border-glass-border shadow-glass-glow self-start">
             <h3 className="text-sm font-bold uppercase tracking-wider text-asset-light">Book a Slot</h3>
             
             {submitError && (
-              <div className="bg-red-950/80 border border-red-900 text-red-200 p-4 rounded text-xs leading-relaxed animate-fadeIn">
+              <div className="bg-red-950/20 border border-red-900/30 text-red-200 p-4 rounded text-xs leading-relaxed animate-fadeIn backdrop-blur-md">
                 <strong>⚠️ Booking Conflict:</strong>
                 <p className="mt-1 font-mono text-[10px] leading-relaxed">{submitError}</p>
               </div>
             )}
 
             {submitSuccess && (
-              <div className="bg-stone-900 border border-asset-green text-asset-light px-4 py-3 rounded text-xs flex items-center gap-2 animate-fadeIn">
-                <span className="h-1.5 w-1.5 rounded-full bg-asset-green animate-ping"></span>
+              <div className="bg-white/[0.02] border border-glass-border text-emerald-450 px-4 py-3 rounded text-xs flex items-center gap-2 animate-fadeIn backdrop-blur-md shadow-accent-glow">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-450 shadow-accent-glow animate-ping"></span>
                 <span>Booking slot reserved successfully!</span>
               </div>
             )}
@@ -337,7 +337,7 @@ export default function ResourceBooking() {
                       setStartTime(e.target.value);
                       setSubmitError(null);
                     }}
-                    className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
+                    className="w-full bg-white/[0.03] border border-glass-border rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
                     required
                   />
                 </div>
@@ -352,7 +352,7 @@ export default function ResourceBooking() {
                       setEndTime(e.target.value);
                       setSubmitError(null);
                     }}
-                    className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
+                    className="w-full bg-white/[0.03] border border-glass-border rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
                     required
                   />
                 </div>
@@ -371,7 +371,7 @@ export default function ResourceBooking() {
                     setSubmitError(null);
                   }}
                   placeholder="e.g. Project Scrum Sync"
-                  className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
+                  className="w-full bg-white/[0.03] border border-glass-border rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
                   required
                 />
                 {formValidationError && <p className="text-[10px] text-red-500 mt-1">{formValidationError}</p>}
@@ -380,7 +380,7 @@ export default function ResourceBooking() {
               <button
                 type="submit"
                 disabled={actionPending || !selectedResourceId}
-                className="w-full bg-asset-green hover:bg-opacity-90 text-asset-light rounded py-2 text-xs font-bold uppercase tracking-wider transition-colors disabled:opacity-50"
+                className="w-full bg-asset-green/35 border border-emerald-500/25 hover:bg-asset-green/45 hover:border-emerald-500/40 text-asset-light rounded py-2 text-xs font-bold uppercase tracking-wider transition-all duration-150 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 shadow-green-glow disabled:opacity-50"
               >
                 {actionPending ? 'Processing…' : 'Reserve Time Slot'}
               </button>
@@ -389,7 +389,7 @@ export default function ResourceBooking() {
 
         </div>
       ) : (
-        <div className="bg-stone-950 border border-stone-850 p-6 rounded-lg text-center text-xs text-stone-400 space-y-3">
+        <div className="glass-panel p-6 text-center text-xs text-stone-400 space-y-3 border border-glass-border shadow-glass-glow">
           <p>No bookable resources or shared assets are currently configured in the ERP registry.</p>
           <p className="text-stone-500 text-[10px] font-mono">TIP: REGISTER AN ASSET UNDER "ASSETS" AND CHECK "MARK AS SHARED / BOOKABLE RESOURCE"</p>
         </div>
