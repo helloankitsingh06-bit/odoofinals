@@ -49,7 +49,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto pb-12 font-sans">
+    <div className="p-8 space-y-6 max-w-7xl mx-auto pb-12 font-sans">
       {/* Error banner */}
       {errorMsg && (
         <div className="bg-red-950/40 border border-red-900 text-red-200 px-4 py-3 rounded-lg text-xs">
@@ -59,11 +59,11 @@ export default function Dashboard() {
 
       {/* KPI Cards Grid */}
       <div>
-        <h3 className="text-xs font-bold uppercase tracking-widest text-stone-500 mb-4">
+        <h3 className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-4">
           Core Metrics Registry
         </h3>
         
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
           {Object.entries(kpiCounts).map(([key, value]) => {
             // Convert camelCase key to uppercase space-separated label
             const label = key
@@ -73,9 +73,9 @@ export default function Dashboard() {
             return (
               <div
                 key={key}
-                className="bg-stone-950 border border-stone-850 p-5 rounded-lg flex flex-col justify-between min-h-[110px]"
+                className="bg-stone-950 border border-stone-850 p-6 rounded-lg flex flex-col justify-between min-h-[110px]"
               >
-                <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">
+                <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider font-mono">
                   {label}
                 </span>
                 {loading ? (
@@ -110,7 +110,7 @@ export default function Dashboard() {
             {overdueReturns.map((item) => (
               <div key={item.id} className="py-2.5 flex items-center justify-between text-xs text-red-200">
                 <span>{item.assetName} ({item.assetCode})</span>
-                <span className="font-semibold text-[10px] bg-red-950 text-red-400 border border-red-900/40 px-2 py-0.5 rounded uppercase">
+                <span className="font-semibold text-[10px] bg-red-950 text-red-400 border border-red-900/40 px-2 py-0.5 rounded uppercase font-mono">
                   Overdue {item.daysOverdue} days
                 </span>
               </div>
@@ -124,11 +124,11 @@ export default function Dashboard() {
       </div>
 
       {/* Lower Dashboard Grid (Quick Actions & Recent Activity) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Quick Actions Panel */}
         <div className="bg-stone-950 border border-stone-850 p-6 rounded-lg space-y-4">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-stone-500 border-b border-stone-850 pb-3">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-stone-400 border-b border-stone-850 pb-3">
             Quick Actions Panel
           </h3>
           
@@ -137,7 +137,7 @@ export default function Dashboard() {
               <Link
                 key={action.label}
                 to={action.path}
-                className={`w-full text-left px-4 py-3 border border-stone-850 bg-stone-900/10 rounded text-xs text-stone-400 font-semibold tracking-wider transition-all duration-150 uppercase ${action.color}`}
+                className="w-full h-10 px-4 flex items-center border border-stone-800 rounded-md text-xs font-bold text-stone-400 hover:text-asset-light hover:bg-stone-900/50 hover:border-stone-700 transition-all duration-150 uppercase tracking-wider active:scale-[0.98]"
               >
                 {action.label}
               </Link>
@@ -147,7 +147,7 @@ export default function Dashboard() {
 
         {/* Recent Activity Mini-Feed */}
         <div className="lg:col-span-2 bg-stone-950 border border-stone-850 p-6 rounded-lg space-y-4">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-stone-500 border-b border-stone-850 pb-3">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-stone-400 border-b border-stone-850 pb-3">
             Recent activity logs (Top 3)
           </h3>
 

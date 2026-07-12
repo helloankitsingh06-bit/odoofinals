@@ -71,23 +71,23 @@ export default function Sidebar({ user: propUser, activeRoute }) {
           <div className="flex flex-col gap-2">
             <div>
               <p className="text-xs font-semibold text-asset-light truncate">{user.name || user.email}</p>
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-stone-900 text-asset-green border border-stone-800 tracking-wide uppercase mt-1">
+              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wider uppercase bg-stone-900 text-asset-green border border-stone-800 mt-1 font-mono">
                 {user.role}
               </span>
             </div>
             <button
               onClick={logout}
-              className="mt-2 w-full text-center px-3 py-1.5 border border-stone-800 rounded text-[10px] font-bold text-stone-400 hover:text-asset-light hover:bg-stone-900 transition-colors uppercase tracking-wider"
+              className="mt-2 w-full text-center h-8 px-3 border border-stone-800 rounded-md text-[10px] font-bold text-stone-400 hover:text-asset-light hover:bg-stone-900 transition-all duration-150 uppercase tracking-wider active:scale-[0.98]"
             >
               Sign Out
             </button>
             {/* TEMP DEV ONLY - remove when real auth lands */}
             <div className="mt-2 pt-2 border-t border-stone-850/50 flex flex-col gap-1">
-              <label className="text-[9px] font-bold uppercase tracking-wider text-stone-500">DEV: Role</label>
+              <label className="text-[9px] font-bold uppercase tracking-wider text-stone-500 mb-1">DEV: Role</label>
               <select
                 value={user.role}
                 onChange={(e) => setRole(e.target.value)}
-                className="w-full bg-stone-950 border border-stone-850 rounded px-2 py-1.5 text-[10px] text-stone-400 focus:outline-none focus:border-stone-700"
+                className="w-full bg-stone-950 border border-stone-800 rounded-md px-2 py-1.5 text-[10px] text-stone-400 focus:outline-none focus:border-asset-green focus:ring-2 focus:ring-asset-green/20 transition-all duration-150"
               >
                 <option value="Admin">Admin</option>
                 <option value="Employee">Employee</option>
@@ -99,7 +99,7 @@ export default function Sidebar({ user: propUser, activeRoute }) {
         ) : (
           <Link
             to="/login"
-            className="block w-full text-center px-3 py-1.5 border border-stone-800 rounded text-[10px] font-bold text-asset-light hover:bg-stone-900 transition-colors uppercase tracking-wider"
+            className="block w-full text-center h-8 flex items-center justify-center border border-stone-800 rounded-md text-[10px] font-bold text-asset-light hover:bg-stone-900 transition-all duration-150 uppercase tracking-wider active:scale-[0.98]"
           >
             Sign In
           </Link>

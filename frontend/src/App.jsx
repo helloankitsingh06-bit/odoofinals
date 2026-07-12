@@ -11,6 +11,9 @@ import AllocationTransfer from './pages/AllocationTransfer';
 import ResourceBooking from './pages/ResourceBooking';
 import Maintenance from './pages/Maintenance';
 import AssetDetail from './pages/AssetDetail';
+import Audit from './pages/Audit';
+import Reports from './pages/Reports';
+import Notifications from './pages/Notifications';
 
 // Generic placeholder page for unused sidebar links
 const PlaceholderPage = ({ title }) => (
@@ -40,9 +43,9 @@ function App() {
             <Route path="/allocation-transfer" element={<AllocationTransfer />} />
             <Route path="/resource-booking" element={<ResourceBooking />} />
             <Route path="/maintenance" element={<Maintenance />} />
-            <Route path="/audit" element={<PlaceholderPage title="Audit" />} />
-            <Route path="/reports" element={<PlaceholderPage title="Reports" />} />
-            <Route path="/notifications" element={<PlaceholderPage title="Notifications" />} />
+            <Route path="/audit" element={<Audit />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/notifications" element={<Notifications />} />
 
             {/* Default Route redirect */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />

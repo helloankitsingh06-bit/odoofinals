@@ -227,7 +227,7 @@ export default function OrgSetup() {
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+    <div className="p-8 space-y-6 max-w-7xl mx-auto pb-12">
       {/* Toast Notification Messages */}
       {errorToast && (
         <div className="bg-red-950/80 border border-red-900 text-red-200 px-4 py-3 rounded-lg flex items-center justify-between text-sm transition-all animate-fadeIn">
@@ -267,16 +267,16 @@ export default function OrgSetup() {
       <div className="mt-6">
         {/* TAB 1: DEPARTMENTS */}
         {activeTab === 'departments' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Create/Edit Form */}
             <div className="bg-stone-950 border border-stone-850 p-6 rounded-lg space-y-4">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-asset-light">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-4">
                 {editingDeptId ? 'Edit Department' : 'Create Department'}
               </h3>
               
               <form onSubmit={handleDeptSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">
                     Department Name *
                   </label>
                   <input
@@ -284,19 +284,19 @@ export default function OrgSetup() {
                     value={deptName}
                     onChange={(e) => setDeptName(e.target.value)}
                     placeholder="e.g. Engineering"
-                    className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
+                    className="w-full h-10 bg-stone-900 border border-stone-800 hover:border-stone-700 rounded-md px-3 py-2 text-xs text-asset-light placeholder-stone-600 focus:outline-none focus:border-asset-green focus:ring-2 focus:ring-asset-green/20 transition-all duration-150"
                   />
                   {deptFormError && <p className="text-[10px] text-red-500 mt-1">{deptFormError}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">
                     Department Head
                   </label>
                   <select
                     value={deptHead}
                     onChange={(e) => setDeptHead(e.target.value)}
-                    className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
+                    className="w-full h-10 bg-stone-900 border border-stone-800 hover:border-stone-700 rounded-md px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green focus:ring-2 focus:ring-asset-green/20 transition-all duration-150"
                   >
                     <option value="">-- Select Head --</option>
                     {employees.map(emp => (
@@ -306,13 +306,13 @@ export default function OrgSetup() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">
                     Parent Department
                   </label>
                   <select
                     value={deptParent}
                     onChange={(e) => setDeptParent(e.target.value)}
-                    className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
+                    className="w-full h-10 bg-stone-900 border border-stone-800 hover:border-stone-700 rounded-md px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green focus:ring-2 focus:ring-asset-green/20 transition-all duration-150"
                   >
                     <option value="">-- None --</option>
                     {departments
@@ -325,7 +325,7 @@ export default function OrgSetup() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">
                     Status
                   </label>
                   <div className="flex gap-4 mt-2">
@@ -349,7 +349,7 @@ export default function OrgSetup() {
                   <button
                     type="submit"
                     disabled={actionPending}
-                    className="flex-1 bg-asset-green hover:bg-opacity-90 text-asset-light font-bold text-xs uppercase py-2.5 rounded tracking-wider transition-colors disabled:opacity-50"
+                    className="flex-1 h-10 bg-asset-green hover:bg-asset-green/80 text-asset-light font-bold text-xs uppercase rounded-md tracking-wider transition-all duration-150 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-asset-green/50 disabled:opacity-50 flex items-center justify-center"
                   >
                     {editingDeptId ? 'Save Changes' : 'Create'}
                   </button>
@@ -363,7 +363,7 @@ export default function OrgSetup() {
                         setDeptParent('');
                         setDeptStatus('Active');
                       }}
-                      className="bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold text-xs uppercase px-4 py-2.5 rounded transition-colors"
+                      className="h-10 px-4 bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold text-xs uppercase rounded-md transition-all duration-150 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-stone-700/50 flex items-center justify-center"
                     >
                       Cancel
                     </button>
@@ -374,47 +374,47 @@ export default function OrgSetup() {
 
             {/* List Table */}
             <div className="lg:col-span-2 bg-stone-950 border border-stone-850 p-6 rounded-lg space-y-4">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-asset-light">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-4">
                 Department Directory
               </h3>
               
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="border-b border-stone-850 text-stone-500 uppercase tracking-widest text-[10px]">
-                      <th className="py-3 px-4 font-bold">Department</th>
-                      <th className="py-3 px-4 font-bold">Head</th>
-                      <th className="py-3 px-4 font-bold">Parent Dept</th>
-                      <th className="py-3 px-4 font-bold text-center">Status</th>
-                      <th className="py-3 px-4 font-bold text-right">Actions</th>
+                    <tr className="border-b border-stone-850 text-stone-400 uppercase tracking-widest text-[10px]">
+                      <th className="py-3.5 px-4 font-bold align-middle">Department</th>
+                      <th className="py-3.5 px-4 font-bold align-middle">Head</th>
+                      <th className="py-3.5 px-4 font-bold align-middle">Parent Dept</th>
+                      <th className="py-3.5 px-4 font-bold text-center align-middle">Status</th>
+                      <th className="py-3.5 px-4 font-bold text-right align-middle">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {departments.map((dept) => (
                       <tr key={dept.id} className="border-b border-stone-850 hover:bg-stone-900/20 transition-colors">
-                        <td className="py-3 px-4 font-medium text-asset-light">{dept.name}</td>
-                        <td className="py-3 px-4 text-stone-400">{dept.head || '—'}</td>
-                        <td className="py-3 px-4 text-stone-400">{dept.parentDept || '—'}</td>
-                        <td className="py-3 px-4 text-center">
-                          <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold ${
+                        <td className="py-3.5 px-4 font-medium text-asset-light align-middle">{dept.name}</td>
+                        <td className="py-3.5 px-4 text-stone-400 align-middle">{dept.head || '—'}</td>
+                        <td className="py-3.5 px-4 text-stone-400 align-middle">{dept.parentDept || '—'}</td>
+                        <td className="py-3.5 px-4 text-center align-middle">
+                          <span className={`inline-flex px-2.5 py-1 rounded-md text-[10px] font-bold uppercase font-mono tracking-wider border ${
                             dept.status === 'Active'
-                              ? 'bg-asset-green/10 text-asset-green border border-asset-green/20'
-                              : 'bg-stone-900 text-stone-500 border border-stone-800'
+                              ? 'bg-asset-green/10 text-emerald-400 border-asset-green/30'
+                              : 'bg-stone-900 text-stone-500 border-stone-800'
                           }`}>
                             {dept.status}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-right space-x-2">
+                        <td className="py-3.5 px-4 text-right space-x-2 align-middle">
                           <button
                             onClick={() => handleEditDept(dept)}
-                            className="text-stone-400 hover:text-asset-light transition-colors text-[11px]"
+                            className="text-stone-400 hover:text-asset-light transition-all duration-150 text-[11px] font-semibold"
                           >
                             Edit
                           </button>
                           <button
                             onClick={() => handleToggleDeptStatus(dept.id, dept.status)}
-                            className={`text-[11px] transition-colors ${
-                              dept.status === 'Active' ? 'text-red-400 hover:text-red-300' : 'text-asset-green hover:text-opacity-80'
+                            className={`text-[11px] font-semibold transition-all duration-150 ${
+                              dept.status === 'Active' ? 'text-red-400 hover:text-red-300' : 'text-emerald-400 hover:text-emerald-300'
                             }`}
                           >
                             {dept.status === 'Active' ? 'Deactivate' : 'Activate'}
@@ -424,7 +424,7 @@ export default function OrgSetup() {
                     ))}
                     {departments.length === 0 && (
                       <tr>
-                        <td colSpan="5" className="py-8 text-center text-stone-500 font-mono uppercase">
+                        <td colSpan="5" className="py-8 text-center text-stone-500 font-mono uppercase align-middle">
                           No departments configured
                         </td>
                       </tr>
@@ -438,16 +438,16 @@ export default function OrgSetup() {
 
         {/* TAB 2: CATEGORIES */}
         {activeTab === 'categories' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Create/Edit Form */}
             <div className="bg-stone-950 border border-stone-850 p-6 rounded-lg space-y-4">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-asset-light">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-4">
                 Add Category
               </h3>
               
               <form onSubmit={handleCatSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">
                     Category Name *
                   </label>
                   <input
@@ -455,23 +455,23 @@ export default function OrgSetup() {
                     value={catName}
                     onChange={(e) => setCatName(e.target.value)}
                     placeholder="e.g. Laptops, Chairs"
-                    className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
+                    className="w-full h-10 bg-stone-900 border border-stone-800 hover:border-stone-700 rounded-md px-3 py-2 text-xs text-asset-light placeholder-stone-600 focus:outline-none focus:border-asset-green focus:ring-2 focus:ring-asset-green/20 transition-all duration-150"
                   />
                   {catFormError && <p className="text-[10px] text-red-500 mt-1">{catFormError}</p>}
                 </div>
 
                 {/* Optional Key-Value extra fields */}
                 <div className="space-y-2 border-t border-stone-850 pt-3">
-                  <span className="block text-[10px] font-bold uppercase tracking-wider text-stone-400">
+                  <span className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">
                     Additional Custom Fields
                   </span>
                   
                   {/* Fields list */}
                   {extraFields.map((field, idx) => (
-                    <div key={idx} className="flex justify-between items-center bg-stone-900/50 border border-stone-800 rounded px-3 py-1.5 text-xs">
+                    <div key={idx} className="flex justify-between items-center bg-stone-900/50 border border-stone-800 rounded-md px-3 py-1.5 text-xs">
                       <span className="text-stone-300 font-semibold">{field.key}:</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-stone-400">{field.value}</span>
+                        <span className="text-stone-400 font-mono">{field.value}</span>
                         <button
                           type="button"
                           onClick={() => handleRemoveExtraField(idx)}
@@ -484,27 +484,27 @@ export default function OrgSetup() {
                   ))}
 
                   {/* Add Field Sub-Form */}
-                  <div className="space-y-2 bg-stone-900/20 border border-stone-850 p-3 rounded">
+                  <div className="space-y-2 bg-stone-900/20 border border-stone-850 p-3 rounded-md">
                     <div className="grid grid-cols-2 gap-2">
                       <input
                         type="text"
                         placeholder="Field Name (Key)"
                         value={newFieldKey}
                         onChange={(e) => setNewFieldKey(e.target.value)}
-                        className="bg-stone-900 border border-stone-800 rounded px-2.5 py-1.5 text-xs text-asset-light focus:outline-none focus:border-asset-green"
+                        className="w-full h-10 bg-stone-900 border border-stone-800 hover:border-stone-700 rounded-md px-3 py-2 text-xs text-asset-light placeholder-stone-600 focus:outline-none focus:border-asset-green focus:ring-2 focus:ring-asset-green/20 transition-all duration-150"
                       />
                       <input
                         type="text"
                         placeholder="Default Value"
                         value={newFieldValue}
                         onChange={(e) => setNewFieldValue(e.target.value)}
-                        className="bg-stone-900 border border-stone-800 rounded px-2.5 py-1.5 text-xs text-asset-light focus:outline-none focus:border-asset-green"
+                        className="w-full h-10 bg-stone-900 border border-stone-800 hover:border-stone-700 rounded-md px-3 py-2 text-xs text-asset-light placeholder-stone-600 focus:outline-none focus:border-asset-green focus:ring-2 focus:ring-asset-green/20 transition-all duration-150"
                       />
                     </div>
                     <button
                       type="button"
                       onClick={handleAddExtraField}
-                      className="w-full bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold text-[10px] uppercase py-1.5 rounded transition-colors"
+                      className="w-full h-10 bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold text-xs uppercase rounded-md transition-all duration-150 active:scale-[0.98] focus:outline-none flex items-center justify-center"
                     >
                       + Add Custom Field
                     </button>
@@ -515,7 +515,7 @@ export default function OrgSetup() {
                   <button
                     type="submit"
                     disabled={actionPending}
-                    className="w-full bg-asset-green hover:bg-opacity-90 text-asset-light font-bold text-xs uppercase py-2.5 rounded tracking-wider transition-colors disabled:opacity-50"
+                    className="w-full h-10 bg-asset-green hover:bg-asset-green/80 text-asset-light font-bold text-xs uppercase rounded-md tracking-wider transition-all duration-150 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-asset-green/50 disabled:opacity-50 flex items-center justify-center"
                   >
                     Save Category
                   </button>
@@ -525,27 +525,27 @@ export default function OrgSetup() {
 
             {/* List Table */}
             <div className="lg:col-span-2 bg-stone-950 border border-stone-850 p-6 rounded-lg space-y-4">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-asset-light">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-4">
                 Category Schema
               </h3>
               
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="border-b border-stone-850 text-stone-500 uppercase tracking-widest text-[10px]">
-                      <th className="py-3 px-4 font-bold w-1/3">Category</th>
-                      <th className="py-3 px-4 font-bold">Custom Metadata Fields</th>
+                    <tr className="border-b border-stone-850 text-stone-400 uppercase tracking-widest text-[10px]">
+                      <th className="py-3.5 px-4 font-bold w-1/3 align-middle">Category</th>
+                      <th className="py-3.5 px-4 font-bold align-middle">Custom Metadata Fields</th>
                     </tr>
                   </thead>
                   <tbody>
                     {categories.map((cat) => (
                       <tr key={cat.id} className="border-b border-stone-850 hover:bg-stone-900/20 transition-colors">
-                        <td className="py-3 px-4 font-medium text-asset-light">{cat.name}</td>
-                        <td className="py-3 px-4 text-stone-400">
+                        <td className="py-3.5 px-4 font-medium text-asset-light align-middle">{cat.name}</td>
+                        <td className="py-3.5 px-4 text-stone-400 align-middle">
                           {cat.extraFields && cat.extraFields.length > 0 ? (
                             <div className="flex flex-wrap gap-1.5">
                               {cat.extraFields.map((field, idx) => (
-                                <span key={idx} className="inline-block bg-stone-900 px-2 py-0.5 rounded text-[10px] border border-stone-800 text-stone-300">
+                                <span key={idx} className="inline-block bg-stone-900 px-2.5 py-1 rounded-md text-[10px] border border-stone-800 text-stone-300 font-mono">
                                   <strong className="text-stone-500">{field.key}:</strong> {field.value}
                                 </span>
                               ))}
@@ -558,7 +558,7 @@ export default function OrgSetup() {
                     ))}
                     {categories.length === 0 && (
                       <tr>
-                        <td colSpan="2" className="py-8 text-center text-stone-500 font-mono uppercase">
+                        <td colSpan="2" className="py-8 text-center text-stone-500 font-mono uppercase align-middle">
                           No categories defined
                         </td>
                       </tr>
@@ -573,45 +573,45 @@ export default function OrgSetup() {
         {/* TAB 3: EMPLOYEE DIRECTORY */}
         {activeTab === 'employees' && (
           <div className="bg-stone-950 border border-stone-850 p-6 rounded-lg space-y-4">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-asset-light">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-4">
               Employee Directory
             </h3>
             
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="border-b border-stone-850 text-stone-500 uppercase tracking-widest text-[10px]">
-                    <th className="py-3 px-4 font-bold">Employee Name</th>
-                    <th className="py-3 px-4 font-bold">Email</th>
-                    <th className="py-3 px-4 font-bold">Current Department</th>
-                    <th className="py-3 px-4 font-bold">Role System</th>
-                    <th className="py-3 px-4 font-bold text-right">Access Controls</th>
+                  <tr className="border-b border-stone-850 text-stone-400 uppercase tracking-widest text-[10px]">
+                    <th className="py-3.5 px-4 font-bold align-middle">Employee Name</th>
+                    <th className="py-3.5 px-4 font-bold align-middle">Email</th>
+                    <th className="py-3.5 px-4 font-bold align-middle">Current Department</th>
+                    <th className="py-3.5 px-4 font-bold align-middle">Role System</th>
+                    <th className="py-3.5 px-4 font-bold text-right align-middle">Access Controls</th>
                   </tr>
                 </thead>
                 <tbody>
                   {employees.map((emp) => (
                     <tr key={emp.id} className="border-b border-stone-850 hover:bg-stone-900/20 transition-colors">
-                      <td className="py-3 px-4 font-medium text-asset-light">{emp.name}</td>
-                      <td className="py-3 px-4 text-stone-400">{emp.email}</td>
-                      <td className="py-3 px-4 text-stone-400">{emp.department || 'Unassigned'}</td>
-                      <td className="py-3 px-4">
-                        <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                      <td className="py-3.5 px-4 font-medium text-asset-light align-middle">{emp.name}</td>
+                      <td className="py-3.5 px-4 text-stone-400 align-middle">{emp.email}</td>
+                      <td className="py-3.5 px-4 text-stone-400 align-middle">{emp.department || 'Unassigned'}</td>
+                      <td className="py-3.5 px-4 align-middle">
+                        <span className={`inline-flex px-2.5 py-1 rounded-md text-[10px] font-bold uppercase font-mono tracking-wider border ${
                           emp.role === 'Admin'
-                            ? 'bg-asset-green/10 text-asset-light border border-asset-green/30'
+                            ? 'bg-asset-green/10 text-asset-light border-asset-green/30'
                             : emp.role === 'Employee'
-                            ? 'text-stone-400 bg-stone-900 border border-stone-800'
-                            : 'bg-asset-green text-asset-light border border-transparent'
+                            ? 'text-stone-400 bg-stone-900 border-stone-800'
+                            : 'bg-asset-green/10 text-emerald-400 border-asset-green/30'
                         }`}>
                           {emp.role}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-right">
+                      <td className="py-3.5 px-4 text-right align-middle">
                         {promotingEmployeeId === emp.id ? (
                           <div className="inline-flex items-center gap-2 animate-fadeIn">
                             <select
                               value={newRoleSelection}
                               onChange={(e) => setNewRoleSelection(e.target.value)}
-                              className="bg-stone-900 border border-stone-800 rounded px-2 py-1 text-xs text-asset-light focus:outline-none focus:border-asset-green"
+                              className="h-8 bg-stone-900 border border-stone-800 hover:border-stone-700 rounded-md px-2 py-1 text-xs text-asset-light focus:outline-none focus:border-asset-green focus:ring-2 focus:ring-asset-green/20 transition-all duration-150"
                             >
                               <option value="Employee">Employee</option>
                               <option value="DeptHead">DeptHead</option>
@@ -621,7 +621,7 @@ export default function OrgSetup() {
                             <button
                               onClick={() => handleConfirmPromotion(emp.id)}
                               disabled={actionPending}
-                              className="bg-asset-green hover:bg-opacity-90 text-asset-light font-bold text-[10px] px-2 py-1 rounded disabled:opacity-50"
+                              className="bg-asset-green hover:bg-asset-green/80 text-asset-light font-bold text-[10px] h-8 px-3 rounded-md transition-all duration-150 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center"
                             >
                               Confirm
                             </button>
@@ -630,25 +630,27 @@ export default function OrgSetup() {
                                 setPromotingEmployeeId(null);
                                 setNewRoleSelection('');
                               }}
-                              className="bg-stone-850 hover:bg-stone-800 text-stone-400 font-bold text-[10px] px-2 py-1 rounded"
+                              className="bg-stone-850 hover:bg-stone-800 text-stone-400 font-bold text-[10px] h-8 px-3 rounded-md transition-all duration-150 active:scale-[0.98] flex items-center justify-center"
                             >
                               Cancel
                             </button>
                           </div>
                         ) : (
-                          <button
-                            onClick={() => handlePromoteClick(emp.id, emp.role)}
-                            className="bg-stone-900 hover:bg-stone-850 text-stone-300 font-bold border border-stone-800 text-[10px] px-3 py-1 rounded uppercase tracking-wider hover:text-asset-light transition-all"
-                          >
-                            Modify Role
-                          </button>
+                          <div className="flex justify-end">
+                            <button
+                              onClick={() => handlePromoteClick(emp.id, emp.role)}
+                              className="bg-stone-900 hover:bg-stone-855 hover:border-stone-700 text-stone-300 font-bold border border-stone-800 text-[10px] h-8 px-3 rounded-md uppercase tracking-wider hover:text-asset-light transition-all duration-150 active:scale-[0.98] flex items-center justify-center"
+                            >
+                              Modify Role
+                            </button>
+                          </div>
                         )}
                       </td>
                     </tr>
                   ))}
                   {employees.length === 0 && (
                     <tr>
-                      <td colSpan="5" className="py-8 text-center text-stone-500 font-mono uppercase">
+                      <td colSpan="5" className="py-8 text-center text-stone-500 font-mono uppercase align-middle">
                         No employees found in directory
                       </td>
                     </tr>

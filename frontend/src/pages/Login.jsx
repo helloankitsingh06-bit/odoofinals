@@ -70,7 +70,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-asset-dark flex items-center justify-center p-6 font-sans">
-      <div className="w-full max-w-md bg-stone-950 border border-stone-850 rounded-lg shadow-2xl p-8 space-y-6">
+      <div className="w-full max-w-md bg-stone-950 border border-stone-850 rounded-lg shadow-2xl p-6 space-y-6">
         
         {/* Branding header */}
         <div className="text-center space-y-2">
@@ -128,7 +128,7 @@ export default function Login() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {isSignUp && (
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">
                 Full Name *
               </label>
               <input
@@ -136,13 +136,13 @@ export default function Login() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Jane Doe"
-                className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
+                className="w-full h-10 bg-stone-900 border border-stone-800 hover:border-stone-700 rounded-md px-3 py-2 text-xs text-asset-light placeholder-stone-600 focus:outline-none focus:border-asset-green focus:ring-2 focus:ring-asset-green/20 transition-all duration-150"
               />
             </div>
           )}
 
           <div>
-            <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">
               Email Address *
             </label>
             <input
@@ -150,12 +150,12 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="user@assetflow.com"
-              className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
+              className="w-full h-10 bg-stone-900 border border-stone-800 hover:border-stone-700 rounded-md px-3 py-2 text-xs text-asset-light placeholder-stone-600 focus:outline-none focus:border-asset-green focus:ring-2 focus:ring-asset-green/20 transition-all duration-150"
             />
           </div>
 
           <div>
-            <div className="flex justify-between items-center mb-1">
+            <div className="flex justify-between items-center mb-1.5">
               <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400">
                 Password *
               </label>
@@ -174,20 +174,20 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
+              className="w-full h-10 bg-stone-900 border border-stone-800 hover:border-stone-700 rounded-md px-3 py-2 text-xs text-asset-light placeholder-stone-600 focus:outline-none focus:border-asset-green focus:ring-2 focus:ring-asset-green/20 transition-all duration-150"
             />
           </div>
 
           {/* Test Role Picker (only visible during mock sign-in) */}
           {!isSignUp && (
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">
                 Select System Role (Test Auth)
               </label>
               <select
                 value={selectedRole}
                 onChange={(e) => setSelectedRole(e.target.value)}
-                className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors capitalize font-semibold"
+                className="w-full h-10 bg-stone-900 border border-stone-800 hover:border-stone-700 rounded-md px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green focus:ring-2 focus:ring-asset-green/20 transition-all duration-150 capitalize font-semibold"
               >
                 <option value="Admin">Admin</option>
                 <option value="Employee">Employee</option>
@@ -201,7 +201,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-asset-green hover:bg-opacity-90 text-asset-light font-bold text-xs uppercase py-2.5 rounded tracking-wider transition-all duration-150 disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full h-10 bg-asset-green hover:bg-asset-green/80 text-asset-light font-bold text-xs uppercase rounded-md tracking-wider transition-all duration-150 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-asset-green/50 disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading ? (
                 <span className="h-3 w-3 rounded-full border-2 border-stone-900 border-t-asset-light animate-spin"></span>

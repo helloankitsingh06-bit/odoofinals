@@ -7,7 +7,7 @@ import React from 'react';
  * @param {string} props.status - The current status of the asset.
  */
 export default function StatusBadge({ status }) {
-  let classes = "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase border ";
+  let classes = "inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wider uppercase border font-mono ";
 
   switch (status) {
     case 'Available':
@@ -30,6 +30,15 @@ export default function StatusBadge({ status }) {
       break;
     case 'Disposed':
       classes += "bg-stone-900/40 text-stone-500 border-stone-800";
+      break;
+    case 'Verified':
+      classes += "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
+      break;
+    case 'Missing':
+      classes += "bg-red-500/10 text-red-400 border-red-500/30";
+      break;
+    case 'Damaged':
+      classes += "bg-amber-500/10 text-amber-400 border-amber-500/30";
       break;
     default:
       classes += "bg-stone-900 text-stone-400 border-stone-800";

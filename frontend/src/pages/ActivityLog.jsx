@@ -66,7 +66,7 @@ export default function ActivityLog() {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12 font-sans">
+    <div className="p-8 space-y-6 max-w-7xl mx-auto pb-12 font-sans">
       {/* Error banner */}
       {errorMsg && (
         <div className="bg-red-950/40 border border-red-900 text-red-200 px-4 py-3 rounded-lg text-xs">
@@ -93,7 +93,7 @@ export default function ActivityLog() {
 
       {/* Activity Feed Container */}
       <div className="bg-stone-950 border border-stone-850 p-6 rounded-lg space-y-4">
-        <h3 className="text-xs font-bold uppercase tracking-widest text-stone-500 border-b border-stone-850 pb-3">
+        <h3 className="text-xs font-bold uppercase tracking-widest text-stone-400 border-b border-stone-850 pb-3">
           Activity Ledger Feed [{activeFilter}]
         </h3>
 
