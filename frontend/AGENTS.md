@@ -30,3 +30,7 @@ Add a separate "Recent Activity" mini-feed component (not a reused Activity Log 
 
 ## Update — Org Setup
 Confirmed as originally scoped: single page, 3 tabs (Departments / Categories / Employee), table view with status badges. No changes.
+
+## Update — Additional Screens (Audit, Reports, Notifications)
+Unassigned in original scope, now owned by Frontend A. Build in this order: Audit, Reports, Notifications. Same rules apply: no hardcoded data, every list/table/number from a stub async service call (empty/zero for now, // TODO Firestore comment), consistent styling with the established design system (asset-green accents, h-10 rounded-md inputs/buttons, px-2.5 py-1 rounded-md font-mono badges, gap-6/p-6 spacing scale, hidden scrollbar).
+

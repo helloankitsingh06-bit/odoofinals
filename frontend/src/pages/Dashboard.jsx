@@ -49,7 +49,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto pb-12 font-sans">
+    <div className="p-8 space-y-6 max-w-7xl mx-auto pb-12 font-sans">
       {/* Error banner */}
       {errorMsg && (
         <div className="bg-red-950/40 border border-red-900 text-red-200 px-4 py-3 rounded-lg text-xs">
@@ -59,11 +59,11 @@ export default function Dashboard() {
 
       {/* KPI Cards Grid */}
       <div>
-        <h3 className="text-xs font-bold uppercase tracking-widest text-stone-500 mb-4">
+        <h3 className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-4">
           Core Metrics Registry
         </h3>
         
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
           {Object.entries(kpiCounts).map(([key, value]) => {
             // Convert camelCase key to uppercase space-separated label
             const label = key
@@ -73,13 +73,13 @@ export default function Dashboard() {
             return (
               <div
                 key={key}
-                className="bg-stone-950 border border-stone-850 p-5 rounded-lg flex flex-col justify-between min-h-[110px]"
+                className="glass-panel p-6 flex flex-col justify-between min-h-[110px] border border-glass-border shadow-glass-glow"
               >
-                <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">
+                <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider font-mono">
                   {label}
                 </span>
                 {loading ? (
-                  <div className="h-8 w-12 bg-stone-900 rounded animate-pulse mt-2"></div>
+                  <div className="h-8 w-12 bg-white/5 rounded animate-pulse mt-2"></div>
                 ) : (
                   <span className="text-3xl font-light text-asset-light tracking-tight mt-2 font-mono">
                     {value}
@@ -92,9 +92,9 @@ export default function Dashboard() {
       </div>
 
       {/* Overdue Returns Box */}
-      <div className="bg-stone-950 border border-red-950/60 p-6 rounded-lg">
+      <div className="glass-panel border-red-900/30 shadow-[0_8px_32px_0_rgba(239,68,68,0.06)] p-6">
         <div className="flex items-center gap-2 border-b border-red-950/40 pb-3 mb-4">
-          <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse"></span>
+          <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]"></span>
           <h3 className="text-xs font-bold uppercase tracking-widest text-red-400">
             Overdue Returns Alert
           </h3>
@@ -102,15 +102,15 @@ export default function Dashboard() {
 
         {loading ? (
           <div className="space-y-2">
-            <div className="h-5 bg-stone-900 rounded animate-pulse w-2/3"></div>
-            <div className="h-5 bg-stone-900 rounded animate-pulse w-1/2"></div>
+            <div className="h-5 bg-white/5 rounded animate-pulse w-2/3"></div>
+            <div className="h-5 bg-white/5 rounded animate-pulse w-1/2"></div>
           </div>
         ) : overdueReturns.length > 0 ? (
           <div className="divide-y divide-red-950/20">
             {overdueReturns.map((item) => (
               <div key={item.id} className="py-2.5 flex items-center justify-between text-xs text-red-200">
                 <span>{item.assetName} ({item.assetCode})</span>
-                <span className="font-semibold text-[10px] bg-red-950 text-red-400 border border-red-900/40 px-2 py-0.5 rounded uppercase">
+                <span className="font-semibold text-[10px] bg-red-950/40 text-red-400 border border-red-900/30 px-2.5 py-1 rounded-md uppercase font-mono shadow-[0_0_8px_rgba(239,68,68,0.15)]">
                   Overdue {item.daysOverdue} days
                 </span>
               </div>
@@ -124,11 +124,11 @@ export default function Dashboard() {
       </div>
 
       {/* Lower Dashboard Grid (Quick Actions & Recent Activity) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Quick Actions Panel */}
-        <div className="bg-stone-950 border border-stone-850 p-6 rounded-lg space-y-4">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-stone-500 border-b border-stone-850 pb-3">
+        <div className="glass-panel p-6 space-y-4 border border-glass-border shadow-glass-glow">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-stone-400 border-b border-glass-border pb-3">
             Quick Actions Panel
           </h3>
           
@@ -137,7 +137,7 @@ export default function Dashboard() {
               <Link
                 key={action.label}
                 to={action.path}
-                className={`w-full text-left px-4 py-3 border border-stone-850 bg-stone-900/10 rounded text-xs text-stone-400 font-semibold tracking-wider transition-all duration-150 uppercase ${action.color}`}
+                className="w-full h-10 px-4 flex items-center border border-glass-border bg-white/[0.02] hover:bg-white/5 hover:border-white/20 rounded-md text-xs font-bold text-stone-400 hover:text-asset-light hover:shadow-green-glow transition-all duration-150 uppercase tracking-wider active:scale-[0.98]"
               >
                 {action.label}
               </Link>
@@ -146,8 +146,8 @@ export default function Dashboard() {
         </div>
 
         {/* Recent Activity Mini-Feed */}
-        <div className="lg:col-span-2 bg-stone-950 border border-stone-850 p-6 rounded-lg space-y-4">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-stone-500 border-b border-stone-850 pb-3">
+        <div className="lg:col-span-2 glass-panel p-6 space-y-4 border border-glass-border shadow-glass-glow">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-stone-400 border-b border-glass-border pb-3">
             Recent activity logs (Top 3)
           </h3>
 
@@ -155,10 +155,10 @@ export default function Dashboard() {
             <div className="space-y-4">
               {[...Array(3)].map((_, i) => (
                 <div key={i} className="flex gap-4 items-center">
-                  <div className="h-2 w-2 rounded-full bg-stone-900"></div>
+                  <div className="h-2 w-2 rounded-full bg-white/5"></div>
                   <div className="flex-1 space-y-1.5">
-                    <div className="h-3 bg-stone-900 rounded animate-pulse w-3/4"></div>
-                    <div className="h-2.5 bg-stone-900 rounded animate-pulse w-1/3"></div>
+                    <div className="h-3 bg-white/5 rounded animate-pulse w-3/4"></div>
+                    <div className="h-2.5 bg-white/5 rounded animate-pulse w-1/3"></div>
                   </div>
                 </div>
               ))}
@@ -167,7 +167,7 @@ export default function Dashboard() {
             <div className="space-y-3">
               {recentActivity.map((activity) => (
                 <div key={activity.id} className="flex gap-3 items-center text-xs py-1">
-                  <span className="h-1 w-1 rounded-full bg-asset-green"></span>
+                  <span className="h-1 w-1 rounded-full bg-emerald-450 shadow-accent-glow"></span>
                   <p className="text-stone-300">
                     <span className="font-semibold text-asset-light">{activity.assetName}</span>
                     {' - '}

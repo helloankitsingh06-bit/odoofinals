@@ -102,8 +102,8 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4 sm:p-6 font-sans antialiased select-none">
-      <div className="w-full max-w-[460px] bg-[#0c0d0c] border border-stone-850 rounded p-6 sm:p-10 space-y-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
+    <div className="min-h-screen bg-transparent flex items-center justify-center p-6 font-sans antialiased select-none">
+      <div className="w-full max-w-md glass-panel p-6 sm:p-10 space-y-8 border border-glass-border shadow-glass-glow rounded-lg">
         
         {/* Branding header */}
         <div className="text-center space-y-2">
@@ -111,7 +111,7 @@ export default function Login() {
           <div className="relative inline-block">
             <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981] animate-pulse"></span>
           </div>
-          <h2 className="text-2xl font-bold tracking-[0.25em] text-stone-100 uppercase">
+          <h2 className="text-2xl font-bold tracking-[0.25em] text-asset-light uppercase">
             AssetFlow
           </h2>
           <p className="text-[10px] text-stone-500 font-mono tracking-[0.18em] uppercase">
@@ -120,7 +120,7 @@ export default function Login() {
         </div>
 
         {/* Tab Headers */}
-        <div className="flex border-b border-stone-850">
+        <div className="flex border-b border-glass-border">
           <button
             onClick={() => {
               setIsSignUp(false);
@@ -128,7 +128,7 @@ export default function Login() {
               setFeedbackMsg('');
             }}
             className={`flex-1 pb-3 text-2xs font-bold uppercase tracking-[0.15em] transition-all border-b-2 ${
-              !isSignUp ? 'border-emerald-500 text-stone-200' : 'border-transparent text-stone-500 hover:text-stone-400'
+              !isSignUp ? 'border-emerald-500 text-asset-light drop-shadow-[0_0_8px_rgba(52,211,153,0.2)]' : 'border-transparent text-stone-500 hover:text-stone-400'
             }`}
           >
             Sign In
@@ -140,7 +140,7 @@ export default function Login() {
               setFeedbackMsg('');
             }}
             className={`flex-1 pb-3 text-2xs font-bold uppercase tracking-[0.15em] transition-all border-b-2 ${
-              isSignUp ? 'border-emerald-500 text-stone-200' : 'border-transparent text-stone-500 hover:text-stone-400'
+              isSignUp ? 'border-emerald-500 text-asset-light drop-shadow-[0_0_8px_rgba(52,211,153,0.2)]' : 'border-transparent text-stone-500 hover:text-stone-400'
             }`}
           >
             Sign Up
@@ -149,13 +149,13 @@ export default function Login() {
 
         {/* Notifications Banners */}
         {formError && (
-          <div className="bg-red-950/40 border border-red-900/60 text-red-200 px-4 py-2.5 rounded text-xs font-mono">
+          <div className="bg-red-950/20 border border-red-900/30 text-red-200 px-4 py-2.5 rounded-md text-xs backdrop-blur-md font-mono">
             ⚠️ {formError}
           </div>
         )}
 
         {feedbackMsg && (
-          <div className="bg-stone-900/80 border border-stone-800 text-stone-300 px-4 py-2.5 rounded text-xs font-mono">
+          <div className="bg-white/[0.02] border border-glass-border text-stone-300 px-4 py-2.5 rounded-md text-xs backdrop-blur-md font-mono">
             ℹ️ {feedbackMsg}
           </div>
         )}
@@ -176,7 +176,7 @@ export default function Login() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Jane Doe"
-                  className="w-full bg-[#121312] border border-stone-850 rounded px-3.5 py-2.5 pl-10 text-xs text-stone-300 placeholder-stone-700 focus:outline-none focus:border-stone-700 focus:ring-0 transition-colors font-mono"
+                  className="w-full h-10 bg-white/[0.03] border border-glass-border hover:border-white/20 rounded-md px-3.5 py-2 text-xs text-asset-light placeholder-stone-600 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 transition-all duration-150 pl-10 font-mono"
                 />
               </div>
             </div>
@@ -195,7 +195,7 @@ export default function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="user@assetflow.com"
-                className="w-full bg-[#121312] border border-stone-850 rounded px-3.5 py-2.5 pl-10 text-xs text-stone-300 placeholder-stone-700 focus:outline-none focus:border-stone-700 focus:ring-0 transition-colors font-mono"
+                className="w-full h-10 bg-white/[0.03] border border-glass-border hover:border-white/20 rounded-md px-3.5 py-2 text-xs text-asset-light placeholder-stone-600 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 transition-all duration-150 pl-10 font-mono"
               />
             </div>
           </div>
@@ -224,7 +224,7 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-[#121312] border border-stone-850 rounded px-3.5 py-2.5 pl-10 text-xs text-stone-300 placeholder-stone-700 focus:outline-none focus:border-stone-700 focus:ring-0 transition-colors font-mono"
+                className="w-full h-10 bg-white/[0.03] border border-glass-border hover:border-white/20 rounded-md px-3.5 py-2 text-xs text-asset-light placeholder-stone-600 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 transition-all duration-150 pl-10 font-mono"
               />
             </div>
           </div>
@@ -242,12 +242,12 @@ export default function Login() {
                 <select
                   value={selectedRole}
                   onChange={(e) => setSelectedRole(e.target.value)}
-                  className="w-full bg-[#121312] border border-stone-850 rounded px-3.5 py-2.5 pl-10 text-xs text-stone-300 focus:outline-none focus:border-stone-700 focus:ring-0 transition-colors capitalize font-semibold font-mono appearance-none"
+                  className="w-full h-10 bg-white/[0.03] border border-glass-border hover:border-white/20 rounded-md px-3.5 py-2 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 transition-all duration-150 pl-10 font-mono capitalize font-semibold appearance-none"
                 >
-                  <option value="Admin">Admin</option>
-                  <option value="Employee">Employee</option>
-                  <option value="AssetManager">AssetManager</option>
-                  <option value="DeptHead">DeptHead</option>
+                  <option value="Admin" className="bg-[#181818] text-stone-300">Admin</option>
+                  <option value="Employee" className="bg-[#181818] text-stone-300">Employee</option>
+                  <option value="AssetManager" className="bg-[#181818] text-stone-300">AssetManager</option>
+                  <option value="DeptHead" className="bg-[#181818] text-stone-300">DeptHead</option>
                 </select>
               </div>
             </div>
@@ -259,7 +259,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#1e3427] hover:bg-[#254231] text-[#76c893] border border-[#2d523c] font-bold text-xs uppercase py-3 rounded tracking-[0.15em] transition-all duration-150 disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
+              className="w-full h-10 bg-[#1e3427]/80 hover:bg-[#254231] text-[#76c893] border border-[#2d523c]/60 rounded-md font-bold text-xs uppercase tracking-[0.15em] transition-all duration-150 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-emerald-500/40 disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading ? (
                 <span className="h-3.5 w-3.5 rounded-full border-2 border-transparent border-t-[#76c893] animate-spin"></span>
@@ -275,7 +275,7 @@ export default function Login() {
               type="button"
               onClick={handleGoogleSignIn}
               disabled={loading}
-              className="w-full bg-black hover:bg-[#070707] text-stone-300 border border-stone-850 font-bold text-xs uppercase py-3 rounded tracking-[0.15em] transition-all duration-150 flex items-center justify-center gap-2.5 shadow-sm"
+              className="w-full bg-black hover:bg-[#070707] text-stone-300 border border-stone-850 font-bold text-xs uppercase py-3 rounded-md tracking-[0.15em] transition-all duration-150 flex items-center justify-center gap-2.5 shadow-sm"
             >
               {/* Google Brand Icon SVG */}
               <svg className="h-4 w-4" viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
