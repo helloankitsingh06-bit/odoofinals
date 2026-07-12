@@ -1,66 +1,72 @@
 // TODO: Replace with real Backend A/B exports
 const API_BASE = "http://localhost:5001/api";
 
+const API_BASE_URL = 'http://localhost:5001/api';
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-// In-memory data store for prototyping (resets on page reload)
-let categories = [];
-let assets = [];
+function normalizeAsset(asset = {}) {
+  if (!asset || typeof asset !== 'object') return asset;
+
+  return {
+    ...asset,
+    id: asset.id || asset._id || '',
+    tag: asset.tag || asset.assetTag || '—',
+    categoryName: asset.categoryName || asset.category?.name || asset.category || '—'
+  };
+}
+
+async function request(path, options = {}) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.headers || {})
+    },
+    ...options
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.message || 'Request failed');
+  }
+
+  return data;
+}
 
 export const ASSET_STATUSES = ['Available', 'Allocated', 'Reserved', 'Under Maintenance', 'Lost', 'Retired', 'Disposed'];
 
 export const assetService = {
   async listCategories() {
-    // TODO: replace with real Firestore query (e.g. getDocs(collection(db, 'categories')))
-    await delay(300);
-    return [...categories];
+    await delay(200);
+    const data = await request('/categories');
+    return Array.isArray(data) ? data : data.items || [];
   },
 
   async createCategory(catData) {
-    // TODO: replace with real Firestore add (e.g. addDoc(collection(db, 'categories'), catData))
-    await delay(400);
-    if (!catData.name) throw new Error('Category name is required');
-    
-    const newCat = {
-      id: `cat-${Date.now()}`,
-      name: catData.name,
-      extraFields: catData.extraFields || []
-    };
-    
-    categories.push(newCat);
-    return newCat;
+    await delay(200);
+    const name = (catData.name || '').trim();
+    if (!name) throw new Error('Category name is required');
+
+    return request('/categories', {
+      method: 'POST',
+      body: JSON.stringify({ name, extraFields: catData.extraFields || [] })
+    });
   },
 
   async listAssets({ search = '', category = '', status = '', department = '' } = {}) {
-    await delay(300);
-    let filtered = [...assets];
+    await delay(200);
+    const params = new URLSearchParams();
+    if (search) params.set('search', search);
+    if (category) params.set('category', category);
+    if (status) params.set('status', status);
+    if (department) params.set('department', department);
 
-    if (search) {
-      const q = search.toLowerCase();
-      filtered = filtered.filter(asset => 
-        (asset.tag && asset.tag.toLowerCase().includes(q)) ||
-        (asset.serialNumber && asset.serialNumber.toLowerCase().includes(q)) ||
-        (asset.name && asset.name.toLowerCase().includes(q))
-      );
-    }
-
-    if (category) {
-      filtered = filtered.filter(asset => asset.category === category);
-    }
-
-    if (status) {
-      filtered = filtered.filter(asset => asset.status === status);
-    }
-
-    if (department) {
-      filtered = filtered.filter(asset => asset.department === department);
-    }
-
-    return filtered;
+    const data = await request(`/assets?${params.toString()}`);
+    const items = Array.isArray(data) ? data : data.items || [];
+    return items.map(normalizeAsset);
   },
 
   async registerAsset(data) {
-    await delay(300);
+    await delay(200);
 
     const requiredFields = ['name', 'category', 'serialNumber', 'acquisitionDate', 'acquisitionCost', 'condition', 'location'];
     for (const field of requiredFields) {
@@ -70,45 +76,40 @@ export const assetService = {
       }
     }
 
-    const nextNum = assets.length + 1;
-    const tag = `AF-${String(nextNum).padStart(4, '0')}`;
-
-    const newAsset = {
-      id: `asset-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      tag,
-      name: data.name,
-      category: data.category,
-      serialNumber: data.serialNumber,
-      acquisitionDate: data.acquisitionDate,
-      acquisitionCost: Number(data.acquisitionCost),
-      condition: data.condition,
-      location: data.location,
-      isShared: !!data.isShared,
-      status: 'Available',
-      createdAt: new Date().toISOString()
-    };
-
-    assets.push(newAsset);
-    return newAsset;
+    return request('/assets', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: data.name,
+        category: data.category,
+        serialNumber: data.serialNumber,
+        acquisitionDate: data.acquisitionDate,
+        acquisitionCost: Number(data.acquisitionCost),
+        condition: data.condition,
+        location: data.location,
+        isBookable: !!data.isShared,
+        createdBy: '000000000000000000000000'
+      })
+    });
   },
 
   async getAssetById(assetId) {
-    await delay(300);
-    return assets.find(asset => asset.id === assetId) || null;
+    await delay(200);
+    const asset = await request(`/assets/${assetId}`);
+    return normalizeAsset(asset);
   },
 
   async updateAssetStatus(assetId, newStatus) {
-    await delay(300);
-    const index = assets.findIndex(asset => asset.id === assetId);
-    if (index === -1) throw new Error('Asset not found');
-    assets[index] = { ...assets[index], status: newStatus };
-    return assets[index];
+    await delay(200);
+    return request(`/assets/${assetId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ newStatus, changedBy: '000000000000000000000000', reason: 'Status updated' })
+    });
   },
 
   async getKpiCounts() {
     try {
       const res = await fetch(`${API_BASE}/dashboard/kpis`);
-      if (!res.ok) throw new Error("Failed to fetch KPIs from server");
+      if (!res.ok) throw new Error('Failed to fetch KPIs from server');
       const data = await res.json();
       return {
         available: data.available || 0,
@@ -119,7 +120,7 @@ export const assetService = {
         upcomingReturns: data.overdueCount || 0
       };
     } catch (error) {
-      console.error("getKpiCounts failed, falling back to mock:", error);
+      console.error('getKpiCounts failed, falling back to mock:', error);
       return {
         available: 0,
         allocated: 0,

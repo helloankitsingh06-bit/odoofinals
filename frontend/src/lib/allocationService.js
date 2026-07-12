@@ -1,182 +1,103 @@
 import { assetService } from './assetService';
-import { orgService } from './orgService';
 
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const API_BASE_URL = 'http://localhost:5001/api';
 
-// In-memory data store for prototyping (resets on page reload)
-let allocations = [];
-let transfers = [];
+async function request(path, options = {}) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    headers: {
+      'Content-Type': 'application/json',
+      'x-user-role': 'AssetManager',
+      'x-user-id': 'mock-employee-1',
+      ...(options.headers || {})
+    },
+    ...options
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(data.message || data.error || 'Request failed');
+    error.status = response.status;
+    error.payload = data;
+    throw error;
+  }
+
+  return data;
+}
 
 export const allocationService = {
   async allocateAsset(assetId, employeeId, departmentId, expectedReturnDate) {
-    await delay(300);
-
-    const asset = await assetService.getAssetById(assetId);
-    if (!asset) {
-      throw new Error('Asset not found');
-    }
-
-    if (asset.status === 'Allocated') {
-      // Find the active allocation record to get the holder name
-      const activeAlloc = allocations.find(a => a.assetId === assetId && a.status === 'Active');
-      if (activeAlloc) {
-        const employees = await orgService.listEmployees();
-        const depts = await orgService.listDepartments();
-        const emp = employees.find(e => e.id === activeAlloc.employeeId);
-        const dept = depts.find(d => d.id === activeAlloc.departmentId || d.name === activeAlloc.departmentId);
-        const empName = emp ? emp.name : 'Unknown';
-        const deptName = dept ? dept.name : 'Unknown';
-        throw new Error(`Already allocated to ${empName} (${deptName})`);
-      } else {
-        throw new Error('Already allocated');
-      }
-    }
-
-    const newAllocation = {
-      id: `alloc-${Date.now()}`,
-      assetId,
-      employeeId,
-      departmentId,
-      allocatedDate: new Date().toISOString().split('T')[0],
-      returnedDate: null,
-      conditionNotes: null,
-      expectedReturnDate: expectedReturnDate || null,
-      status: 'Active'
-    };
-
-    allocations.push(newAllocation);
-    await assetService.updateAssetStatus(assetId, 'Allocated');
-    return newAllocation;
+    return request('/allocations', {
+      method: 'POST',
+      body: JSON.stringify({
+        asset: assetId,
+        employee: employeeId || undefined,
+        department: departmentId || undefined,
+        expectedReturnDate: expectedReturnDate || undefined
+      })
+    });
   },
 
   async requestTransfer(assetId, fromUserId, toUserId, requestedByUserId, reason) {
-    await delay(300);
-
-    if (!assetId || !fromUserId || !toUserId || !requestedByUserId || !reason || !reason.trim()) {
-      throw new Error('All fields including reason are required for a transfer request');
-    }
-
-    const newTransfer = {
-      id: `trans-${Date.now()}`,
-      assetId,
-      fromUserId,
-      toUserId,
-      requestedByUserId,
-      reason: reason.trim(),
-      status: 'Requested',
-      requestedDate: new Date().toISOString().split('T')[0]
-    };
-
-    transfers.push(newTransfer);
-    return newTransfer;
+    return request('/transfers', {
+      method: 'POST',
+      body: JSON.stringify({
+        asset: assetId,
+        fromHolder: fromUserId,
+        toHolder: toUserId,
+        requestedBy: requestedByUserId,
+        reason
+      })
+    });
   },
 
   async approveTransfer(transferId) {
-    await delay(300);
+    return request(`/transfers/${transferId}/approve`, {
+      method: 'PATCH'
+    });
+  },
 
-    const transfer = transfers.find(t => t.id === transferId);
-    if (!transfer) {
-      throw new Error('Transfer request not found');
-    }
-
-    transfer.status = 'Approved';
-
-    // Close the current active allocation
-    const activeAlloc = allocations.find(a => a.assetId === transfer.assetId && a.status === 'Active');
-    if (activeAlloc) {
-      activeAlloc.status = 'Returned';
-      activeAlloc.returnedDate = new Date().toISOString().split('T')[0];
-      activeAlloc.conditionNotes = 'Transferred to another user';
-    }
-
-    // Lookup new holder's department
-    const employees = await orgService.listEmployees();
-    const toEmp = employees.find(e => e.id === transfer.toUserId);
-    const toDept = toEmp ? toEmp.department : '';
-
-    const depts = await orgService.listDepartments();
-    const deptObj = depts.find(d => d.name === toDept || d.id === toDept);
-    const departmentId = deptObj ? deptObj.id : toDept;
-
-    // Create a new allocation record
-    const newAllocation = {
-      id: `alloc-${Date.now()}`,
-      assetId: transfer.assetId,
-      employeeId: transfer.toUserId,
-      departmentId: departmentId,
-      allocatedDate: new Date().toISOString().split('T')[0],
-      returnedDate: null,
-      conditionNotes: null,
-      expectedReturnDate: null,
-      status: 'Active'
-    };
-
-    allocations.push(newAllocation);
-    await assetService.updateAssetStatus(transfer.assetId, 'Allocated');
-    return transfer;
+  async rejectTransfer(transferId, reason) {
+    return request(`/transfers/${transferId}/reject`, {
+      method: 'PATCH',
+      body: JSON.stringify({ rejectionReason: reason })
+    });
   },
 
   async getAllocationHistory(assetId) {
-    await delay(300);
-
-    const employees = await orgService.listEmployees();
-    const depts = await orgService.listDepartments();
-
-    const events = [];
-    const assetAllocs = allocations.filter(a => a.assetId === assetId);
-
-    for (const alloc of assetAllocs) {
-      const emp = employees.find(e => e.id === alloc.employeeId);
-      const dept = depts.find(d => d.id === alloc.departmentId || d.name === alloc.departmentId);
-      const empName = emp ? emp.name : 'Unknown';
-      const deptName = dept ? dept.name : 'Unknown';
-
-      events.push({
-        date: alloc.allocatedDate,
-        description: `Allocated to ${empName} - ${deptName}`
-      });
-
-      if (alloc.returnedDate) {
-        events.push({
-          date: alloc.returnedDate,
-          description: `Returned by ${empName} - condition: ${alloc.conditionNotes || 'none'}`
-        });
-      }
-    }
-
-    // Sort by date descending
-    events.sort((a, b) => b.date.localeCompare(a.date));
-    return events;
+    const data = await request(`/allocations?asset=${assetId}`);
+    return (Array.isArray(data) ? data : []).map((entry) => ({
+      date: entry.allocatedDate || entry.createdAt,
+      description: `Allocated to ${entry.employee?.name || entry.department?.name || 'Unknown'} (${entry.status})`
+    }));
   },
 
   async returnAsset(assetId, conditionNotes) {
-    await delay(300);
+    const allocation = await request(`/allocations?asset=${assetId}`);
+    const active = Array.isArray(allocation) ? allocation.find((item) => item.status === 'Active') : null;
+    if (!active) throw new Error('No active allocation found');
 
-    if (!conditionNotes || !conditionNotes.trim()) {
-      throw new Error('Condition notes are required');
-    }
-
-    const activeAlloc = allocations.find(a => a.assetId === assetId && a.status === 'Active');
-    if (!activeAlloc) {
-      throw new Error('No active allocation found for this asset');
-    }
-
-    activeAlloc.status = 'Returned';
-    activeAlloc.returnedDate = new Date().toISOString().split('T')[0];
-    activeAlloc.conditionNotes = conditionNotes.trim();
-
-    await assetService.updateAssetStatus(assetId, 'Available');
+    return request(`/allocations/${active._id}/return`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        conditionAtCheckin: conditionNotes,
+        checkinNotes: conditionNotes
+      })
+    });
   },
 
-  // Helper to fetch any pending transfer for a specific asset
   async getPendingTransferForAsset(assetId) {
-    await delay(300);
-    return transfers.find(t => t.assetId === assetId && t.status === 'Requested') || null;
+    const data = await request(`/transfers?status=Requested`);
+    const items = Array.isArray(data) ? data : [];
+    return items.find((item) => item.asset?._id === assetId || item.asset === assetId) || null;
   },
 
-  // Helper to get active allocation for an asset
   async getActiveAllocationForAsset(assetId) {
-    await delay(300);
-    return allocations.find(a => a.assetId === assetId && a.status === 'Active') || null;
+    const data = await request(`/allocations?asset=${assetId}`);
+    const items = Array.isArray(data) ? data : [];
+    return items.find((item) => item.status === 'Active') || null;
+  },
+
+  async getOverdueAllocations() {
+    return request('/allocations/overdue');
   }
 };

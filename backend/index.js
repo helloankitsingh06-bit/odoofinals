@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const mongoose = require('mongoose');
 
 // Load environment variables from .env
 require('dotenv').config({ path: path.join(__dirname, '.env') });
@@ -9,6 +10,11 @@ const dashboardRoutes = require('./src/routes/dashboardRoutes');
 const { registerAsset } = require('./src/services/assetService');
 const { bookResource, cancelBooking } = require('./src/services/bookingService');
 const { verifyToken, requireAssetManager } = require('./src/middleware/auth');
+const assetRoutes = require('./routes/assetRoutes');
+const categoryRoutes = require('./routes/categoryRoutes');
+const allocationRoutes = require('./routes/allocationRoutes');
+const transferRoutes = require('./routes/transferRoutes');
+const { runOverdueCheck } = require('./jobs/overdueAllocationCheck');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -26,9 +32,14 @@ app.get('/api/me', verifyToken, (req, res) => {
   res.json({
     uid: req.user.uid,
     email: req.user.email || null,
-    role: req.user.role || 'Employee' // defaults to Employee if no custom role is set
+    role: req.user.role || 'Employee'
   });
 });
+
+app.use('/api/assets', assetRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/allocations', allocationRoutes);
+app.use('/api/transfers', transferRoutes);
 
 // Mounted Routes
 app.use('/api/dashboard', dashboardRoutes);
@@ -67,6 +78,26 @@ app.post('/api/bookings/:id/cancel', verifyToken, async (req, res) => {
 });
 
 // Start Server
-app.listen(PORT, () => {
-  console.log(`🚀 AssetFlow Backend Server running on http://localhost:${PORT}`);
-});
+const startServer = async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_URL);
+    console.log('✅ MongoDB connected');
+
+    app.listen(PORT, () => {
+      console.log(`🚀 AssetFlow Backend Server running on http://localhost:${PORT}`);
+    });
+
+    setInterval(async () => {
+      try {
+        await runOverdueCheck();
+      } catch (err) {
+        console.error('Overdue allocation check failed', err.message);
+      }
+    }, 15 * 60 * 1000);
+  } catch (error) {
+    console.error('❌ MongoDB connection failed:', error.message);
+    process.exit(1);
+  }
+};
+
+startServer();

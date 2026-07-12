@@ -148,12 +148,8 @@ export default function AllocationTransfer() {
     e.preventDefault();
     setAllocFormError('');
 
-    if (!allocateEmployeeId) {
-      setAllocFormError('Employee selection is required');
-      return;
-    }
-    if (!allocateDepartmentId) {
-      setAllocFormError('Department selection is required');
+    if (!allocateEmployeeId && !allocateDepartmentId) {
+      setAllocFormError('Employee or department selection is required');
       return;
     }
 
@@ -172,7 +168,11 @@ export default function AllocationTransfer() {
       // Refresh details
       await refreshDetails(selectedAssetId);
     } catch (err) {
-      triggerToast('error', err.message || 'Failed to allocate asset');
+      if (err.status === 409 && err.payload?.error === 'ASSET_ALREADY_ALLOCATED') {
+        triggerToast('error', `Currently held by ${err.payload.currentHolder?.name || 'another user'}`);
+      } else {
+        triggerToast('error', err.message || 'Failed to allocate asset');
+      }
     } finally {
       setActionPending(false);
     }
@@ -306,9 +306,9 @@ export default function AllocationTransfer() {
                 className="w-full sm:flex-1 bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
               >
                 <option value="">-- Choose an Asset --</option>
-                {assets.map((asset) => (
-                  <option key={asset.id} value={asset.id}>
-                    {asset.tag} - {asset.name} ({asset.status})
+                {assets.map((asset, index) => (
+                  <option key={asset.id || asset._id || `${asset.name}-${index}`} value={asset.id || asset._id || ''}>
+                    {asset.tag || asset.assetTag || '—'} - {asset.name} ({asset.status})
                   </option>
                 ))}
               </select>
@@ -355,9 +355,11 @@ export default function AllocationTransfer() {
                           Transfer Pending
                         </span>
                         <p className="text-stone-300">
-                          Transfer requested from <strong>{getEmployeeName(pendingTransfer.fromUserId)}</strong> to <strong>{getEmployeeName(pendingTransfer.toUserId)}</strong>.
+                          Transfer requested from <strong>{pendingTransfer.fromHolder?.name || pendingTransfer.fromHolder || 'Unknown'}</strong> to <strong>{pendingTransfer.toHolder?.name || pendingTransfer.toHolder || 'Unknown'}</strong>.
                         </p>
-                        <p className="text-stone-500 font-mono text-[10px]">Reason: "{pendingTransfer.reason}"</p>
+                        {pendingTransfer.reason ? (
+                          <p className="text-stone-500 font-mono text-[10px]">Reason: "{pendingTransfer.reason}"</p>
+                        ) : null}
                       </div>
 
                       {/* Approval flow */}

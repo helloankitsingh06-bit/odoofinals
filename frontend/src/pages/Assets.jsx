@@ -119,8 +119,8 @@ export default function Assets() {
             className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-1.5 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
           >
             <option value="">All Categories</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.name}>
+            {categories.map((cat, index) => (
+              <option key={cat._id || cat.id || `${cat.name}-${index}`} value={cat.name}>
                 {cat.name}
               </option>
             ))}
@@ -153,8 +153,8 @@ export default function Assets() {
             className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-1.5 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
           >
             <option value="">All Departments</option>
-            {departments.map((dept) => (
-              <option key={dept.id} value={dept.name}>
+            {departments.map((dept, index) => (
+              <option key={dept._id || dept.id || `${dept.name}-${index}`} value={dept.name}>
                 {dept.name}
               </option>
             ))}
@@ -192,15 +192,15 @@ export default function Assets() {
                 </tr>
               </thead>
               <tbody>
-                {assets.map((asset) => (
+                {assets.map((asset, index) => (
                   <tr
-                    key={asset.id}
-                    onClick={() => navigate(`/assets/${asset.id}`)}
+                    key={asset._id || asset.id || asset.assetTag || `${asset.name}-${index}`}
+                    onClick={() => navigate(`/assets/${asset._id || asset.id}`)}
                     className="border-b border-stone-850 hover:bg-stone-900/30 transition-colors cursor-pointer"
                   >
-                    <td className="py-3.5 px-4 text-xs font-mono text-emerald-400 font-bold">{asset.tag}</td>
+                    <td className="py-3.5 px-4 text-xs font-mono text-emerald-400 font-bold">{asset.assetTag || asset.tag || '—'}</td>
                     <td className="py-3.5 px-4 text-xs font-semibold text-asset-light">{asset.name}</td>
-                    <td className="py-3.5 px-4 text-xs text-stone-400">{asset.category}</td>
+                    <td className="py-3.5 px-4 text-xs text-stone-400">{asset.category?.name || asset.category || '—'}</td>
                     <td className="py-3.5 px-4 text-xs">
                       <StatusBadge status={asset.status} />
                     </td>

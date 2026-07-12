@@ -13,6 +13,8 @@ export default function RegisterAssetModal({ isOpen, onClose, onSuccess }) {
 
   const [categories, setCategories] = useState([]);
   const [loadingCats, setLoadingCats] = useState(true);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [creatingCategory, setCreatingCategory] = useState(false);
 
   // Form fields state
   const [formData, setFormData] = useState({
@@ -64,7 +66,7 @@ export default function RegisterAssetModal({ isOpen, onClose, onSuccess }) {
   const validate = () => {
     const newErrors = {};
     if (!formData.name.trim()) newErrors.name = 'Asset name is required';
-    if (!formData.category) newErrors.category = 'Category is required';
+    if (!formData.category || formData.category === '__add_new__') newErrors.category = 'Category is required';
     if (!formData.serialNumber.trim()) newErrors.serialNumber = 'Serial number is required';
     if (!formData.acquisitionDate) newErrors.acquisitionDate = 'Acquisition date is required';
     
@@ -95,6 +97,27 @@ export default function RegisterAssetModal({ isOpen, onClose, onSuccess }) {
       setSubmitError(err.message || 'Failed to register asset.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleAddCategory = async () => {
+    const trimmedName = newCategoryName.trim();
+    if (!trimmedName) {
+      setErrors(prev => ({ ...prev, category: 'Category name is required' }));
+      return;
+    }
+
+    try {
+      setCreatingCategory(true);
+      const created = await assetService.createCategory({ name: trimmedName });
+      setCategories(prev => [...prev, created]);
+      setFormData(prev => ({ ...prev, category: created.name }));
+      setNewCategoryName('');
+      setErrors(prev => ({ ...prev, category: null }));
+    } catch (err) {
+      setErrors(prev => ({ ...prev, category: err.message || 'Unable to add category' }));
+    } finally {
+      setCreatingCategory(false);
     }
   };
 
@@ -154,20 +177,44 @@ export default function RegisterAssetModal({ isOpen, onClose, onSuccess }) {
                 No categories available. Please configure them in Organization Setup first.
               </div>
             ) : (
-              <select
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
-              >
-                {categories.map(cat => (
-                  <option key={cat.id} value={cat.name}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
+              <>
+                <select
+                  name="category"
+                  value={formData.category}
+                  onChange={handleChange}
+                  className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
+                >
+                  <option value="">Select a category</option>
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.name}>
+                      {cat.name}
+                    </option>
+                  ))}
+                  <option value="__add_new__">+ Add new category</option>
+                </select>
+                {formData.category === '__add_new__' && (
+                  <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                    <input
+                      type="text"
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      placeholder="New category name"
+                      className="flex-1 bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddCategory}
+                      disabled={creatingCategory}
+                      className="bg-asset-green hover:bg-opacity-90 text-asset-light rounded px-3 py-2 text-[10px] font-bold uppercase tracking-wider transition-colors disabled:opacity-50"
+                    >
+                      {creatingCategory ? 'Adding…' : 'Add Category'}
+                    </button>
+                  </div>
+                )}
+              </>
             )}
             {errors.category && <p className="text-[10px] text-red-500 mt-1">{errors.category}</p>}
+            <p className="text-[10px] text-stone-500 mt-1">Preset options are available instantly, or you can add a custom category.</p>
           </div>
 
           {/* Serial Number */}
