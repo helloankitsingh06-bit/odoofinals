@@ -9,11 +9,17 @@ require('dotenv').config({ path: path.join(__dirname, '.env') });
 const dashboardRoutes = require('./src/routes/dashboardRoutes');
 const { registerAsset } = require('./src/services/assetService');
 const { bookResource, cancelBooking } = require('./src/services/bookingService');
-const { verifyToken, requireAssetManager } = require('./src/middleware/auth');
+const { verifyToken, requireAdmin, requireAssetManager } = require('./src/middleware/auth');
+const linkEmployeeAccount = require('./src/middleware/linkEmployeeAccount');
+const requireActiveEmployee = require('./src/middleware/requireActiveEmployee');
+
 const assetRoutes = require('./routes/assetRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const allocationRoutes = require('./routes/allocationRoutes');
 const transferRoutes = require('./routes/transferRoutes');
+const adminEmployeesRoutes = require('./src/routes/adminEmployees');
+const adminDepartmentsRoutes = require('./src/routes/adminDepartments');
+const employeeRoutes = require('./src/routes/employee');
 const { runOverdueCheck } = require('./jobs/overdueAllocationCheck');
 
 const app = express();
@@ -43,6 +49,11 @@ app.use('/api/transfers', transferRoutes);
 
 // Mounted Routes
 app.use('/api/dashboard', dashboardRoutes);
+
+// Employee and Admin routes
+app.use('/api/admin', verifyToken, requireAdmin, adminEmployeesRoutes);
+app.use('/api/admin', verifyToken, requireAdmin, adminDepartmentsRoutes);
+app.use('/api/employee', verifyToken, linkEmployeeAccount, requireActiveEmployee, employeeRoutes);
 
 // Assets APIs (Only AssetManagers or Admins can register assets)
 app.post('/api/assets', verifyToken, requireAssetManager, async (req, res) => {

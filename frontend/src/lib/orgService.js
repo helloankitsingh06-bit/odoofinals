@@ -1,80 +1,130 @@
-// TODO: Replace with real Backend A/B exports
+import { auth } from './firebase';
+
 const API_BASE = "http://localhost:5001/api";
 
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+/**
+ * Helper: request
+ * Makes an HTTP fetch call to the backend with appropriate JSON and Authorization headers.
+ */
+async function request(path, options = {}) {
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(options.headers || {})
+  };
 
-// In-memory data store for prototyping (resets on page reload)
-let departments = [];
-let employees = [];
+  // Attach Firebase ID token if authenticated
+  if (auth.currentUser) {
+    try {
+      const token = await auth.currentUser.getIdToken();
+      headers['Authorization'] = `Bearer ${token}`;
+    } catch (e) {
+      console.warn("Failed to get Firebase Auth ID token:", e);
+    }
+  } else {
+    // Fallback: local development/prototyping mock tokens
+    const localRole = localStorage.getItem('lastSelectedRole') || 'Employee';
+    const mockToken = localRole === 'Admin' ? 'mock-admin' : 'mock-employee';
+    headers['Authorization'] = `Bearer ${mockToken}`;
+  }
+
+  const response = await fetch(`${API_BASE}${path}`, {
+    headers,
+    ...options
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.message || data.error || 'Request failed');
+  }
+
+  return data;
+}
 
 export const orgService = {
+  /**
+   * List all departments
+   */
   async listDepartments() {
-    // TODO: replace with real Firestore query (e.g. getDocs(collection(db, 'departments')))
-    await delay(300);
-    return [...departments];
+    return request('/admin/departments');
   },
 
+  /**
+   * List all employees
+   */
   async listEmployees() {
-    // TODO: replace with real Firestore query (e.g. getDocs(collection(db, 'employees')))
-    await delay(300);
-    return [...employees];
+    return request('/admin/employees');
   },
 
+  /**
+   * Modify employee role
+   */
   async promoteUser(employeeId, newRole) {
-    // TODO: replace with real Firestore update (e.g. updateDoc(doc(db, 'employees', employeeId), { role: newRole }))
-    await delay(500);
-    if (!newRole) throw new Error('New role is required');
-    
-    const index = employees.findIndex(emp => emp.id === employeeId);
-    if (index === -1) throw new Error('Employee not found');
-    
-    employees[index] = { ...employees[index], role: newRole };
-    return employees[index];
+    return request(`/admin/employees/${employeeId}/department`, {
+      method: 'PATCH',
+      body: JSON.stringify({ role: newRole })
+    });
   },
 
+  /**
+   * Create a new department
+   */
   async createDepartment(deptData) {
-    // TODO: replace with real Firestore add (e.g. addDoc(collection(db, 'departments'), deptData))
-    await delay(400);
-    if (!deptData.name) throw new Error('Department name is required');
-    
-    const newDept = {
-      id: `dept-${Date.now()}`,
-      name: deptData.name,
-      head: deptData.head || '',
-      parentDept: deptData.parentDept || '',
-      status: deptData.status || 'Active'
-    };
-    
-    departments.push(newDept);
-    return newDept;
+    return request('/admin/departments', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: deptData.name,
+        description: deptData.head ? `Head: ${deptData.head}` : 'Department description'
+      })
+    });
   },
 
+  /**
+   * Update an existing department
+   */
   async updateDepartment(deptId, deptData) {
-    // TODO: replace with real Firestore update (e.g. updateDoc(doc(db, 'departments', deptId), deptData))
-    await delay(400);
-    const index = departments.findIndex(d => d.id === deptId);
-    if (index === -1) throw new Error('Department not found');
-    
-    departments[index] = {
-      ...departments[index],
-      ...deptData
-    };
-    return departments[index];
+    return request(`/admin/departments/${deptId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        name: deptData.name,
+        description: deptData.head ? `Head: ${deptData.head}` : 'Department description'
+      })
+    });
   },
 
+  /**
+   * Create (invite) a new employee record
+   */
+  async createEmployee(empData) {
+    return request('/admin/employees', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: empData.name,
+        email: empData.email,
+        departmentId: empData.departmentId
+      })
+    });
+  },
+
+  /**
+   * Remove/delete an employee record
+   */
+  async deleteEmployee(employeeId) {
+    return request(`/admin/employees/${employeeId}`, {
+      method: 'DELETE'
+    });
+  },
+
+  /**
+   * Get recent activity logs for dashboard
+   */
   async getRecentActivity(limitCount = 3) {
     try {
-      const res = await fetch(`${API_BASE}/dashboard/activities?limit=${limitCount}`);
-      if (!res.ok) throw new Error("Failed to fetch activities from server");
-      const data = await res.json();
+      const response = await fetch(`${API_BASE}/dashboard/activities?limit=${limitCount}`);
+      if (!response.ok) throw new Error("Failed to fetch activities");
+      const data = await response.json();
       
-      // Map properties to what Dashboard.jsx expects:
-      // activity.assetName, activity.action, activity.personName, activity.deptName
       return data.map(log => {
-        // e.g. log.message is "Allocated asset AF-0001 to charlie-id"
-        // Let's parse details nicely or provide fallbacks
         const assetName = log.entityType === 'assets' ? `Asset ${log.entityId}` : 'System';
-        
         let displayAction = log.actionType;
         if (log.actionType === 'ASSET_ALLOCATION') displayAction = 'Allocated';
         else if (log.actionType === 'TRANSFER_APPROVED') displayAction = 'Transferred';

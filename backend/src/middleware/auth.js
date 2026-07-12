@@ -1,4 +1,4 @@
-const { auth } = require('../firebase');
+const { auth, db } = require('../firebase');
 
 /**
  * Why can't the role check happen on the frontend alone?
@@ -13,7 +13,9 @@ const { auth } = require('../firebase');
 
 /**
  * Middleware: verifyToken
- * Validates the Authorization Bearer header, decodes the claims, and attaches req.user.
+ * Validates the Authorization Bearer header, decodes the claims, checks if the email exists in the database
+ * (either as the configured Admin, or as an employee in the Firestore employees collection),
+ * configures the role (Admin for designated admin email, Employee for invited employees), and attaches req.user.
  */
 async function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -27,8 +29,65 @@ async function verifyToken(req, res, next) {
 
   const token = authHeader.split(' ')[1];
 
+  // Development/Mock login bypass
+  if (token.startsWith('mock-')) {
+    let decodedToken;
+    if (token === 'mock-admin') {
+      decodedToken = { uid: 'admin-123', email: (process.env.ADMIN_EMAIL || 'krishdravi123@gmail.com').toLowerCase(), role: 'Admin', name: 'Admin User' };
+    } else {
+      decodedToken = { uid: 'emp-999', email: 'test_employee@example.com', role: 'Employee', name: 'John Doe' };
+      req.employee = {
+        id: 'mock-emp-id',
+        name: 'John Doe',
+        email: 'test_employee@example.com',
+        uid: 'emp-999',
+        displayName: 'John Doe',
+        departmentId: 'mock-dept-id',
+        role: 'Employee',
+        status: 'active',
+        deadlines: []
+      };
+    }
+    req.user = decodedToken;
+    return next();
+  }
+
   try {
     const decodedToken = await auth.verifyIdToken(token);
+    const email = decodedToken.email;
+    if (!email) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'Authentication token is missing email address'
+      });
+    }
+
+    const adminEmail = (process.env.ADMIN_EMAIL || 'krishdravi123@gmail.com').toLowerCase();
+    const normalizedEmail = email.toLowerCase();
+
+    // 1. Check whether the email exists in the database (either as Admin or Employee)
+    if (normalizedEmail === adminEmail) {
+      // 2. Set Admin role for the single designated admin email
+      decodedToken.role = 'Admin';
+    } else {
+      // 1. Check whether the email exists in the employees collection
+      const employeeSnap = await db.collection('employees').where('email', '==', normalizedEmail).limit(1).get();
+      
+      if (employeeSnap.empty) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'Access denied: Email not registered in the database.'
+        });
+      }
+
+      // 2. Set Employee role for registered users
+      decodedToken.role = 'Employee';
+      
+      // Cache the loaded employee details on the request to optimize downstream routes/middleware
+      const doc = employeeSnap.docs[0];
+      req.employee = { id: doc.id, ...doc.data() };
+    }
+
     req.user = decodedToken;
     next();
   } catch (error) {

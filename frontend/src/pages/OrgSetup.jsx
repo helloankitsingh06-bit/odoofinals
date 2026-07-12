@@ -44,6 +44,13 @@ export default function OrgSetup() {
   const [promotingEmployeeId, setPromotingEmployeeId] = useState(null);
   const [newRoleSelection, setNewRoleSelection] = useState('');
 
+  // 4. Employees Form
+  const [empName, setEmpName] = useState('');
+  const [empEmail, setEmpEmail] = useState('');
+  const [empDept, setEmpDept] = useState('');
+  const [customDeptName, setCustomDeptName] = useState('');
+  const [empFormError, setEmpFormError] = useState('');
+
   // Fetch all data
   const fetchData = async () => {
     setLoading(true);
@@ -206,12 +213,100 @@ export default function OrgSetup() {
     setActionPending(true);
     try {
       await orgService.promoteUser(empId, newRoleSelection);
-      triggerSuccess(`User promoted to ${newRoleSelection} successfully.`);
+      triggerSuccess(`User role updated to ${newRoleSelection} successfully.`);
       setPromotingEmployeeId(null);
       setNewRoleSelection('');
       await fetchData();
     } catch (err) {
       triggerError(err.message || 'Failed to promote user.');
+    } finally {
+      setActionPending(false);
+    }
+  };
+
+  // Employees Form Handlers
+  const handleEmpSubmit = async (e) => {
+    e.preventDefault();
+    setEmpFormError('');
+
+    if (!empName.trim()) {
+      setEmpFormError('Employee name is required');
+      return;
+    }
+    if (!empEmail.trim()) {
+      setEmpFormError('Email is required');
+      return;
+    }
+    // Basic email format check
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(empEmail.trim())) {
+      setEmpFormError('Invalid email format');
+      return;
+    }
+    let finalDeptId = empDept;
+
+    if (empDept === 'custom') {
+      if (!customDeptName.trim()) {
+        setEmpFormError('Custom department name is required');
+        return;
+      }
+      
+      setActionPending(true);
+      try {
+        const newDept = await orgService.createDepartment({
+          name: customDeptName.trim()
+        });
+        finalDeptId = newDept.id;
+        
+        // Refresh departments list in background
+        const deptsData = await orgService.listDepartments();
+        setDepartments(deptsData);
+      } catch (err) {
+        setEmpFormError(err.message || 'Failed to create new department');
+        setActionPending(false);
+        return;
+      }
+    } else if (!empDept) {
+      setEmpFormError('Department selection is required');
+      return;
+    }
+
+    setActionPending(true);
+    try {
+      await orgService.createEmployee({
+        name: empName.trim(),
+        email: empEmail.trim(),
+        departmentId: finalDeptId
+      });
+
+      triggerSuccess(`Employee "${empName}" invited successfully.`);
+      
+      // Reset form
+      setEmpName('');
+      setEmpEmail('');
+      setEmpDept('');
+      setCustomDeptName('');
+      
+      await fetchData();
+    } catch (err) {
+      triggerError(err.message || 'Failed to add employee.');
+    } finally {
+      setActionPending(false);
+    }
+  };
+
+  const handleRemoveEmployee = async (employeeId, name) => {
+    if (!window.confirm(`Are you sure you want to remove employee "${name}"? This will delete their Firestore record and revoke their Firebase Auth account.`)) {
+      return;
+    }
+
+    setActionPending(true);
+    try {
+      await orgService.deleteEmployee(employeeId);
+      triggerSuccess(`Employee "${name}" removed successfully.`);
+      await fetchData();
+    } catch (err) {
+      triggerError(err.message || 'Failed to remove employee.');
     } finally {
       setActionPending(false);
     }
@@ -570,93 +665,195 @@ export default function OrgSetup() {
           </div>
         )}
 
-        {/* TAB 3: EMPLOYEE DIRECTORY */}
+        {/* TAB 3: EMPLOYEES */}
         {activeTab === 'employees' && (
-          <div className="glass-panel p-6 space-y-4 border border-glass-border shadow-glass-glow">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-4">
-              Employee Directory
-            </h3>
-            
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-glass-border text-stone-400 uppercase tracking-widest text-[10px]">
-                    <th className="py-3.5 px-4 font-bold align-middle">Employee Name</th>
-                    <th className="py-3.5 px-4 font-bold align-middle">Email</th>
-                    <th className="py-3.5 px-4 font-bold align-middle">Current Department</th>
-                    <th className="py-3.5 px-4 font-bold align-middle">Role System</th>
-                    <th className="py-3.5 px-4 font-bold text-right align-middle">Access Controls</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {employees.map((emp) => (
-                    <tr key={emp.id} className="border-b border-glass-border/40 hover:bg-white/[0.02] transition-colors">
-                      <td className="py-3.5 px-4 font-medium text-asset-light align-middle">{emp.name}</td>
-                      <td className="py-3.5 px-4 text-stone-400 align-middle">{emp.email}</td>
-                      <td className="py-3.5 px-4 text-stone-400 align-middle">{emp.department || 'Unassigned'}</td>
-                      <td className="py-3.5 px-4 align-middle">
-                        <span className={`inline-flex px-2.5 py-1 rounded-md text-[10px] font-bold uppercase font-mono tracking-wider border ${
-                          emp.role === 'Admin'
-                            ? 'bg-white/5 text-emerald-400 border-emerald-500/20 shadow-accent-glow'
-                            : emp.role === 'Employee'
-                            ? 'text-stone-400 bg-white/5 border border-glass-border'
-                            : 'bg-white/5 text-emerald-400 border-emerald-500/20 shadow-accent-glow'
-                        }`}>
-                          {emp.role}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-right align-middle">
-                        {promotingEmployeeId === emp.id ? (
-                          <div className="inline-flex items-center gap-2 animate-fadeIn">
-                            <select
-                              value={newRoleSelection}
-                              onChange={(e) => setNewRoleSelection(e.target.value)}
-                              className="h-8 bg-white/[0.03] border border-glass-border hover:border-white/20 rounded-md px-2 py-1 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
-                            >
-                              <option value="Employee">Employee</option>
-                              <option value="DeptHead">DeptHead</option>
-                              <option value="AssetManager">AssetManager</option>
-                              <option value="Admin">Admin</option>
-                            </select>
-                            <button
-                              onClick={() => handleConfirmPromotion(emp.id)}
-                              disabled={actionPending}
-                              className="bg-asset-green/35 border border-emerald-500/25 hover:bg-asset-green/45 hover:border-emerald-500/40 text-asset-light font-bold text-[10px] h-8 px-3 rounded-md transition-all duration-150 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center shadow-green-glow"
-                            >
-                              Confirm
-                            </button>
-                            <button
-                              onClick={() => {
-                                setPromotingEmployeeId(null);
-                                setNewRoleSelection('');
-                              }}
-                              className="bg-white/[0.05] border border-glass-border hover:bg-white/10 text-stone-400 font-bold text-[10px] h-8 px-3 rounded-md transition-all duration-150 active:scale-[0.98] flex items-center justify-center"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex justify-end">
-                            <button
-                              onClick={() => handlePromoteClick(emp.id, emp.role)}
-                              className="bg-white/[0.02] border border-glass-border hover:bg-white/5 hover:border-white/20 text-stone-300 font-bold text-[10px] h-8 px-3 rounded-md uppercase tracking-wider hover:text-asset-light transition-all duration-150 active:scale-[0.98] flex items-center justify-center"
-                            >
-                              Modify Role
-                            </button>
-                          </div>
-                        )}
-                      </td>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* ADD EMPLOYEE Form */}
+            <div className="glass-panel p-6 space-y-4 border border-glass-border shadow-glass-glow">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-4">
+                ADD EMPLOYEE
+              </h3>
+              
+              <form onSubmit={handleEmpSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">
+                    Employee Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={empName}
+                    onChange={(e) => setEmpName(e.target.value)}
+                    placeholder="e.g. John Doe"
+                    className="w-full h-10 bg-white/[0.03] border border-glass-border hover:border-white/20 rounded-md px-3 py-2 text-xs text-asset-light placeholder-stone-600 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">
+                    Email *
+                  </label>
+                  <input
+                    type="email"
+                    value={empEmail}
+                    onChange={(e) => setEmpEmail(e.target.value)}
+                    placeholder="e.g. john.doe@company.com"
+                    className="w-full h-10 bg-white/[0.03] border border-glass-border hover:border-white/20 rounded-md px-3 py-2 text-xs text-asset-light placeholder-stone-600 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">
+                    Department *
+                  </label>
+                  <select
+                    value={empDept}
+                    onChange={(e) => {
+                      setEmpDept(e.target.value);
+                      if (e.target.value !== 'custom') {
+                        setCustomDeptName('');
+                      }
+                    }}
+                    className="w-full h-10 bg-white/[0.03] border border-glass-border hover:border-white/20 rounded-md px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150 text-stone-300"
+                  >
+                    <option value="" className="text-stone-800">-- Select Department --</option>
+                    {departments.map((dept) => (
+                      <option key={dept.id} value={dept.id} className="text-stone-800">
+                        {dept.name}
+                      </option>
+                    ))}
+                    <option value="custom" className="text-emerald-400 font-bold bg-stone-900">
+                      + Add Custom Department...
+                    </option>
+                  </select>
+                </div>
+
+                {empDept === 'custom' && (
+                  <div className="animate-fadeIn">
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">
+                      New Department Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={customDeptName}
+                      onChange={(e) => setCustomDeptName(e.target.value)}
+                      placeholder="e.g. Marketing"
+                      className="w-full h-10 bg-white/[0.03] border border-glass-border hover:border-white/20 rounded-md px-3 py-2 text-xs text-asset-light placeholder-stone-600 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
+                    />
+                  </div>
+                )}
+
+                {empFormError && (
+                  <p className="text-[10px] text-red-500 font-semibold">{empFormError}</p>
+                )}
+
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={actionPending}
+                    className="w-full h-10 bg-asset-green/35 border border-emerald-500/25 hover:bg-asset-green/45 hover:border-emerald-500/40 text-asset-light font-bold text-xs uppercase rounded-md tracking-wider transition-all duration-150 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 shadow-green-glow disabled:opacity-50 flex items-center justify-center"
+                  >
+                    ADD EMPLOYEE
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* EMPLOYEE DIRECTORY */}
+            <div className="lg:col-span-2 glass-panel p-6 space-y-4 border border-glass-border shadow-glass-glow">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-4">
+                EMPLOYEE DIRECTORY
+              </h3>
+              
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-glass-border text-stone-400 uppercase tracking-widest text-[10px]">
+                      <th className="py-3.5 px-4 font-bold align-middle">NAME</th>
+                      <th className="py-3.5 px-4 font-bold align-middle">EMAIL</th>
+                      <th className="py-3.5 px-4 font-bold align-middle">DEPARTMENT</th>
+                      <th className="py-3.5 px-4 font-bold text-center align-middle">STATUS</th>
+                      <th className="py-3.5 px-4 font-bold text-right align-middle">ACTIONS</th>
                     </tr>
-                  ))}
-                  {employees.length === 0 && (
-                    <tr>
-                      <td colSpan="5" className="py-8 text-center text-stone-500 font-mono uppercase align-middle">
-                        No employees found in directory
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {employees.map((emp) => (
+                      <tr key={emp.id} className="border-b border-glass-border/40 hover:bg-white/[0.02] transition-colors">
+                        <td className="py-3.5 px-4 font-medium text-asset-light align-middle">{emp.name}</td>
+                        <td className="py-3.5 px-4 text-stone-400 align-middle">{emp.email}</td>
+                        <td className="py-3.5 px-4 text-stone-400 align-middle">
+                          {emp.departmentName || emp.department || '—'}
+                        </td>
+                        <td className="py-3.5 px-4 text-center align-middle">
+                          <span className={`inline-flex px-2.5 py-1 rounded-md text-[10px] font-bold uppercase font-mono tracking-wider border ${
+                            emp.status === 'active'
+                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_8px_rgba(16,185,129,0.1)]'
+                              : emp.status === 'suspended'
+                              ? 'bg-red-500/10 text-red-400 border-red-500/20'
+                              : 'bg-stone-900/30 text-stone-500 border-stone-800'
+                          }`}>
+                            {emp.status || 'invited'}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-right space-x-2 align-middle">
+                          {promotingEmployeeId === emp.id ? (
+                            <div className="inline-flex items-center gap-2 animate-fadeIn">
+                              <select
+                                value={newRoleSelection}
+                                onChange={(e) => setNewRoleSelection(e.target.value)}
+                                className="h-8 bg-white/[0.03] border border-glass-border hover:border-white/20 rounded-md px-2 py-1 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
+                              >
+                                <option value="Employee">Employee</option>
+                                <option value="DeptHead">DeptHead</option>
+                                <option value="AssetManager">AssetManager</option>
+                                <option value="Admin">Admin</option>
+                              </select>
+                              <button
+                                onClick={() => handleConfirmPromotion(emp.id)}
+                                disabled={actionPending}
+                                className="bg-asset-green/35 border border-emerald-500/25 hover:bg-asset-green/45 hover:border-emerald-500/40 text-asset-light font-bold text-[10px] h-8 px-3 rounded-md transition-all duration-150 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center shadow-green-glow"
+                              >
+                                Confirm
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setPromotingEmployeeId(null);
+                                  setNewRoleSelection('');
+                                }}
+                                className="bg-white/[0.05] border border-glass-border hover:bg-white/10 text-stone-400 font-bold text-[10px] h-8 px-3 rounded-md transition-all duration-150 active:scale-[0.98] flex items-center justify-center"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex justify-end items-center gap-3">
+                              <button
+                                onClick={() => handlePromoteClick(emp.id, emp.role)}
+                                className="text-stone-400 hover:text-asset-light transition-all duration-150 text-[11px] font-semibold"
+                              >
+                                Modify Role
+                              </button>
+                              <button
+                                onClick={() => handleRemoveEmployee(emp.id, emp.name)}
+                                disabled={actionPending}
+                                className="text-red-400 hover:text-red-300 transition-all duration-150 text-[11px] font-semibold disabled:opacity-50"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {employees.length === 0 && (
+                      <tr>
+                        <td colSpan="5" className="py-8 text-center text-stone-500 font-mono uppercase align-middle">
+                          NO EMPLOYEES ADDED
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
