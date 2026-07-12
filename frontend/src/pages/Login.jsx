@@ -69,12 +69,12 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-asset-dark flex items-center justify-center p-6 font-sans">
-      <div className="w-full max-w-md bg-stone-950 border border-stone-850 rounded-lg shadow-2xl p-6 space-y-6">
+    <div className="min-h-screen bg-transparent flex items-center justify-center p-6 font-sans">
+      <div className="w-full max-w-md glass-panel p-6 space-y-6 border border-glass-border shadow-glass-glow">
         
         {/* Branding header */}
         <div className="text-center space-y-2">
-          <span className="inline-flex h-3 w-3 rounded-full bg-asset-green animate-pulse mb-1"></span>
+          <span className="inline-flex h-3 w-3 rounded-full bg-emerald-450 shadow-accent-glow animate-pulse mb-1"></span>
           <h2 className="text-2xl font-bold tracking-widest text-asset-light uppercase">
             AssetFlow
           </h2>
@@ -84,7 +84,7 @@ export default function Login() {
         </div>
 
         {/* Tab Headers */}
-        <div className="flex border-b border-stone-850">
+        <div className="flex border-b border-glass-border">
           <button
             onClick={() => {
               setIsSignUp(false);
@@ -92,7 +92,7 @@ export default function Login() {
               setFeedbackMsg('');
             }}
             className={`flex-1 pb-3 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 ${
-              !isSignUp ? 'border-asset-green text-asset-light' : 'border-transparent text-stone-500 hover:text-stone-300'
+              !isSignUp ? 'border-emerald-500 text-asset-light drop-shadow-[0_0_8px_rgba(52,211,153,0.2)]' : 'border-transparent text-stone-500 hover:text-stone-300'
             }`}
           >
             Sign In
@@ -104,7 +104,7 @@ export default function Login() {
               setFeedbackMsg('');
             }}
             className={`flex-1 pb-3 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 ${
-              isSignUp ? 'border-asset-green text-asset-light' : 'border-transparent text-stone-500 hover:text-stone-300'
+              isSignUp ? 'border-emerald-500 text-asset-light drop-shadow-[0_0_8px_rgba(52,211,153,0.2)]' : 'border-transparent text-stone-500 hover:text-stone-300'
             }`}
           >
             Sign Up
@@ -113,13 +113,13 @@ export default function Login() {
 
         {/* Notifications Banners */}
         {formError && (
-          <div className="bg-red-950/40 border border-red-900 text-red-200 px-4 py-2.5 rounded text-xs">
+          <div className="bg-red-950/20 border border-red-900/30 text-red-200 px-4 py-2.5 rounded-md text-xs backdrop-blur-md">
             ⚠️ {formError}
           </div>
         )}
 
         {feedbackMsg && (
-          <div className="bg-stone-900 border border-asset-green text-stone-300 px-4 py-2.5 rounded text-xs">
+          <div className="bg-white/[0.02] border border-glass-border text-stone-300 px-4 py-2.5 rounded-md text-xs backdrop-blur-md">
             ℹ️ {feedbackMsg}
           </div>
         )}
@@ -136,7 +136,7 @@ export default function Login() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Jane Doe"
-                className="w-full h-10 bg-stone-900 border border-stone-800 hover:border-stone-700 rounded-md px-3 py-2 text-xs text-asset-light placeholder-stone-600 focus:outline-none focus:border-asset-green focus:ring-2 focus:ring-asset-green/20 transition-all duration-150"
+                className="w-full h-10 bg-white/[0.03] border border-glass-border hover:border-white/20 rounded-md px-3 py-2 text-xs text-asset-light placeholder-stone-600 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
               />
             </div>
           )}
@@ -150,7 +150,7 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="user@assetflow.com"
-              className="w-full h-10 bg-stone-900 border border-stone-800 hover:border-stone-700 rounded-md px-3 py-2 text-xs text-asset-light placeholder-stone-600 focus:outline-none focus:border-asset-green focus:ring-2 focus:ring-asset-green/20 transition-all duration-150"
+              className="w-full h-10 bg-white/[0.03] border border-glass-border hover:border-white/20 rounded-md px-3 py-2 text-xs text-asset-light placeholder-stone-600 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
             />
           </div>
 
@@ -174,7 +174,7 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full h-10 bg-stone-900 border border-stone-800 hover:border-stone-700 rounded-md px-3 py-2 text-xs text-asset-light placeholder-stone-600 focus:outline-none focus:border-asset-green focus:ring-2 focus:ring-asset-green/20 transition-all duration-150"
+              className="w-full h-10 bg-white/[0.03] border border-glass-border hover:border-white/20 rounded-md px-3 py-2 text-xs text-asset-light placeholder-stone-600 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
             />
           </div>
 
@@ -187,7 +187,7 @@ export default function Login() {
               <select
                 value={selectedRole}
                 onChange={(e) => setSelectedRole(e.target.value)}
-                className="w-full h-10 bg-stone-900 border border-stone-800 hover:border-stone-700 rounded-md px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green focus:ring-2 focus:ring-asset-green/20 transition-all duration-150 capitalize font-semibold"
+                className="w-full h-10 bg-white/[0.03] border border-glass-border hover:border-white/20 rounded-md px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150 capitalize font-semibold"
               >
                 <option value="Admin">Admin</option>
                 <option value="Employee">Employee</option>
@@ -201,7 +201,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-10 bg-asset-green hover:bg-asset-green/80 text-asset-light font-bold text-xs uppercase rounded-md tracking-wider transition-all duration-150 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-asset-green/50 disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full h-10 bg-asset-green/35 border border-emerald-500/25 hover:bg-asset-green/45 hover:border-emerald-500/40 text-asset-light font-bold text-xs uppercase rounded-md tracking-wider transition-all duration-150 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 shadow-green-glow disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading ? (
                 <span className="h-3 w-3 rounded-full border-2 border-stone-900 border-t-asset-light animate-spin"></span>

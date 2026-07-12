@@ -33,7 +33,7 @@ export default function Notifications() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-96 gap-4">
-        <span className="h-8 w-8 rounded-full border-4 border-stone-800 border-t-asset-green animate-spin"></span>
+        <span className="h-8 w-8 rounded-full border-4 border-stone-800/40 border-t-emerald-500 animate-spin"></span>
         <p className="text-sm text-stone-500 font-mono">RETRIEVING NOTIFICATIONS...</p>
       </div>
     );
@@ -43,7 +43,7 @@ export default function Notifications() {
     <div className="p-8 space-y-6 max-w-7xl mx-auto pb-12 font-sans">
       {/* Error banner */}
       {errorMsg && (
-        <div className="bg-red-950/40 border border-red-900 text-red-200 px-4 py-3 rounded-lg text-xs">
+        <div className="bg-red-950/20 border border-red-900/30 text-red-200 px-4 py-3 rounded-lg text-xs backdrop-blur-md">
           ⚠️ {errorMsg}
         </div>
       )}
@@ -56,25 +56,25 @@ export default function Notifications() {
         </div>
         <button
           onClick={handleMarkAllAsRead}
-          className="h-10 px-4 bg-stone-900 hover:bg-stone-850 hover:border-stone-750 text-stone-300 font-bold border border-stone-800 text-xs uppercase rounded-md tracking-wider transition-all duration-150 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-stone-700/50 flex items-center justify-center self-start md:self-auto"
+          className="h-10 px-4 bg-white/[0.02] border border-glass-border hover:bg-white/5 hover:border-white/20 text-stone-300 font-bold text-xs uppercase rounded-md tracking-wider transition-all duration-150 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:shadow-green-glow flex items-center justify-center self-start md:self-auto"
         >
           Mark all as read
         </button>
       </div>
 
       {/* Notification Ledger Box */}
-      <div className="bg-stone-950 border border-stone-850 p-6 rounded-lg space-y-4">
-        <h3 className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-4 border-b border-stone-850 pb-3">
+      <div className="glass-panel p-6 space-y-4 border border-glass-border shadow-glass-glow">
+        <h3 className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-4 border-b border-glass-border pb-3">
           Inbox Notification Feed
         </h3>
 
         {notifications.length > 0 ? (
-          <div className="divide-y divide-stone-850/50">
+          <div className="divide-y divide-glass-border/40">
             {notifications.map((notif) => (
               <div
                 key={notif.id}
-                className={`py-4 flex items-center justify-between gap-4 hover:bg-stone-900/10 transition-colors ${
-                  !notif.read ? 'bg-stone-950' : 'bg-transparent opacity-75'
+                className={`py-4 flex items-center justify-between gap-4 hover:bg-white/[0.01] transition-colors ${
+                  !notif.read ? 'bg-white/[0.01]' : 'bg-transparent opacity-75'
                 }`}
               >
                 <div className="flex items-start gap-3 min-w-0">
@@ -82,7 +82,7 @@ export default function Notifications() {
                   <div className="pt-1.5 flex-shrink-0">
                     <span
                       className={`h-2 w-2 rounded-full block ${
-                        !notif.read ? 'bg-emerald-500 animate-pulse' : 'bg-stone-800'
+                        !notif.read ? 'bg-emerald-500 shadow-accent-glow animate-pulse' : 'bg-stone-800'
                       }`}
                     ></span>
                   </div>
@@ -107,7 +107,7 @@ export default function Notifications() {
           </div>
         ) : (
           <div className="py-16 text-center space-y-2">
-            <div className="mx-auto h-12 w-12 rounded-full bg-stone-900 border border-stone-800 flex items-center justify-center mb-2">
+            <div className="mx-auto h-12 w-12 rounded-full bg-white/[0.02] border border-glass-border flex items-center justify-center mb-2">
               <span className="text-stone-500 text-lg">🔔</span>
             </div>
             <p className="text-xs text-stone-500 font-mono uppercase italic tracking-wide">

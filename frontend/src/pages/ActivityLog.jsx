@@ -69,20 +69,20 @@ export default function ActivityLog() {
     <div className="p-8 space-y-6 max-w-7xl mx-auto pb-12 font-sans">
       {/* Error banner */}
       {errorMsg && (
-        <div className="bg-red-950/40 border border-red-900 text-red-200 px-4 py-3 rounded-lg text-xs">
+        <div className="bg-red-950/20 border border-red-900/30 text-red-200 px-4 py-3 rounded-lg text-xs backdrop-blur-md">
           ⚠️ {errorMsg}
         </div>
       )}
 
       {/* Filter Toggle Buttons Header */}
-      <div className="flex border-b border-stone-850">
+      <div className="flex border-b border-glass-border">
         {['All', 'Alerts', 'Approvals', 'Bookings'].map((filter) => (
           <button
             key={filter}
             onClick={() => setActiveFilter(filter)}
             className={`px-6 py-3 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 ${
               activeFilter === filter
-                ? 'border-asset-green text-asset-light bg-stone-950/20'
+                ? 'border-emerald-500 text-asset-light bg-white/[0.02] drop-shadow-[0_0_8px_rgba(52,211,153,0.25)]'
                 : 'border-transparent text-stone-500 hover:text-stone-300'
             }`}
           >
@@ -92,36 +92,36 @@ export default function ActivityLog() {
       </div>
 
       {/* Activity Feed Container */}
-      <div className="bg-stone-950 border border-stone-850 p-6 rounded-lg space-y-4">
-        <h3 className="text-xs font-bold uppercase tracking-widest text-stone-400 border-b border-stone-850 pb-3">
+      <div className="glass-panel p-6 space-y-4 border border-glass-border shadow-glass-glow">
+        <h3 className="text-xs font-bold uppercase tracking-widest text-stone-400 border-b border-glass-border pb-3">
           Activity Ledger Feed [{activeFilter}]
         </h3>
 
         {loading ? (
           <div className="space-y-4">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="flex gap-4 items-center py-2.5 border-b border-stone-850/50">
-                <div className="h-2 w-2 rounded-full bg-stone-900"></div>
+              <div key={i} className="flex gap-4 items-center py-2.5 border-b border-glass-border/40">
+                <div className="h-2 w-2 rounded-full bg-white/5"></div>
                 <div className="flex-1 space-y-1.5">
-                  <div className="h-3.5 bg-stone-900 rounded animate-pulse w-2/3"></div>
+                  <div className="h-3.5 bg-white/5 rounded animate-pulse w-2/3"></div>
                 </div>
-                <div className="h-3 bg-stone-900 rounded animate-pulse w-12"></div>
+                <div className="h-3 bg-white/5 rounded animate-pulse w-12"></div>
               </div>
             ))}
           </div>
         ) : filteredLogs.length > 0 ? (
-          <div className="divide-y divide-stone-850/55">
+          <div className="divide-y divide-glass-border/40">
             {filteredLogs.map((log) => (
               <div
                 key={log.id}
-                className="py-3.5 flex items-center justify-between text-xs hover:bg-stone-900/10 transition-colors"
+                className="py-3.5 flex items-center justify-between text-xs hover:bg-white/[0.01] transition-colors"
               >
                 <div className="flex items-center gap-3">
                   {/* Visual bullet matching bucket type */}
                   <span className={`h-1.5 w-1.5 rounded-full ${
                     getBucketForActionType(log.actionType) === 'Alerts' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' :
-                    getBucketForActionType(log.actionType) === 'Approvals' ? 'bg-amber-500' :
-                    getBucketForActionType(log.actionType) === 'Bookings' ? 'bg-emerald-500' :
+                    getBucketForActionType(log.actionType) === 'Approvals' ? 'bg-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.3)]' :
+                    getBucketForActionType(log.actionType) === 'Bookings' ? 'bg-emerald-450 shadow-accent-glow' :
                     'bg-stone-500'
                   }`}></span>
                   
@@ -135,7 +135,7 @@ export default function ActivityLog() {
                     <span className="text-stone-500 font-mono">{log.deptName || log.detail}</span>
                   </p>
                 </div>
-                <span className="text-stone-600 font-mono text-[10px] uppercase tracking-wide">
+                <span className="text-stone-500 font-mono text-[10px] uppercase tracking-wide">
                   {log.timestampRelative || 'Just now'}
                 </span>
               </div>

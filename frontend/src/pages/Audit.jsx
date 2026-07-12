@@ -43,7 +43,7 @@ export default function Audit() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-96 gap-4">
-        <span className="h-8 w-8 rounded-full border-4 border-stone-800 border-t-asset-green animate-spin"></span>
+        <span className="h-8 w-8 rounded-full border-4 border-stone-800 border-t-emerald-500 animate-spin"></span>
         <p className="text-sm text-stone-500 font-mono">LOADING AUDIT CYCLE...</p>
       </div>
     );
@@ -53,17 +53,17 @@ export default function Audit() {
     <div className="p-8 space-y-6 max-w-7xl mx-auto pb-12 font-sans">
       {/* Error banner */}
       {errorMsg && (
-        <div className="bg-red-950/40 border border-red-900 text-red-200 px-4 py-3 rounded-lg text-xs">
+        <div className="bg-red-950/20 border border-red-900/30 text-red-200 px-4 py-3 rounded-lg text-xs backdrop-blur-md">
           ⚠️ {errorMsg}
         </div>
       )}
 
       {/* Header Panel: Current Audit Cycle */}
-      <div className="bg-stone-950 border border-stone-850 p-6 rounded-lg">
+      <div className="glass-panel p-6 border border-glass-border shadow-glass-glow">
         {auditCycle ? (
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-1">
-              <span className="inline-flex px-2.5 py-1 rounded-md text-[10px] font-bold uppercase font-mono tracking-wider bg-asset-green/10 text-emerald-400 border border-asset-green/30">
+              <span className="inline-flex px-2.5 py-1 rounded-md text-[10px] font-bold uppercase font-mono tracking-wider bg-white/5 text-emerald-400 border border-emerald-500/20 shadow-accent-glow">
                 Active Cycle
               </span>
               <h2 className="text-lg font-bold text-asset-light uppercase tracking-wider mt-1.5">
@@ -86,7 +86,7 @@ export default function Audit() {
             </div>
             <button
               onClick={handleCloseCycle}
-              className="h-10 px-4 bg-red-900/10 hover:bg-red-900/20 text-red-400 border border-red-900/30 font-bold text-xs uppercase rounded-md tracking-wider transition-all duration-150 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-red-900/50 flex items-center justify-center self-start md:self-auto"
+              className="h-10 px-4 bg-red-950/20 border border-red-900/30 hover:bg-red-950/35 hover:border-red-900/40 text-red-400 font-bold text-xs uppercase rounded-md tracking-wider transition-all duration-150 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-red-900/50 flex items-center justify-center self-start md:self-auto shadow-[0_0_8px_rgba(239,68,68,0.05)]"
             >
               Close Audit Cycle
             </button>
@@ -94,13 +94,13 @@ export default function Audit() {
         ) : (
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-2">
             <div className="space-y-1">
-              <span className="inline-flex px-2.5 py-1 rounded-md text-[10px] font-bold uppercase font-mono tracking-wider bg-stone-900 text-stone-500 border border-stone-800">
+              <span className="inline-flex px-2.5 py-1 rounded-md text-[10px] font-bold uppercase font-mono tracking-wider bg-stone-900/30 text-stone-500 border border-stone-850">
                 Inactive
               </span>
               <h2 className="text-sm font-bold text-asset-light uppercase tracking-wider mt-1.5">
                 No active audit cycle
               </h2>
-              <p className="text-xs text-stone-500">
+              <p className="text-xs text-stone-550">
                 Please configure or start a physical audit cycle to begin reconciliation.
               </p>
             </div>
@@ -108,10 +108,10 @@ export default function Audit() {
         )}
       </div>
 
-      {/* Discrepancy Summary Bar */}
+      {/* Discrepancy Warning Bar */}
       {discrepancyCount > 0 && (
-        <div className="bg-red-950/20 border border-red-900/40 p-4 rounded-md flex items-center gap-2 text-xs text-red-200">
-          <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse"></span>
+        <div className="bg-red-950/20 border border-red-900/30 p-4 rounded-md flex items-center gap-2 text-xs text-red-200 backdrop-blur-md">
+          <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]"></span>
           <span>
             Discrepancy Warning: <strong className="font-semibold font-mono">{discrepancyCount}</strong> asset{discrepancyCount > 1 ? 's' : ''} flagged with missing or damaged verification status.
           </span>
@@ -119,8 +119,8 @@ export default function Audit() {
       )}
 
       {/* Checklist Table Card */}
-      <div className="bg-stone-950 border border-stone-850 p-6 rounded-lg space-y-4">
-        <h3 className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-4 border-b border-stone-850 pb-3">
+      <div className="glass-panel p-6 space-y-4 border border-glass-border shadow-glass-glow">
+        <h3 className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-4 border-b border-glass-border pb-3">
           Physical Verification Checklist
         </h3>
 
@@ -128,7 +128,7 @@ export default function Audit() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-stone-850 text-stone-400 uppercase tracking-widest text-[10px]">
+                <tr className="border-b border-glass-border text-stone-400 uppercase tracking-widest text-[10px]">
                   <th className="py-3.5 px-4 font-bold align-middle">Asset Name</th>
                   <th className="py-3.5 px-4 font-bold align-middle">Expected Location</th>
                   <th className="py-3.5 px-4 font-bold text-center align-middle">Verification Status</th>
@@ -136,7 +136,7 @@ export default function Audit() {
               </thead>
               <tbody>
                 {auditItems.map((item) => (
-                  <tr key={item.id} className="border-b border-stone-850 hover:bg-stone-900/20 transition-colors">
+                  <tr key={item.id} className="border-b border-glass-border/40 hover:bg-white/[0.02] transition-colors">
                     <td className="py-3.5 px-4 font-medium text-asset-light align-middle">
                       {item.assetName} <span className="text-stone-500 font-mono text-[10px]">({item.assetCode})</span>
                     </td>
@@ -150,7 +150,10 @@ export default function Audit() {
             </table>
           </div>
         ) : (
-          <div className="py-12 text-center space-y-2">
+          <div className="py-16 text-center space-y-2">
+            <div className="mx-auto h-12 w-12 rounded-full bg-white/[0.02] border border-glass-border flex items-center justify-center mb-2">
+              <span className="text-stone-500 text-lg">📋</span>
+            </div>
             <p className="text-xs text-stone-500 font-mono uppercase italic tracking-wide">
               No audit items yet
             </p>
