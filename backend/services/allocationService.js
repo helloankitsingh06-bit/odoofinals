@@ -30,8 +30,26 @@ async function getOverdueAllocations() {
 }
 
 async function createAllocation(data, actor) {
-  const asset = await Asset.findById(data.asset);
-  if (!asset) throw new Error('Asset not found');
+  if (!data.employee && !data.department) {
+    const err = new Error('Either employee or department is required for an allocation');
+    err.statusCode = 400;
+    throw err;
+  }
+
+  let asset;
+  try {
+    asset = await Asset.findById(data.asset);
+  } catch (e) {
+    const err = new Error('Invalid Asset ID');
+    err.statusCode = 400;
+    throw err;
+  }
+
+  if (!asset) {
+    const err = new Error('Asset not found');
+    err.statusCode = 404;
+    throw err;
+  }
 
   if (asset.status !== 'Available') {
     const currentHolder = await Employee.findById(asset.currentHolder).lean();

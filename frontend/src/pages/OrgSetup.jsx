@@ -48,6 +48,7 @@ export default function OrgSetup() {
   const [empName, setEmpName] = useState('');
   const [empEmail, setEmpEmail] = useState('');
   const [empDept, setEmpDept] = useState('');
+  const [empRole, setEmpRole] = useState('Employee');
   const [customDeptName, setCustomDeptName] = useState('');
   const [empFormError, setEmpFormError] = useState('');
 
@@ -276,7 +277,8 @@ export default function OrgSetup() {
       await orgService.createEmployee({
         name: empName.trim(),
         email: empEmail.trim(),
-        departmentId: finalDeptId
+        departmentId: finalDeptId,
+        role: empRole
       });
 
       triggerSuccess(`Employee "${empName}" invited successfully.`);
@@ -285,6 +287,7 @@ export default function OrgSetup() {
       setEmpName('');
       setEmpEmail('');
       setEmpDept('');
+      setEmpRole('Employee');
       setCustomDeptName('');
       
       await fetchData();
@@ -741,6 +744,22 @@ export default function OrgSetup() {
                     />
                   </div>
                 )}
+
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">
+                    Role *
+                  </label>
+                  <select
+                    value={empRole}
+                    onChange={(e) => setEmpRole(e.target.value)}
+                    className="w-full h-10 bg-white/[0.03] border border-glass-border hover:border-white/20 rounded-md px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150 text-stone-300"
+                  >
+                    <option value="Employee" className="text-stone-800">Employee</option>
+                    <option value="AssetManager" className="text-stone-800">Asset Manager</option>
+                    <option value="DeptHead" className="text-stone-800">Department Head</option>
+                    <option value="Viewer" className="text-stone-800">Viewer</option>
+                  </select>
+                </div>
 
                 {empFormError && (
                   <p className="text-[10px] text-red-500 font-semibold">{empFormError}</p>

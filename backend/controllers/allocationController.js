@@ -26,6 +26,12 @@ async function createAllocation(req, res, next) {
     if (err.statusCode === 409) {
       return res.status(409).json(err.payload);
     }
+    if (err.statusCode === 404) {
+      return res.status(404).json({ error: err.message });
+    }
+    if (err.statusCode === 400) {
+      return res.status(400).json({ error: err.message });
+    }
     return next(err);
   }
 }

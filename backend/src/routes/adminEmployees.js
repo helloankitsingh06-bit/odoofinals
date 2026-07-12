@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { db, auth } = require('../firebase');
+const Employee = require('../../models/Employee');
 
 // Simple email regex validation
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -54,7 +55,7 @@ router.post('/employees', async (req, res) => {
   try {
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Check if employee with this email already exists
+    // Check if employee with this email already exists in Firestore
     const existingEmployeeSnap = await db.collection('employees').where('email', '==', normalizedEmail).limit(1).get();
     if (!existingEmployeeSnap.empty) {
       return res.status(400).json({
@@ -86,6 +87,23 @@ router.post('/employees', async (req, res) => {
     };
 
     const docRef = await db.collection('employees').add(newEmployee);
+
+    // Save in Mongo as well
+    try {
+      let deptIdForMongo = null;
+      // We could try casting departmentId to ObjectId if it's valid, but Firestore IDs are usually 20 chars
+      // Mongoose expects 24 hex char for ObjectId. We'll skip department relation if it throws or just store as string if we modified schema.
+      // But the model has `department: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' }`. Let's skip it to avoid CastError.
+      const mongoEmployee = new Employee({
+        name: name.trim(),
+        email: normalizedEmail,
+        role: employeeRole,
+        isActive: true
+      });
+      await mongoEmployee.save();
+    } catch (mongoError) {
+      console.error("Failed to save employee to Mongo, but saved to Firestore:", mongoError);
+    }
 
     return res.status(201).json({
       id: docRef.id,

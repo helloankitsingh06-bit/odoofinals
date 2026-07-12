@@ -12,19 +12,20 @@ async function request(path, options = {}) {
     ...(options.headers || {})
   };
 
-  // Attach Firebase ID token if authenticated
-  if (auth.currentUser) {
+  // For Hackathon/Local testing: If we have a localRole set, we prefer sending the mock token 
+  // so the mock backend knows our exact role, bypassing real Firebase tokens.
+  const localRole = localStorage.getItem('lastSelectedRole') || 'Employee';
+  const mockToken = localRole === 'Admin' ? 'mock-admin' : 'mock-employee';
+  
+  if (mockToken) {
+    headers['Authorization'] = `Bearer ${mockToken}`;
+  } else if (auth.currentUser) {
     try {
       const token = await auth.currentUser.getIdToken();
       headers['Authorization'] = `Bearer ${token}`;
     } catch (e) {
       console.warn("Failed to get Firebase Auth ID token:", e);
     }
-  } else {
-    // Fallback: local development/prototyping mock tokens
-    const localRole = localStorage.getItem('lastSelectedRole') || 'Employee';
-    const mockToken = localRole === 'Admin' ? 'mock-admin' : 'mock-employee';
-    headers['Authorization'] = `Bearer ${mockToken}`;
   }
 
   const response = await fetch(`${API_BASE}${path}`, {
@@ -100,7 +101,8 @@ export const orgService = {
       body: JSON.stringify({
         name: empData.name,
         email: empData.email,
-        departmentId: empData.departmentId
+        departmentId: empData.departmentId,
+        role: empData.role
       })
     });
   },

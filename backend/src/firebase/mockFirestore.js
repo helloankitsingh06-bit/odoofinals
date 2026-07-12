@@ -31,18 +31,23 @@ class MockDocRef {
 }
 
 class MockQuery {
-  constructor(collection, filters = [], limitVal = null) {
+  constructor(collection, filters = [], limitVal = null, orderBys = []) {
     this.collection = collection;
     this.filters = filters;
     this.limitVal = limitVal;
+    this.orderBys = orderBys;
   }
 
   where(field, op, value) {
-    return new MockQuery(this.collection, [...this.filters, { field, op, value }], this.limitVal);
+    return new MockQuery(this.collection, [...this.filters, { field, op, value }], this.limitVal, this.orderBys);
   }
 
   limit(n) {
-    return new MockQuery(this.collection, this.filters, n);
+    return new MockQuery(this.collection, this.filters, n, this.orderBys);
+  }
+
+  orderBy(field, direction = 'asc') {
+    return new MockQuery(this.collection, this.filters, this.limitVal, [...this.orderBys, { field, direction }]);
   }
 
   async get() {
@@ -58,7 +63,20 @@ class MockQuery {
       docs = docs.filter(doc => {
         const val = doc.data()[filter.field];
         if (filter.op === '==') return val === filter.value;
+        if (filter.op === '<') return val < filter.value;
+        if (filter.op === '>') return val > filter.value;
+        if (filter.op === 'in') return filter.value.includes(val);
         return true;
+      });
+    }
+
+    for (const ob of this.orderBys) {
+      docs.sort((a, b) => {
+        const valA = a.data()[ob.field];
+        const valB = b.data()[ob.field];
+        if (valA < valB) return ob.direction === 'desc' ? 1 : -1;
+        if (valA > valB) return ob.direction === 'desc' ? -1 : 1;
+        return 0;
       });
     }
 
@@ -90,6 +108,10 @@ class MockCollection {
 
   limit(n) {
     return new MockQuery(this).limit(n);
+  }
+
+  orderBy(field, direction = 'asc') {
+    return new MockQuery(this).orderBy(field, direction);
   }
 
   async add(data) {
