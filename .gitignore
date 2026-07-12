@@ -12,6 +12,9 @@ web_modules/
 .env.production.local
 *.local
 serviceAccountKey.json
+*firebase-adminsdk*.json
+asset-flow-hackathon-firebase-adminsdk-fbsvc-8dffcb41f2.json
+info.txt
 *.pem
 
 # Build outputs

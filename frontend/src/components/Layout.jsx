@@ -12,8 +12,30 @@ import { useAuth } from '../hooks/useAuth';
  * @param {React.ReactNode} [props.children] - Page content elements to render. Fallbacks to react-router-dom Outlet.
  */
 export default function Layout({ children }) {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const location = useLocation();
+
+  // Show a loading spinner screen while authentication checks are pending
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center space-y-4 antialiased font-sans select-none">
+        <div className="relative">
+          <div className="h-12 w-12 rounded-full border-2 border-stone-850 border-t-emerald-500 animate-spin"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981] animate-ping"></span>
+          </div>
+        </div>
+        <div className="text-center space-y-1.5">
+          <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-200">
+            Authenticating Secure Node
+          </h3>
+          <p className="text-[8px] text-stone-600 font-mono tracking-widest uppercase animate-pulse">
+            Establishing handshake // Reading security clearance
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // If user is not authenticated, redirect to login page
   if (!user) {

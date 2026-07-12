@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './hooks/useAuth';
 import Layout from './components/Layout';
+import AdminRoute from './components/AdminRoute';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import OrgSetup from './pages/OrgSetup';
@@ -34,8 +35,12 @@ function App() {
           {/* Protected Routes inside Layout */}
           <Route element={<Layout />}>
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/org-setup" element={<OrgSetup />} />
             <Route path="/activity-log" element={<ActivityLog />} />
+            
+            {/* Admin-Only Route Guard */}
+            <Route element={<AdminRoute />}>
+              <Route path="/org-setup" element={<OrgSetup />} />
+            </Route>
             
             {/* Additional Sidebar Routes */}
             <Route path="/assets" element={<Assets />} />

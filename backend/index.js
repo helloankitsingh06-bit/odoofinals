@@ -5,9 +5,10 @@ const path = require('path');
 // Load environment variables from .env
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
-const { getDashboardKPIs, getRecentActivity } = require('./src/services/dashboardService');
+const dashboardRoutes = require('./src/routes/dashboardRoutes');
 const { registerAsset } = require('./src/services/assetService');
 const { bookResource, cancelBooking } = require('./src/services/bookingService');
+const { verifyToken, requireAssetManager } = require('./src/middleware/auth');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -20,30 +21,20 @@ app.get('/', (req, res) => {
   res.json({ message: "Welcome to the AssetFlow Backend Server!" });
 });
 
-// Dashboard APIs
-app.get('/api/dashboard/kpis', async (req, res) => {
-  try {
-    const kpis = await getDashboardKPIs();
-    res.json(kpis);
-  } catch (error) {
-    console.error("Error fetching KPIs:", error);
-    res.status(500).json({ error: error.message });
-  }
+// GET /api/me - Returns authenticated user details and role based on Firebase claims
+app.get('/api/me', verifyToken, (req, res) => {
+  res.json({
+    uid: req.user.uid,
+    email: req.user.email || null,
+    role: req.user.role || 'Employee' // defaults to Employee if no custom role is set
+  });
 });
 
-app.get('/api/dashboard/activities', async (req, res) => {
-  try {
-    const limit = req.query.limit ? parseInt(req.query.limit) : 5;
-    const activities = await getRecentActivity(limit);
-    res.json(activities);
-  } catch (error) {
-    console.error("Error fetching activities:", error);
-    res.status(500).json({ error: error.message });
-  }
-});
+// Mounted Routes
+app.use('/api/dashboard', dashboardRoutes);
 
-// Assets APIs
-app.post('/api/assets', async (req, res) => {
+// Assets APIs (Only AssetManagers or Admins can register assets)
+app.post('/api/assets', verifyToken, requireAssetManager, async (req, res) => {
   try {
     const result = await registerAsset(req.body);
     res.status(201).json(result);
@@ -53,8 +44,8 @@ app.post('/api/assets', async (req, res) => {
   }
 });
 
-// Bookings APIs
-app.post('/api/bookings', async (req, res) => {
+// Bookings APIs (Any verified logged-in user can book)
+app.post('/api/bookings', verifyToken, async (req, res) => {
   try {
     const { assetId, startTime, endTime, bookedBy } = req.body;
     const result = await bookResource(assetId, new Date(startTime), new Date(endTime), bookedBy);
@@ -65,7 +56,7 @@ app.post('/api/bookings', async (req, res) => {
   }
 });
 
-app.post('/api/bookings/:id/cancel', async (req, res) => {
+app.post('/api/bookings/:id/cancel', verifyToken, async (req, res) => {
   try {
     await cancelBooking(req.params.id);
     res.json({ message: "Booking cancelled successfully" });
