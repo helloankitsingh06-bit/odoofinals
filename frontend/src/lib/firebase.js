@@ -1,43 +1,26 @@
-// TODO: Replace with real Firebase SDK initialization.
-// e.g. 
-// import { initializeApp } from "firebase/app";
-// import { getFirestore } from "firebase/firestore";
-// import { getAuth } from "firebase/auth";
-//
-// const firebaseConfig = {
-//   apiKey: "YOUR_API_KEY",
-//   authDomain: "YOUR_AUTH_DOMAIN",
-//   projectId: "YOUR_PROJECT_ID",
-//   storageBucket: "YOUR_STORAGE_BUCKET",
-//   messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-//   appId: "YOUR_APP_ID"
-// };
-//
-// const app = initializeApp(firebaseConfig);
-// export const db = getFirestore(app);
-// export const auth = getAuth(app);
+import { initializeApp } from "firebase/app";
+import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
-export const db = {};
-export const auth = {};
+const firebaseConfig = {
+  apiKey: "AIzaSyBfQIcYaTMdNrKfcDnH_59fAPDS-J4H-s4",
+  authDomain: "asset-flow-hackathon.firebaseapp.com",
+  projectId: "asset-flow-hackathon",
+  storageBucket: "asset-flow-hackathon.firebasestorage.app",
+  messagingSenderId: "187288651681",
+  appId: "1:187288651681:web:6b28281a9e5b9796dc2de0",
+  measurementId: "G-29JB600402"
+};
 
-// TODO: Replace with real Firestore database exports below
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);
+export const auth = getAuth(app);
+export const googleProvider = new GoogleAuthProvider();
 
-export async function getAssets() {
-  // TODO: replace with real Firestore query (e.g. getDocs(collection(db, 'assets')))
-  return [];
-}
-
-export async function checkOutAsset(assetId, userId) {
-  // TODO: replace with real Firestore mutation (e.g. updateDoc(doc(db, 'assets', assetId), { status: 'allocated', ... }))
-  return { success: true };
-}
-
-export async function checkInAsset(assetId) {
-  // TODO: replace with real Firestore mutation (e.g. updateDoc(doc(db, 'assets', assetId), { status: 'available', ... }))
-  return { success: true };
-}
-
-export async function addActivityLog(log) {
-  // TODO: replace with real Firestore add (e.g. addDoc(collection(db, 'activityLogs'), log))
-  return { success: true };
-}
+// Google OAuth scopes (optional, to make sure email is requested)
+googleProvider.addScope('email');
+googleProvider.addScope('profile');
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});

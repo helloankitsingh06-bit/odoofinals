@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { LogIn, User, Mail, Lock, Shield, ArrowRight } from 'lucide-react';
 
 export default function Login() {
-  const { user, login } = useAuth();
+  const { user, login, loginWithGoogle, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   // Redirect if already authenticated
@@ -25,16 +26,14 @@ export default function Login() {
   const [feedbackMsg, setFeedbackMsg] = useState('');
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     setFormError('');
     setFeedbackMsg('');
 
     // Validation checks
-    if (isSignUp) {
-      if (!name.trim()) {
-        setFormError('Name is required');
-        return;
-      }
+    if (isSignUp && !name.trim()) {
+      setFormError('Name is required');
+      return;
     }
 
     if (!email.trim()) {
@@ -50,14 +49,27 @@ export default function Login() {
     setLoading(true);
     try {
       if (isSignUp) {
-        // Sign up creates Employee only
         await login(email, password, 'Employee');
       } else {
-        // Sign in passes the selected role from the dropdown
         await login(email, password, selectedRole);
       }
     } catch (err) {
       setFormError(err.message || 'Login failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setFormError('');
+    setFeedbackMsg('');
+    setLoading(true);
+    try {
+      // Trigger the real Google Sign-In pop-up
+      await loginWithGoogle(selectedRole);
+    } catch (err) {
+      console.error(err);
+      setFormError(err.message || 'Google authentication failed.');
     } finally {
       setLoading(false);
     }
@@ -68,17 +80,41 @@ export default function Login() {
     setFeedbackMsg('Password reset instructions stub: email sent to ' + (email || 'your address') + '.');
   };
 
+  if (loading || authLoading) {
+    return (
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center space-y-4 antialiased font-sans select-none">
+        <div className="relative">
+          <div className="h-12 w-12 rounded-full border-2 border-stone-850 border-t-emerald-500 animate-spin"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981] animate-ping"></span>
+          </div>
+        </div>
+        <div className="text-center space-y-1.5">
+          <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-200">
+            Authenticating Secure Node
+          </h3>
+          <p className="text-[8px] text-stone-600 font-mono tracking-widest uppercase animate-pulse">
+            Establishing handshake // Reading security clearance
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-asset-dark flex items-center justify-center p-6 font-sans">
-      <div className="w-full max-w-md bg-stone-950 border border-stone-850 rounded-lg shadow-2xl p-8 space-y-6">
+    <div className="min-h-screen bg-black flex items-center justify-center p-4 sm:p-6 font-sans antialiased select-none">
+      <div className="w-full max-w-[460px] bg-[#0c0d0c] border border-stone-850 rounded p-6 sm:p-10 space-y-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
         
         {/* Branding header */}
         <div className="text-center space-y-2">
-          <span className="inline-flex h-3 w-3 rounded-full bg-asset-green animate-pulse mb-1"></span>
-          <h2 className="text-2xl font-bold tracking-widest text-asset-light uppercase">
+          {/* Status Dot */}
+          <div className="relative inline-block">
+            <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981] animate-pulse"></span>
+          </div>
+          <h2 className="text-2xl font-bold tracking-[0.25em] text-stone-100 uppercase">
             AssetFlow
           </h2>
-          <p className="text-xs text-stone-500 font-semibold tracking-wider uppercase">
+          <p className="text-[10px] text-stone-500 font-mono tracking-[0.18em] uppercase">
             Enterprise Asset Directory
           </p>
         </div>
@@ -91,8 +127,8 @@ export default function Login() {
               setFormError('');
               setFeedbackMsg('');
             }}
-            className={`flex-1 pb-3 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 ${
-              !isSignUp ? 'border-asset-green text-asset-light' : 'border-transparent text-stone-500 hover:text-stone-300'
+            className={`flex-1 pb-3 text-2xs font-bold uppercase tracking-[0.15em] transition-all border-b-2 ${
+              !isSignUp ? 'border-emerald-500 text-stone-200' : 'border-transparent text-stone-500 hover:text-stone-400'
             }`}
           >
             Sign In
@@ -103,8 +139,8 @@ export default function Login() {
               setFormError('');
               setFeedbackMsg('');
             }}
-            className={`flex-1 pb-3 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 ${
-              isSignUp ? 'border-asset-green text-asset-light' : 'border-transparent text-stone-500 hover:text-stone-300'
+            className={`flex-1 pb-3 text-2xs font-bold uppercase tracking-[0.15em] transition-all border-b-2 ${
+              isSignUp ? 'border-emerald-500 text-stone-200' : 'border-transparent text-stone-500 hover:text-stone-400'
             }`}
           >
             Sign Up
@@ -113,109 +149,151 @@ export default function Login() {
 
         {/* Notifications Banners */}
         {formError && (
-          <div className="bg-red-950/40 border border-red-900 text-red-200 px-4 py-2.5 rounded text-xs">
+          <div className="bg-red-950/40 border border-red-900/60 text-red-200 px-4 py-2.5 rounded text-xs font-mono">
             ⚠️ {formError}
           </div>
         )}
 
         {feedbackMsg && (
-          <div className="bg-stone-900 border border-asset-green text-stone-300 px-4 py-2.5 rounded text-xs">
+          <div className="bg-stone-900/80 border border-stone-800 text-stone-300 px-4 py-2.5 rounded text-xs font-mono">
             ℹ️ {feedbackMsg}
           </div>
         )}
 
         {/* Form contents */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           {isSignUp && (
-            <div>
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">
+            <div className="space-y-1.5">
+              <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-stone-400">
                 Full Name *
               </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Jane Doe"
-                className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
-              />
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <User className="h-3.5 w-3.5 text-stone-600" />
+                </span>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Jane Doe"
+                  className="w-full bg-[#121312] border border-stone-850 rounded px-3.5 py-2.5 pl-10 text-xs text-stone-300 placeholder-stone-700 focus:outline-none focus:border-stone-700 focus:ring-0 transition-colors font-mono"
+                />
+              </div>
             </div>
           )}
 
-          <div>
-            <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-stone-400">
               Email Address *
             </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="user@assetflow.com"
-              className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
-            />
+            <div className="relative">
+              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <Mail className="h-3.5 w-3.5 text-stone-600" />
+              </span>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="user@assetflow.com"
+                className="w-full bg-[#121312] border border-stone-850 rounded px-3.5 py-2.5 pl-10 text-xs text-stone-300 placeholder-stone-700 focus:outline-none focus:border-stone-700 focus:ring-0 transition-colors font-mono"
+              />
+            </div>
           </div>
 
-          <div>
-            <div className="flex justify-between items-center mb-1">
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400">
+          <div className="space-y-1.5">
+            <div className="flex justify-between items-center">
+              <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-stone-400">
                 Password *
               </label>
               {!isSignUp && (
                 <button
                   type="button"
                   onClick={handleForgotPassword}
-                  className="text-[10px] text-stone-500 hover:text-stone-300 transition-colors uppercase tracking-wider font-semibold"
+                  className="text-[9px] text-stone-500 hover:text-stone-300 transition-colors uppercase tracking-[0.1em] font-semibold"
                 >
                   Forgot Password?
                 </button>
               )}
             </div>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors"
-            />
+            <div className="relative">
+              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <Lock className="h-3.5 w-3.5 text-stone-600" />
+              </span>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full bg-[#121312] border border-stone-850 rounded px-3.5 py-2.5 pl-10 text-xs text-stone-300 placeholder-stone-700 focus:outline-none focus:border-stone-700 focus:ring-0 transition-colors font-mono"
+              />
+            </div>
           </div>
 
           {/* Test Role Picker (only visible during mock sign-in) */}
           {!isSignUp && (
-            <div>
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">
+            <div className="space-y-1.5">
+              <label className="block text-[10px] font-bold uppercase tracking-[0.12em] text-stone-400">
                 Select System Role (Test Auth)
               </label>
-              <select
-                value={selectedRole}
-                onChange={(e) => setSelectedRole(e.target.value)}
-                className="w-full bg-stone-900 border border-stone-800 rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-asset-green transition-colors capitalize font-semibold"
-              >
-                <option value="Admin">Admin</option>
-                <option value="Employee">Employee</option>
-                <option value="AssetManager">AssetManager</option>
-                <option value="DeptHead">DeptHead</option>
-              </select>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <Shield className="h-3.5 w-3.5 text-stone-600" />
+                </span>
+                <select
+                  value={selectedRole}
+                  onChange={(e) => setSelectedRole(e.target.value)}
+                  className="w-full bg-[#121312] border border-stone-850 rounded px-3.5 py-2.5 pl-10 text-xs text-stone-300 focus:outline-none focus:border-stone-700 focus:ring-0 transition-colors capitalize font-semibold font-mono appearance-none"
+                >
+                  <option value="Admin">Admin</option>
+                  <option value="Employee">Employee</option>
+                  <option value="AssetManager">AssetManager</option>
+                  <option value="DeptHead">DeptHead</option>
+                </select>
+              </div>
             </div>
           )}
 
-          <div className="pt-2">
+          {/* Buttons Stack */}
+          <div className="pt-2 space-y-3">
+            {/* Primary Action Button */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-asset-green hover:bg-opacity-90 text-asset-light font-bold text-xs uppercase py-2.5 rounded tracking-wider transition-all duration-150 disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full bg-[#1e3427] hover:bg-[#254231] text-[#76c893] border border-[#2d523c] font-bold text-xs uppercase py-3 rounded tracking-[0.15em] transition-all duration-150 disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
             >
               {loading ? (
-                <span className="h-3 w-3 rounded-full border-2 border-stone-900 border-t-asset-light animate-spin"></span>
+                <span className="h-3.5 w-3.5 rounded-full border-2 border-transparent border-t-[#76c893] animate-spin"></span>
               ) : isSignUp ? (
                 'Create Account'
               ) : (
                 'Authenticate'
               )}
             </button>
+
+            {/* Google Sign-in Button */}
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={loading}
+              className="w-full bg-black hover:bg-[#070707] text-stone-300 border border-stone-850 font-bold text-xs uppercase py-3 rounded tracking-[0.15em] transition-all duration-150 flex items-center justify-center gap-2.5 shadow-sm"
+            >
+              {/* Google Brand Icon SVG */}
+              <svg className="h-4 w-4" viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
+                <g transform="matrix(1, 0, 0, 1, 0, 0)">
+                  <path d="M21.35,11.1H12v2.7h5.38c-0.24,1.28 -0.96,2.37 -2.04,3.1v2.57h3.3c1.93,-1.78 3.04,-4.4 3.04,-7.4C21.68,11.83 21.56,11.4 21.35,11.1z" fill="#4285F4" />
+                  <path d="M12,20.6c2.59,0 4.77,-0.86 6.36,-2.33l-3.3,-2.57c-0.91,0.61 -2.08,0.98 -3.06,0.98 -2.35,0 -4.35,-1.59 -5.06,-3.72H3.48v2.66C5.07,18.8 8.35,20.6 12,20.6z" fill="#34A853" />
+                  <path d="M6.94,12.97c-0.18,-0.54 -0.28,-1.11 -0.28,-1.7c0,-0.59 0.1,-1.16 0.28,-1.7V6.9H3.48c-0.6,1.2 -0.94,2.56 -0.94,4c0,1.44 0.34,2.8 0.94,4L6.94,12.97z" fill="#FBBC05" />
+                  <path d="M12,6.07c1.41,0 2.68,0.49 3.68,1.44l2.76,-2.76C16.77,3.15 14.59,2.3 12,2.3 8.35,2.3 5.07,4.1 3.48,7.22l3.46,2.68C7.65,7.66 9.65,6.07 12,6.07z" fill="#EA4335" />
+                </g>
+              </svg>
+              <span>Sign In with Google</span>
+            </button>
           </div>
         </form>
 
+        {/* Footer info text */}
         <div className="text-center">
-          <p className="text-[10px] text-stone-600 font-mono">
+          <p className="text-[10px] text-stone-600 font-mono tracking-widest">
             SECURE TERMINAL CONSOLE // SYSTEM STUB V1.0
           </p>
         </div>
