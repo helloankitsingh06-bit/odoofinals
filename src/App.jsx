@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import OrgSetup from './pages/OrgSetup';
 import ActivityLog from './pages/ActivityLog';
+import Assets from './pages/Assets';
 
 // Generic placeholder page for unused sidebar links
 const PlaceholderPage = ({ title }) => (
@@ -30,7 +31,8 @@ function App() {
             <Route path="/activity-log" element={<ActivityLog />} />
             
             {/* Additional Sidebar Routes */}
-            <Route path="/assets" element={<PlaceholderPage title="Assets" />} />
+            <Route path="/assets" element={<Assets />} />
+            <Route path="/assets/:id" element={<PlaceholderPage title="Asset Detail" />} />
             <Route path="/allocation-transfer" element={<PlaceholderPage title="Allocation & Transfer" />} />
             <Route path="/resource-booking" element={<PlaceholderPage title="Resource Booking" />} />
             <Route path="/maintenance" element={<PlaceholderPage title="Maintenance" />} />
