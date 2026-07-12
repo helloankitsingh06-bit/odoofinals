@@ -10,7 +10,6 @@ import { assetService } from '../lib/assetService';
  * @param {Function} props.onSuccess - Callback function called after successful asset registration.
  */
 export default function RegisterAssetModal({ isOpen, onClose, onSuccess }) {
-  if (!isOpen) return null;
 
   const [categories, setCategories] = useState([]);
   const [loadingCats, setLoadingCats] = useState(true);
@@ -100,6 +99,8 @@ export default function RegisterAssetModal({ isOpen, onClose, onSuccess }) {
   };
 
   const conditions = ['New', 'Good', 'Fair', 'Poor'];
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">

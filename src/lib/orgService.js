@@ -59,5 +59,10 @@ export const orgService = {
       ...deptData
     };
     return departments[index];
+  },
+
+  async getRecentActivity(limitCount = 3) {
+    await delay(300);
+    return [];
   }
 };

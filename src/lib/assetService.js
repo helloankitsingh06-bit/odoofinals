@@ -102,5 +102,26 @@ export const assetService = {
     if (index === -1) throw new Error('Asset not found');
     assets[index] = { ...assets[index], status: newStatus };
     return assets[index];
+  },
+
+  async getKpiCounts() {
+    await delay(300);
+    const available = assets.filter(a => a.status === 'Available').length;
+    const allocated = assets.filter(a => a.status === 'Allocated').length;
+    const underMaintenance = assets.filter(a => a.status === 'Under Maintenance').length;
+    
+    return {
+      available,
+      allocated,
+      underMaintenance,
+      activeBookings: 0,
+      pendingTransfers: 0,
+      upcomingReturns: 0
+    };
+  },
+
+  async getOverdueReturns() {
+    await delay(350);
+    return [];
   }
 };
