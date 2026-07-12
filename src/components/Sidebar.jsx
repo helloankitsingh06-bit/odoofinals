@@ -11,7 +11,7 @@ import { useAuth } from '../hooks/useAuth';
  * @param {string} [props.activeRoute] - The display name of the route currently active.
  */
 export default function Sidebar({ user: propUser, activeRoute }) {
-  const { user: authUser, logout } = useAuth();
+  const { user: authUser, logout, setRole } = useAuth();
   
   // Use the passed user prop if provided, else fallback to useAuth() hook user
   const user = propUser !== undefined ? propUser : authUser;
@@ -81,6 +81,20 @@ export default function Sidebar({ user: propUser, activeRoute }) {
             >
               Sign Out
             </button>
+            {/* TEMP DEV ONLY - remove when real auth lands */}
+            <div className="mt-2 pt-2 border-t border-stone-850/50 flex flex-col gap-1">
+              <label className="text-[9px] font-bold uppercase tracking-wider text-stone-500">DEV: Role</label>
+              <select
+                value={user.role}
+                onChange={(e) => setRole(e.target.value)}
+                className="w-full bg-stone-950 border border-stone-850 rounded px-2 py-1.5 text-[10px] text-stone-400 focus:outline-none focus:border-stone-700"
+              >
+                <option value="Admin">Admin</option>
+                <option value="Employee">Employee</option>
+                <option value="AssetManager">AssetManager</option>
+                <option value="DeptHead">DeptHead</option>
+              </select>
+            </div>
           </div>
         ) : (
           <Link

@@ -94,5 +94,13 @@ export const assetService = {
   async getAssetById(assetId) {
     await delay(300);
     return assets.find(asset => asset.id === assetId) || null;
+  },
+
+  async updateAssetStatus(assetId, newStatus) {
+    await delay(300);
+    const index = assets.findIndex(asset => asset.id === assetId);
+    if (index === -1) throw new Error('Asset not found');
+    assets[index] = { ...assets[index], status: newStatus };
+    return assets[index];
   }
 };

@@ -38,8 +38,25 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
+  const setRole = (newRole) => {
+    setUser(prev => {
+      if (!prev) {
+        return {
+          uid: 'mock-uid-123',
+          email: `${newRole.toLowerCase()}@assetflow.com`,
+          role: newRole,
+          name: `${newRole} User`,
+        };
+      }
+      return {
+        ...prev,
+        role: newRole,
+      };
+    });
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading: false }}>
+    <AuthContext.Provider value={{ user, login, logout, setRole, loading: false }}>
       {children}
     </AuthContext.Provider>
   );
