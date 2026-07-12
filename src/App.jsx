@@ -10,6 +10,7 @@ import Assets from './pages/Assets';
 import AllocationTransfer from './pages/AllocationTransfer';
 import ResourceBooking from './pages/ResourceBooking';
 import Maintenance from './pages/Maintenance';
+import AssetDetail from './pages/AssetDetail';
 
 // Generic placeholder page for unused sidebar links
 const PlaceholderPage = ({ title }) => (
@@ -35,7 +36,7 @@ function App() {
             
             {/* Additional Sidebar Routes */}
             <Route path="/assets" element={<Assets />} />
-            <Route path="/assets/:id" element={<PlaceholderPage title="Asset Detail" />} />
+            <Route path="/assets/:id" element={<AssetDetail />} />
             <Route path="/allocation-transfer" element={<AllocationTransfer />} />
             <Route path="/resource-booking" element={<ResourceBooking />} />
             <Route path="/maintenance" element={<Maintenance />} />

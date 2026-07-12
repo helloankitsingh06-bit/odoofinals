@@ -141,5 +141,12 @@ export const maintenanceService = {
     req.status = 'Rejected';
     req.rejectionReason = reason ? reason.trim() : 'No reason provided';
     return req;
+  },
+
+  async getRequestsByAsset(assetId) {
+    await delay(300);
+    return requests
+      .filter(r => r.assetId === assetId)
+      .sort((a, b) => b.raisedDate.localeCompare(a.raisedDate));
   }
 };
