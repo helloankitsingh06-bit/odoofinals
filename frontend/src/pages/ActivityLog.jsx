@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { activityService } from '../lib/activityService';
 
 // Explicit mapping from actionType to filter buckets
@@ -112,9 +113,10 @@ export default function ActivityLog() {
         ) : filteredLogs.length > 0 ? (
           <div className="divide-y divide-glass-border/40">
             {filteredLogs.map((log) => (
-              <div
+              <Link
                 key={log.id}
-                className="py-3.5 flex items-center justify-between text-xs hover:bg-white/[0.01] transition-colors"
+                to={log.assetId ? `/assets/${log.assetId}` : '#'}
+                className="py-3.5 flex items-center justify-between text-xs hover:bg-white/[0.02] transition-colors -mx-2 px-2 rounded block"
               >
                 <div className="flex items-center gap-3">
                   {/* Visual bullet matching bucket type */}
@@ -138,7 +140,7 @@ export default function ActivityLog() {
                 <span className="text-stone-500 font-mono text-[10px] uppercase tracking-wide">
                   {log.timestampRelative || 'Just now'}
                 </span>
-              </div>
+              </Link>
             ))}
           </div>
         ) : (

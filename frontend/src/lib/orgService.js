@@ -146,5 +146,17 @@ export const orgService = {
       console.error("getRecentActivity failed:", error);
       return [];
     }
+  },
+
+  /**
+   * Get logged-in user's tasks/deadlines
+   */
+  async getMyDeadlines() {
+    try {
+      return request('/employee/deadlines');
+    } catch (error) {
+      console.error("getMyDeadlines failed:", error);
+      return [];
+    }
   }
 };

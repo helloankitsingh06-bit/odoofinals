@@ -154,7 +154,7 @@ export default function Assets() {
           >
             <option value="">All Departments</option>
             {departments.map((dept, index) => (
-              <option key={dept._id || dept.id || `${dept.name}-${index}`} value={dept.name}>
+              <option key={dept._id || dept.id || `${dept.name}-${index}`} value={dept._id || dept.id}>
                 {dept.name}
               </option>
             ))}

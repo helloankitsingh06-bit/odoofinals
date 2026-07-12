@@ -23,7 +23,7 @@ const assetSchema = new mongoose.Schema({
     default: 'New'
   },
   location: { type: String, required: true, trim: true },
-  department: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' },
+  department: { type: String, ref: 'Department' },
   photos: [{ type: String }],
   documents: [{
     name: { type: String },
@@ -38,8 +38,8 @@ const assetSchema = new mongoose.Schema({
     required: true,
     index: true
   },
-  currentHolder: { type: mongoose.Schema.Types.ObjectId, ref: 'Employee' },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Employee' },
+  currentHolder: { type: String, ref: 'Employee' },
+  createdBy: { type: String, ref: 'Employee' },
   isDeleted: { type: Boolean, default: false }
 }, { timestamps: true });
 

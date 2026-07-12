@@ -396,9 +396,9 @@ export default function OrgSetup() {
                     onChange={(e) => setDeptHead(e.target.value)}
                     className="w-full h-10 bg-white/[0.03] border border-glass-border hover:border-white/20 rounded-md px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
                   >
-                    <option value="">-- Select Head --</option>
+                    <option value="" className="bg-stone-900 text-stone-300">-- Select Head --</option>
                     {employees.map(emp => (
-                      <option key={emp.id} value={emp.name}>{emp.name}</option>
+                      <option key={emp.id} value={emp.name} className="bg-stone-900 text-stone-300">{emp.name}</option>
                     ))}
                   </select>
                 </div>
@@ -412,11 +412,11 @@ export default function OrgSetup() {
                     onChange={(e) => setDeptParent(e.target.value)}
                     className="w-full h-10 bg-white/[0.03] border border-glass-border hover:border-white/20 rounded-md px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
                   >
-                    <option value="">-- None --</option>
+                    <option value="" className="bg-stone-900 text-stone-300">-- None --</option>
                     {departments
                       .filter(d => d.id !== editingDeptId) // Prevent circular inheritance
                       .map(d => (
-                        <option key={d.id} value={d.name}>{d.name}</option>
+                        <option key={d.id} value={d.name} className="bg-stone-900 text-stone-300">{d.name}</option>
                       ))
                     }
                   </select>
@@ -488,8 +488,8 @@ export default function OrgSetup() {
                     </tr>
                   </thead>
                   <tbody>
-                    {departments.map((dept) => (
-                      <tr key={dept.id} className="border-b border-glass-border/40 hover:bg-white/[0.02] transition-colors">
+                    {departments.map((dept, index) => (
+                      <tr key={dept.id || dept._id || `dept-${index}`} className="border-b border-glass-border/40 hover:bg-white/[0.02] transition-colors">
                         <td className="py-3.5 px-4 font-medium text-asset-light align-middle">{dept.name}</td>
                         <td className="py-3.5 px-4 text-stone-400 align-middle">{dept.head || '—'}</td>
                         <td className="py-3.5 px-4 text-stone-400 align-middle">{dept.parentDept || '—'}</td>
@@ -636,8 +636,8 @@ export default function OrgSetup() {
                     </tr>
                   </thead>
                   <tbody>
-                    {categories.map((cat) => (
-                      <tr key={cat.id} className="border-b border-glass-border/40 hover:bg-white/[0.02] transition-colors">
+                    {categories.map((cat, index) => (
+                      <tr key={cat.id || cat._id || `cat-${index}`} className="border-b border-glass-border/40 hover:bg-white/[0.02] transition-colors">
                         <td className="py-3.5 px-4 font-medium text-asset-light align-middle">{cat.name}</td>
                         <td className="py-3.5 px-4 text-stone-400 align-middle">
                           {cat.extraFields && cat.extraFields.length > 0 ? (
@@ -718,9 +718,9 @@ export default function OrgSetup() {
                     }}
                     className="w-full h-10 bg-white/[0.03] border border-glass-border hover:border-white/20 rounded-md px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150 text-stone-300"
                   >
-                    <option value="" className="text-stone-800">-- Select Department --</option>
+                    <option value="" className="bg-stone-900 text-stone-300">-- Select Department --</option>
                     {departments.map((dept) => (
-                      <option key={dept.id} value={dept.id} className="text-stone-800">
+                      <option key={dept.id} value={dept.id} className="bg-stone-900 text-stone-300">
                         {dept.name}
                       </option>
                     ))}
@@ -754,10 +754,10 @@ export default function OrgSetup() {
                     onChange={(e) => setEmpRole(e.target.value)}
                     className="w-full h-10 bg-white/[0.03] border border-glass-border hover:border-white/20 rounded-md px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150 text-stone-300"
                   >
-                    <option value="Employee" className="text-stone-800">Employee</option>
-                    <option value="AssetManager" className="text-stone-800">Asset Manager</option>
-                    <option value="DeptHead" className="text-stone-800">Department Head</option>
-                    <option value="Viewer" className="text-stone-800">Viewer</option>
+                    <option value="Employee" className="bg-stone-900 text-stone-300">Employee</option>
+                    <option value="AssetManager" className="bg-stone-900 text-stone-300">Asset Manager</option>
+                    <option value="DeptHead" className="bg-stone-900 text-stone-300">Department Head</option>
+                    <option value="Viewer" className="bg-stone-900 text-stone-300">Viewer</option>
                   </select>
                 </div>
 
@@ -795,8 +795,8 @@ export default function OrgSetup() {
                     </tr>
                   </thead>
                   <tbody>
-                    {employees.map((emp) => (
-                      <tr key={emp.id} className="border-b border-glass-border/40 hover:bg-white/[0.02] transition-colors">
+                    {employees.map((emp, index) => (
+                      <tr key={emp.id || emp._id || `emp-${index}`} className="border-b border-glass-border/40 hover:bg-white/[0.02] transition-colors">
                         <td className="py-3.5 px-4 font-medium text-asset-light align-middle">{emp.name}</td>
                         <td className="py-3.5 px-4 text-stone-400 align-middle">{emp.email}</td>
                         <td className="py-3.5 px-4 text-stone-400 align-middle">
@@ -821,10 +821,10 @@ export default function OrgSetup() {
                                 onChange={(e) => setNewRoleSelection(e.target.value)}
                                 className="h-8 bg-white/[0.03] border border-glass-border hover:border-white/20 rounded-md px-2 py-1 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
                               >
-                                <option value="Employee">Employee</option>
-                                <option value="DeptHead">DeptHead</option>
-                                <option value="AssetManager">AssetManager</option>
-                                <option value="Admin">Admin</option>
+                                <option value="Employee" className="bg-stone-900 text-stone-300">Employee</option>
+                                <option value="DeptHead" className="bg-stone-900 text-stone-300">DeptHead</option>
+                                <option value="AssetManager" className="bg-stone-900 text-stone-300">AssetManager</option>
+                                <option value="Admin" className="bg-stone-900 text-stone-300">Admin</option>
                               </select>
                               <button
                                 onClick={() => handleConfirmPromotion(emp.id)}

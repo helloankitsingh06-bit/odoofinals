@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
 
 const allocationHistorySchema = new mongoose.Schema({
-  asset: { type: mongoose.Schema.Types.ObjectId, ref: 'Asset', required: true, index: true },
-  employee: { type: mongoose.Schema.Types.ObjectId, ref: 'Employee', required: true },
-  department: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' },
+  asset: { type: String, ref: 'Asset', required: true, index: true },
+  employee: { type: String, ref: 'Employee', required: true },
+  department: { type: String, ref: 'Department' },
   allocatedDate: { type: Date, default: Date.now },
   expectedReturnDate: { type: Date },
   actualReturnDate: { type: Date },

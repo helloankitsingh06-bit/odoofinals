@@ -112,8 +112,8 @@ export default function AllocationTransfer() {
     setSelectedAssetId(assetId);
     refreshDetails(assetId);
     // Reset forms
-    setAllocateEmployeeId(employees[0]?.id || '');
-    setAllocateDepartmentId(departments[0]?.id || '');
+    setAllocateEmployeeId(employees[0]?._id || employees[0]?.id || '');
+    setAllocateDepartmentId(departments[0]?._id || departments[0]?.id || '');
     setExpectedReturnDate('');
     setTransferReason('');
     setReturnNotes('');
@@ -130,16 +130,16 @@ export default function AllocationTransfer() {
 
   // Helper lists
   const empListExcluding = (excludeId) => {
-    return employees.filter(emp => emp.id !== excludeId);
+    return employees.filter(emp => (emp._id || emp.id) !== excludeId);
   };
 
   const getEmployeeName = (id) => {
-    const emp = employees.find(e => e.id === id);
+    const emp = employees.find(e => (e._id || e.id) === id);
     return emp ? emp.name : id;
   };
 
   const getDepartmentName = (id) => {
-    const dept = departments.find(d => d.id === id || d.name === id);
+    const dept = departments.find(d => (d._id || d.id) === id || d.name === id);
     return dept ? dept.name : id;
   };
 
@@ -410,7 +410,7 @@ export default function AllocationTransfer() {
                               className="w-full bg-white/[0.03] border border-glass-border rounded px-3 py-2 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:shadow-green-glow transition-all duration-150"
                             >
                               {empListExcluding(activeAllocation?.employeeId).map((emp) => (
-                                <option key={emp.id} value={emp.id}>
+                                <option key={emp._id || emp.id} value={emp._id || emp.id}>
                                   {emp.name} ({emp.department})
                                 </option>
                               ))}
@@ -464,7 +464,7 @@ export default function AllocationTransfer() {
                         >
                           <option value="">-- Choose Employee --</option>
                           {employees.map((emp) => (
-                            <option key={emp.id} value={emp.id}>
+                            <option key={emp._id || emp.id} value={emp._id || emp.id}>
                               {emp.name} ({emp.department})
                             </option>
                           ))}
@@ -485,7 +485,7 @@ export default function AllocationTransfer() {
                         >
                           <option value="">-- Choose Department --</option>
                           {departments.map((dept) => (
-                            <option key={dept.id} value={dept.id}>
+                            <option key={dept._id || dept.id} value={dept._id || dept.id}>
                               {dept.name}
                             </option>
                           ))}

@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
 
 const allocationSchema = new mongoose.Schema({
-  asset: { type: mongoose.Schema.Types.ObjectId, ref: 'Asset', required: true, index: true },
-  employee: { type: mongoose.Schema.Types.ObjectId, ref: 'Employee' },
-  department: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' },
+  asset: { type: String, ref: 'Asset', required: true, index: true },
+  employee: { type: String, ref: 'Employee' },
+  department: { type: String, ref: 'Department' },
   allocatedDate: { type: Date, default: Date.now },
   expectedReturnDate: { type: Date },
   actualReturnDate: { type: Date },
@@ -11,7 +11,7 @@ const allocationSchema = new mongoose.Schema({
   conditionAtCheckout: { type: String },
   conditionAtCheckin: { type: String },
   checkinNotes: { type: String },
-  allocatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Employee' }
+  allocatedBy: { type: String, ref: 'Employee' }
 }, { timestamps: true });
 
 allocationSchema.pre('validate', function(next) {

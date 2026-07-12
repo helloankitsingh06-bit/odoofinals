@@ -5,7 +5,7 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, setDoc } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../lib/firebase';
 
 const AuthContext = createContext(null);
@@ -20,30 +20,23 @@ export function AuthProvider({ children }) {
       setLoading(true);
       if (firebaseUser) {
         try {
-          // Fetch user document from Firestore to get their designated role
-          const userDocRef = doc(db, 'users', firebaseUser.uid);
-          const userSnap = await getDoc(userDocRef);
-
           let role = 'Employee'; // fallback role
           let name = firebaseUser.displayName || 'User';
 
-          if (userSnap.exists()) {
-            const data = userSnap.data();
-            role = data.role || 'Employee';
-            name = data.name || name;
+          // 1. Check if an admin invited this user via the `employees` collection
+          const employeesRef = collection(db, 'employees');
+          const q = query(employeesRef, where('email', '==', firebaseUser.email.toLowerCase()));
+          const querySnapshot = await getDocs(q);
+
+          if (!querySnapshot.empty) {
+            const employeeData = querySnapshot.docs[0].data();
+            role = employeeData.role || 'Employee';
+            name = employeeData.name || employeeData.displayName || name;
           } else {
-            // Document doesn't exist, create it (e.g., first-time Google sign-in)
+            // 2. Fallback for new Google/Email logins without an employee record
             // Use the last selected test role or default to Employee
             const selectedRole = localStorage.getItem('lastSelectedRole') || 'Employee';
             role = selectedRole;
-            await setDoc(userDocRef, {
-              id: firebaseUser.uid,
-              name,
-              email: firebaseUser.email,
-              role: selectedRole,
-              status: 'Active',
-              createdAt: new Date().toISOString()
-            });
           }
 
           if (firebaseUser.uid === 'kubNQqUFVSMBVquVXKx5IP4jfM83') {

@@ -15,6 +15,7 @@ export default function Dashboard() {
   });
   const [overdueReturns, setOverdueReturns] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
+  const [myTasks, setMyTasks] = useState([]);
   const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
@@ -22,14 +23,16 @@ export default function Dashboard() {
       setLoading(true);
       setErrorMsg('');
       try {
-        const [kpiData, overdueData, activityData] = await Promise.all([
+        const [kpiData, overdueData, activityData, tasksData] = await Promise.all([
           assetService.getKpiCounts(),
           assetService.getOverdueReturns(),
-          orgService.getRecentActivity(3)
+          orgService.getRecentActivity(3),
+          orgService.getMyDeadlines()
         ]);
         setKpiCounts(kpiData);
         setOverdueReturns(overdueData);
         setRecentActivity(activityData);
+        setMyTasks(tasksData || []);
       } catch (err) {
         setErrorMsg('Error reloading dashboard statistics.');
         console.error(err);
@@ -108,12 +111,12 @@ export default function Dashboard() {
         ) : overdueReturns.length > 0 ? (
           <div className="divide-y divide-red-950/20">
             {overdueReturns.map((item) => (
-              <div key={item.id} className="py-2.5 flex items-center justify-between text-xs text-red-200">
+              <Link key={item.id} to={`/assets/${item.assetCode}`} className="py-2.5 flex items-center justify-between text-xs text-red-200 hover:bg-white/[0.02] px-2 rounded transition-colors">
                 <span>{item.assetName} ({item.assetCode})</span>
                 <span className="font-semibold text-[10px] bg-red-950/40 text-red-400 border border-red-900/30 px-2.5 py-1 rounded-md uppercase font-mono shadow-[0_0_8px_rgba(239,68,68,0.15)]">
                   Overdue {item.daysOverdue} days
                 </span>
-              </div>
+              </Link>
             ))}
           </div>
         ) : (
@@ -123,7 +126,7 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Lower Dashboard Grid (Quick Actions & Recent Activity) */}
+      {/* Lower Dashboard Grid (Quick Actions, Tasks, Recent Activity) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Quick Actions Panel */}
@@ -145,8 +148,50 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Tasks / Deadlines Panel */}
+        <div className="glass-panel p-6 space-y-4 border border-glass-border shadow-glass-glow">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-stone-400 border-b border-glass-border pb-3">
+            My Assigned Tasks
+          </h3>
+          
+          {loading ? (
+            <div className="space-y-4">
+              {[...Array(2)].map((_, i) => (
+                <div key={i} className="flex gap-4 items-center">
+                  <div className="flex-1 space-y-1.5">
+                    <div className="h-3 bg-white/5 rounded animate-pulse w-3/4"></div>
+                    <div className="h-2.5 bg-white/5 rounded animate-pulse w-1/3"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : myTasks.length > 0 ? (
+            <div className="space-y-3 max-h-[160px] overflow-y-auto pr-2">
+              {myTasks.map((task) => {
+                const dueDate = new Date(task.dueDate);
+                const isOverdue = dueDate < new Date() && dueDate.toDateString() !== new Date().toDateString();
+                
+                return (
+                  <div key={task.id} className={`p-3 rounded-lg border ${isOverdue ? 'border-red-900/30 bg-red-950/10' : 'border-glass-border/60 bg-white/[0.02]'}`}>
+                    <p className={`text-[11px] font-bold ${isOverdue ? 'text-red-300' : 'text-asset-light'}`}>
+                      {task.title}
+                    </p>
+                    <p className={`text-[9px] font-mono mt-1 ${isOverdue ? 'text-red-400' : 'text-stone-400'}`}>
+                      Due: {dueDate.toLocaleDateString()}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="py-4 text-xs text-stone-500 font-mono uppercase italic tracking-wide text-center">
+              No pending tasks
+            </div>
+          )}
+        </div>
+
         {/* Recent Activity Mini-Feed */}
-        <div className="lg:col-span-2 glass-panel p-6 space-y-4 border border-glass-border shadow-glass-glow">
+        <div className="glass-panel p-6 space-y-4 border border-glass-border shadow-glass-glow">
           <h3 className="text-xs font-bold uppercase tracking-widest text-stone-400 border-b border-glass-border pb-3">
             Recent activity logs (Top 3)
           </h3>
@@ -166,17 +211,15 @@ export default function Dashboard() {
           ) : recentActivity.length > 0 ? (
             <div className="space-y-3">
               {recentActivity.map((activity) => (
-                <div key={activity.id} className="flex gap-3 items-center text-xs py-1">
+                <Link key={activity.id} to={activity.assetId ? `/assets/${activity.assetId}` : '#'} className="flex gap-3 items-center text-xs py-1 hover:bg-white/[0.02] px-2 -mx-2 rounded transition-colors">
                   <span className="h-1 w-1 rounded-full bg-emerald-450 shadow-accent-glow"></span>
                   <p className="text-stone-300">
                     <span className="font-semibold text-asset-light">{activity.assetName}</span>
                     {' - '}
                     <span className="text-stone-400">{activity.action} to </span>
                     <span className="font-medium text-asset-light">{activity.personName}</span>
-                    {' - '}
-                    <span className="text-stone-500 font-mono">[{activity.deptName}]</span>
                   </p>
-                </div>
+                </Link>
               ))}
             </div>
           ) : (

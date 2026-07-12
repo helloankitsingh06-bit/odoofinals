@@ -95,9 +95,11 @@ router.post('/employees', async (req, res) => {
       // Mongoose expects 24 hex char for ObjectId. We'll skip department relation if it throws or just store as string if we modified schema.
       // But the model has `department: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' }`. Let's skip it to avoid CastError.
       const mongoEmployee = new Employee({
+        _id: docRef.id,
         name: name.trim(),
         email: normalizedEmail,
         role: employeeRole,
+        department: departmentId,
         isActive: true
       });
       await mongoEmployee.save();

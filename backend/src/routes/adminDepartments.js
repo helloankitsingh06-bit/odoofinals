@@ -37,6 +37,18 @@ router.post('/departments', async (req, res) => {
 
     const docRef = await departmentsRef.add(newDept);
     
+    try {
+      const Department = require('../../models/Department');
+      const mongoDept = new Department({
+        _id: docRef.id,
+        name: name.trim(),
+        status: 'Active'
+      });
+      await mongoDept.save();
+    } catch (mongoError) {
+      console.error('Failed to sync department to Mongo:', mongoError);
+    }
+
     return res.status(201).json({
       id: docRef.id,
       ...newDept
