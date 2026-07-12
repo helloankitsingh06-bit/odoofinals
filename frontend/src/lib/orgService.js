@@ -1,4 +1,5 @@
 // TODO: Replace with real Backend A/B exports
+const API_BASE = "http://localhost:5001/api";
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -62,7 +63,36 @@ export const orgService = {
   },
 
   async getRecentActivity(limitCount = 3) {
-    await delay(300);
-    return [];
+    try {
+      const res = await fetch(`${API_BASE}/dashboard/activities?limit=${limitCount}`);
+      if (!res.ok) throw new Error("Failed to fetch activities from server");
+      const data = await res.json();
+      
+      // Map properties to what Dashboard.jsx expects:
+      // activity.assetName, activity.action, activity.personName, activity.deptName
+      return data.map(log => {
+        // e.g. log.message is "Allocated asset AF-0001 to charlie-id"
+        // Let's parse details nicely or provide fallbacks
+        const assetName = log.entityType === 'assets' ? `Asset ${log.entityId}` : 'System';
+        
+        let displayAction = log.actionType;
+        if (log.actionType === 'ASSET_ALLOCATION') displayAction = 'Allocated';
+        else if (log.actionType === 'TRANSFER_APPROVED') displayAction = 'Transferred';
+        else if (log.actionType === 'ASSET_RETURNED') displayAction = 'Returned';
+        else if (log.actionType === 'MAINTENANCE_APPROVED') displayAction = 'Approved Maintenance';
+        else if (log.actionType === 'MAINTENANCE_RESOLVED') displayAction = 'Resolved Maintenance';
+
+        return {
+          id: log.id,
+          assetName: assetName,
+          action: displayAction.toLowerCase(),
+          personName: log.actorUserId === 'SYSTEM' ? 'System' : `User (${log.actorUserId.substring(0, 5)})`,
+          deptName: log.message || "Activity logged"
+        };
+      });
+    } catch (error) {
+      console.error("getRecentActivity failed:", error);
+      return [];
+    }
   }
 };

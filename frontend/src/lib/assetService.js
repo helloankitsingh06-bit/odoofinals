@@ -1,4 +1,5 @@
 // TODO: Replace with real Backend A/B exports
+const API_BASE = "http://localhost:5001/api";
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -105,23 +106,56 @@ export const assetService = {
   },
 
   async getKpiCounts() {
-    await delay(300);
-    const available = assets.filter(a => a.status === 'Available').length;
-    const allocated = assets.filter(a => a.status === 'Allocated').length;
-    const underMaintenance = assets.filter(a => a.status === 'Under Maintenance').length;
-    
-    return {
-      available,
-      allocated,
-      underMaintenance,
-      activeBookings: 0,
-      pendingTransfers: 0,
-      upcomingReturns: 0
-    };
+    try {
+      const res = await fetch(`${API_BASE}/dashboard/kpis`);
+      if (!res.ok) throw new Error("Failed to fetch KPIs from server");
+      const data = await res.json();
+      return {
+        available: data.available || 0,
+        allocated: data.allocated || 0,
+        underMaintenance: data.maintenanceToday || 0,
+        activeBookings: data.activeBookings || 0,
+        pendingTransfers: data.pendingTransfers || 0,
+        upcomingReturns: data.overdueCount || 0
+      };
+    } catch (error) {
+      console.error("getKpiCounts failed, falling back to mock:", error);
+      return {
+        available: 0,
+        allocated: 0,
+        underMaintenance: 0,
+        activeBookings: 0,
+        pendingTransfers: 0,
+        upcomingReturns: 0
+      };
+    }
   },
 
   async getOverdueReturns() {
-    await delay(350);
-    return [];
+    try {
+      const res = await fetch(`${API_BASE}/dashboard/kpis`);
+      if (!res.ok) throw new Error("Failed to fetch KPIs from server");
+      const data = await res.json();
+      // Map properties from backend database:
+      // data.overdueReturns returns list of { id, assetId, assetName, employeeName, expectedReturnDate }
+      // We map it to expected fields in Dashboard.jsx:
+      // item.assetName, item.assetCode (using assetTag / id), item.daysOverdue (calculate)
+      return (data.overdueReturns || []).map(item => {
+        const expectedDate = item.expectedReturnDate?.seconds 
+          ? new Date(item.expectedReturnDate.seconds * 1000) 
+          : new Date(item.expectedReturnDate);
+        const diffTime = Math.max(0, new Date() - expectedDate);
+        const daysOverdue = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return {
+          id: item.id,
+          assetName: item.assetName,
+          assetCode: item.assetId,
+          daysOverdue: daysOverdue || 0
+        };
+      });
+    } catch (error) {
+      console.error("getOverdueReturns failed:", error);
+      return [];
+    }
   }
 };

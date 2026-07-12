@@ -5,7 +5,7 @@ const path = require('path');
 // Load environment variables from .env
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
-const { getDashboardKPIs, getRecentActivity } = require('./src/services/dashboardService');
+const dashboardRoutes = require('./src/routes/dashboardRoutes');
 const { registerAsset } = require('./src/services/assetService');
 const { bookResource, cancelBooking } = require('./src/services/bookingService');
 
@@ -20,27 +20,8 @@ app.get('/', (req, res) => {
   res.json({ message: "Welcome to the AssetFlow Backend Server!" });
 });
 
-// Dashboard APIs
-app.get('/api/dashboard/kpis', async (req, res) => {
-  try {
-    const kpis = await getDashboardKPIs();
-    res.json(kpis);
-  } catch (error) {
-    console.error("Error fetching KPIs:", error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/api/dashboard/activities', async (req, res) => {
-  try {
-    const limit = req.query.limit ? parseInt(req.query.limit) : 5;
-    const activities = await getRecentActivity(limit);
-    res.json(activities);
-  } catch (error) {
-    console.error("Error fetching activities:", error);
-    res.status(500).json({ error: error.message });
-  }
-});
+// Mounted Routes
+app.use('/api/dashboard', dashboardRoutes);
 
 // Assets APIs
 app.post('/api/assets', async (req, res) => {
