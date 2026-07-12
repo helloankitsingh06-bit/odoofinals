@@ -59,5 +59,12 @@ export const orgService = {
       ...deptData
     };
     return departments[index];
+  },
+
+  async getRecentActivity(limitCount = 3) {
+    // TODO: replace with real Firestore query fetching recent activity from 'activityLogs' collection:
+    // query(collection(db, 'activityLogs'), orderBy('timestamp', 'desc'), limit(limitCount))
+    await delay(300);
+    return [];
   }
 };
