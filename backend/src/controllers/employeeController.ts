@@ -235,17 +235,70 @@ export const deleteEmployee = async (req: Request, res: Response): Promise<void>
   try {
     const { id } = req.params;
 
-    // Remove user association first if exists
-    await prisma.user.updateMany({
-      where: { employeeId: id },
-      data: { employeeId: null }
+    const existing = await prisma.employee.findUnique({ where: { id } });
+    if (!existing) {
+      res.status(404).json({ error: 'Employee not found' });
+      return;
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Unlink any user accounts linked to this employee
+      await tx.user.updateMany({
+        where: { employeeId: id },
+        data: { employeeId: null }
+      });
+
+      // 2. Unlink any subordinates where this employee is manager
+      await tx.employee.updateMany({
+        where: { managerId: id },
+        data: { managerId: null }
+      });
+
+      // 3. Delete payslip lines & warnings
+      await tx.payslipWarning.deleteMany({
+        where: { payslip: { employeeId: id } }
+      });
+
+      await tx.payslipRuleLine.deleteMany({
+        where: { payslip: { employeeId: id } }
+      });
+
+      // 4. Delete payslips
+      await tx.payslip.deleteMany({
+        where: { employeeId: id }
+      });
+
+      // 5. Delete payrun link
+      await tx.payrunEmployee.deleteMany({
+        where: { employeeId: id }
+      });
+
+      // 6. Delete attendances
+      await tx.attendance.deleteMany({
+        where: { employeeId: id }
+      });
+
+      // 7. Delete time off requests & allocations
+      await tx.timeOffRequest.deleteMany({
+        where: { employeeId: id }
+      });
+
+      await tx.allocation.deleteMany({
+        where: { employeeId: id }
+      });
+
+      // 8. Delete contracts
+      await tx.contract.deleteMany({
+        where: { employeeId: id }
+      });
+
+      // 9. Delete employee record
+      await tx.employee.delete({
+        where: { id }
+      });
     });
 
-    await prisma.employee.delete({
-      where: { id }
-    });
-
-    res.json({ message: 'Employee deleted successfully' });
+    res.json({ message: 'Employee and all associated records deleted successfully' });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
