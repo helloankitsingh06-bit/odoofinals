@@ -9,9 +9,31 @@ import Contracts from './pages/Contracts';
 import WorkingSchedules from './pages/WorkingSchedules';
 import UserManagement from './pages/UserManagement';
 
+// P2 Scope Imports
+import Attendance from './pages/Attendance';
+import TimeOffRequests from './pages/TimeOffRequests';
+import Allocations from './pages/Allocations';
+import TimeOffTypes from './pages/TimeOffTypes';
+import EmployeeAttendanceTab from './components/EmployeeAttendanceTab';
+
 function EmployeeContractsBridge() {
   const { id } = useParams();
   return <Contracts defaultEmployeeId={id} />;
+}
+
+function EmployeeAttendanceBridge() {
+  const { id } = useParams();
+  return (
+    <div className="p-8 max-w-7xl mx-auto space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-asset-light">Employee Attendance History</h2>
+          <p className="text-xs text-stone-400 font-mono">Viewing shifts for Employee ID: {id}</p>
+        </div>
+      </div>
+      <EmployeeAttendanceTab employeeId={id} />
+    </div>
+  );
 }
 
 function IntegrationPlaceholder({ title, description, badge }) {
@@ -40,39 +62,30 @@ function App() {
 
           {/* Authenticated Area */}
           <Route element={<Layout />}>
-            {/* Employee Master (Deliverable 2 + 5) */}
+            {/* P1: Employee Master */}
             <Route path="/employees" element={<Employees />} />
 
             {/* Smart button bridges */}
             <Route path="/employees/:id/contracts" element={<EmployeeContractsBridge />} />
-            <Route
-              path="/employees/:id/attendance"
-              element={
-                <IntegrationPlaceholder
-                  title="Attendance Tracking"
-                  badge="Person 2 Scope"
-                  description="Attendance check-ins, check-outs, and overtime logs (P2 scope)."
-                />
-              }
-            />
+            <Route path="/employees/:id/attendance" element={<EmployeeAttendanceBridge />} />
             <Route
               path="/employees/:id/timeoff"
-              element={
-                <IntegrationPlaceholder
-                  title="Time Off & Leaves"
-                  badge="Person 2 Scope"
-                  description="Time off allocation balances and requests (P2 scope)."
-                />
-              }
+              element={<TimeOffRequests />}
             />
 
-            {/* Contracts Management (Deliverable 3 + 5) */}
+            {/* P1: Contracts Management */}
             <Route path="/contracts" element={<Contracts />} />
 
-            {/* Working Schedules (Deliverable 4 + 5) */}
+            {/* P1: Working Schedules */}
             <Route path="/schedules" element={<WorkingSchedules />} />
 
-            {/* Admin-only branch (Deliverable 1 + 5) */}
+            {/* P2: Attendance & Time Off Console */}
+            <Route path="/attendance" element={<Attendance />} />
+            <Route path="/time-off-requests" element={<TimeOffRequests />} />
+            <Route path="/allocations" element={<Allocations />} />
+            <Route path="/time-off-types" element={<TimeOffTypes />} />
+
+            {/* Admin-only branch (P1 Deliverable 1) */}
             <Route element={<AdminRoute />}>
               <Route path="/admin/users" element={<UserManagement />} />
               <Route path="/admin" element={<Navigate to="/admin/users" replace />} />

@@ -14,6 +14,10 @@ const userRoutes = require('./routes/userRoutes');
 const employeeRoutes = require('./routes/employeeRoutes');
 const contractRoutes = require('./routes/contractRoutes');
 const workingScheduleRoutes = require('./routes/workingScheduleRoutes');
+const attendanceRoutes = require('./routes/attendanceRoutes');
+const timeOffTypeRoutes = require('./routes/timeOffTypeRoutes');
+const allocationRoutes = require('./routes/allocationRoutes');
+const timeOffRequestRoutes = require('./routes/timeOffRequestRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -49,6 +53,12 @@ app.use('/api/contracts', contractRoutes);
 
 // Working Schedule routes
 app.use('/api/schedules', workingScheduleRoutes);
+
+// P2 Scope: Attendance & Time Off routes
+app.use('/api/attendance', attendanceRoutes);
+app.use('/api/time-off-types', timeOffTypeRoutes);
+app.use('/api/allocations', allocationRoutes);
+app.use('/api/time-off-requests', timeOffRequestRoutes);
 
 // Generic CRUD example. Copy this pattern for real domain entities.
 app.use('/api/items', itemRoutes);

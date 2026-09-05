@@ -45,6 +45,38 @@ const DAYS_OF_WEEK = [
   'Sunday',
 ];
 
+const ATTENDANCE_STATUS = {
+  PRESENT: 'Present',
+  LATE: 'Late',
+  ABSENT: 'Absent',
+  OVERTIME: 'Overtime',
+  MISSING_CHECKOUT: 'MissingCheckout',
+};
+
+const VALID_ATTENDANCE_STATUSES = Object.values(ATTENDANCE_STATUS);
+
+const TIME_OFF_UNITS = {
+  DAYS: 'Days',
+  HOURS: 'Hours',
+};
+
+const VALID_TIME_OFF_UNITS = Object.values(TIME_OFF_UNITS);
+
+const ALLOCATION_STATUS = {
+  PENDING: 'Pending',
+  APPROVED: 'Approved',
+};
+
+const VALID_ALLOCATION_STATUSES = Object.values(ALLOCATION_STATUS);
+
+const TIME_OFF_REQUEST_STATUS = {
+  PENDING: 'Pending',
+  APPROVED: 'Approved',
+  REFUSED: 'Refused',
+};
+
+const VALID_TIME_OFF_REQUEST_STATUSES = Object.values(TIME_OFF_REQUEST_STATUS);
+
 module.exports = {
   ROLES,
   VALID_ROLES,
@@ -55,4 +87,12 @@ module.exports = {
   SCHEDULE_TYPES,
   VALID_SCHEDULE_TYPES,
   DAYS_OF_WEEK,
+  ATTENDANCE_STATUS,
+  VALID_ATTENDANCE_STATUSES,
+  TIME_OFF_UNITS,
+  VALID_TIME_OFF_UNITS,
+  ALLOCATION_STATUS,
+  VALID_ALLOCATION_STATUSES,
+  TIME_OFF_REQUEST_STATUS,
+  VALID_TIME_OFF_REQUEST_STATUSES,
 };

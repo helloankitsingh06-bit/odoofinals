@@ -144,11 +144,17 @@ const requireHRorPayroll = requireRole(
   'HR, Payroll, or Admin role'
 );
 
+const requireHRManagerPlus = requireRole(
+  [ROLES.ADMIN, ROLES.HR_MANAGER, ROLES.HR_PAYROLL_MANAGER],
+  'HRManager, HRPayrollManager, or Admin role'
+);
+
 module.exports = {
   verifyToken,
   requireRole,
   requireAdmin,
   requireHRManager,
+  requireHRManagerPlus,
   requireHRPayrollUser,
   requireHRPayrollManager,
   requireHRorPayroll,
