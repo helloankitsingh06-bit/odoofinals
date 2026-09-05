@@ -1,0 +1,256 @@
+// Prisma Schema for PeoplePay360
+// Authoritative Relational HR & Payroll Data Model
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(uuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         String    @default("Employee") // Employee | HRManager | HRPayrollUser | HRPayrollManager | Admin
+  employeeId   String?   @unique
+  employee     Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  status       String    @default("Active") // Active | Inactive
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Employee {
+  id                String            @id @default(uuid())
+  name              String
+  email             String?
+  department        String
+  jobPosition       String
+  managerId         String?
+  manager           Employee?         @relation("ManagerSubordinates", fields: [managerId], references: [id], onDelete: SetNull)
+  subordinates      Employee[]        @relation("ManagerSubordinates")
+  workingScheduleId String?
+  workingSchedule   WorkingSchedule?  @relation(fields: [workingScheduleId], references: [id], onDelete: SetNull)
+  status            String            @default("Active") // Active | Inactive
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  user              User?
+  contracts         Contract[]
+  attendances       Attendance[]
+  allocations       Allocation[]
+  timeOffRequests   TimeOffRequest[]
+  payrunEmployees   PayrunEmployee[]
+  payslips          Payslip[]
+}
+
+model Contract {
+  id                String          @id @default(uuid())
+  employeeId        String
+  employee          Employee        @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  startDate         DateTime
+  endDate           DateTime?
+  wage              Float
+  salaryStructureId String
+  salaryStructure   SalaryStructure @relation(fields: [salaryStructureId], references: [id])
+  department        String
+  jobPosition       String
+  status            String          @default("Active") // Draft | Active | Expired
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  payslips          Payslip[]
+}
+
+model WorkingSchedule {
+  id               String               @id @default(uuid())
+  name             String
+  type             String               @default("Standard") // Standard | Flexible | Shift
+  totalWeeklyHours Float                @default(40.0) // Computed from days
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  days             WorkingScheduleDay[]
+  employees        Employee[]
+}
+
+model WorkingScheduleDay {
+  id                String          @id @default(uuid())
+  workingScheduleId String
+  workingSchedule   WorkingSchedule @relation(fields: [workingScheduleId], references: [id], onDelete: Cascade)
+  day               String          // Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday
+  startTime         String          // e.g. "09:00"
+  endTime           String          // e.g. "17:00"
+  breakMins         Int             @default(60)
+}
+
+model Attendance {
+  id           String    @id @default(uuid())
+  employeeId   String
+  employee     Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  checkIn      DateTime
+  checkOut     DateTime?
+  workedHours  Float     @default(0.0) // Computed
+  status       String    @default("Present") // Present | Late | Absent | Overtime | MissingCheckout
+  isManualEdit Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model TimeOffType {
+  id                 String           @id @default(uuid())
+  name               String           @unique
+  unit               String           @default("Days") // Days | Hours
+  requiresAllocation Boolean          @default(true)
+  requiresApproval   Boolean          @default(true)
+  payrollIntegrated  Boolean          @default(true)
+  createdAt          DateTime         @default(now())
+
+  allocations        Allocation[]
+  timeOffRequests    TimeOffRequest[]
+}
+
+model Allocation {
+  id              String      @id @default(uuid())
+  employeeId      String
+  employee        Employee    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  timeOffTypeId   String
+  timeOffType     TimeOffType @relation(fields: [timeOffTypeId], references: [id], onDelete: Cascade)
+  allocatedAmount Float
+  takenAmount     Float       @default(0.0)
+  remainingAmount Float       // Computed: allocatedAmount - takenAmount
+  validFrom       DateTime
+  validTo         DateTime
+  status          String      @default("Approved") // Pending | Approved
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model TimeOffRequest {
+  id            String      @id @default(uuid())
+  employeeId    String
+  employee      Employee    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  timeOffTypeId String
+  timeOffType   TimeOffType @relation(fields: [timeOffTypeId], references: [id], onDelete: Cascade)
+  startDate     DateTime
+  endDate       DateTime
+  duration      Float
+  status        String      @default("Pending") // Pending | Approved | Refused
+  reason        String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model SalaryStructure {
+  id        String                @id @default(uuid())
+  name      String                @unique
+  status    String                @default("Active") // Active | Inactive
+  createdAt DateTime              @default(now())
+  updatedAt DateTime              @updatedAt
+
+  rules     SalaryStructureRule[]
+  contracts Contract[]
+  payruns   Payrun[]
+}
+
+model SalaryStructureRule {
+  id                String          @id @default(uuid())
+  salaryStructureId String
+  salaryStructure   SalaryStructure @relation(fields: [salaryStructureId], references: [id], onDelete: Cascade)
+  salaryRuleId      String
+  salaryRule        SalaryRule      @relation(fields: [salaryRuleId], references: [id], onDelete: Cascade)
+  position          Int             // Explicit execution sequence
+
+  @@unique([salaryStructureId, salaryRuleId])
+  @@unique([salaryStructureId, position])
+}
+
+model SalaryRule {
+  id          String                @id @default(uuid())
+  name        String
+  code        String                @unique // e.g. BASIC, HRA, PF, GROSS, NET
+  category    String                // Basic | Allowance | Gross | Deduction | Net
+  sequence    Int                   @default(1)
+  computeType String                // Fixed | Percentage | Formula
+  value       Float?                // Numeric value for Fixed or Percentage
+  formula     String?               // Expression e.g. "BASIC * 0.40" or "GROSS - PF - TAX"
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  structures  SalaryStructureRule[]
+  lines       PayslipRuleLine[]
+}
+
+model Payrun {
+  id                String           @id @default(uuid())
+  name              String
+  salaryStructureId String
+  salaryStructure   SalaryStructure  @relation(fields: [salaryStructureId], references: [id])
+  periodStart       DateTime
+  periodEnd         DateTime
+  status            String           @default("Draft") // Draft | Computed | Validated | Paid
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  employees         PayrunEmployee[]
+  payslips          Payslip[]
+}
+
+model PayrunEmployee {
+  id         String   @id @default(uuid())
+  payrunId   String
+  payrun     Payrun   @relation(fields: [payrunId], references: [id], onDelete: Cascade)
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([payrunId, employeeId])
+}
+
+model Payslip {
+  id          String            @id @default(uuid())
+  payrunId    String
+  payrun      Payrun            @relation(fields: [payrunId], references: [id], onDelete: Cascade)
+  employeeId  String
+  employee    Employee          @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  contractId  String
+  contract    Contract          @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  periodStart DateTime
+  periodEnd   DateTime
+  workedDays  Float             @default(0.0)
+  grossTotal  Float             @default(0.0)
+  netTotal    Float             @default(0.0)
+  status      String            @default("Draft") // Draft | Computed | Validated | Paid
+  pdfPath     String?
+  emailSentAt DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  lines       PayslipRuleLine[]
+  warnings    PayslipWarning[]
+
+  @@unique([payrunId, employeeId])
+}
+
+model PayslipRuleLine {
+  id           String     @id @default(uuid())
+  payslipId    String
+  payslip      Payslip    @relation(fields: [payslipId], references: [id], onDelete: Cascade)
+  salaryRuleId String
+  salaryRule   SalaryRule @relation(fields: [salaryRuleId], references: [id], onDelete: Cascade)
+  name         String
+  code         String
+  category     String
+  amount       Float
+}
+
+model PayslipWarning {
+  id        String   @id @default(uuid())
+  payslipId String
+  payslip   Payslip  @relation(fields: [payslipId], references: [id], onDelete: Cascade)
+  message   String
+  type      String   // Warning | Error | Info
+  createdAt DateTime @default(now())
+}

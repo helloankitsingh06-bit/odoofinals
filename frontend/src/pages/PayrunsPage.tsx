@@ -1,0 +1,649 @@
+import React, { useState, useEffect } from 'react';
+import { apiRequest } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import {
+  DollarSign,
+  Play,
+  CheckCircle2,
+  AlertTriangle,
+  FileText,
+  Mail,
+  Download,
+  Calendar,
+  Layers,
+  ChevronRight,
+  Plus,
+  RefreshCw,
+  X,
+  UserCheck,
+  Check,
+  ShieldCheck,
+  Building2
+} from 'lucide-react';
+
+export const PayrunsPage: React.FC = () => {
+  const { user } = useAuth();
+  const [payruns, setPayruns] = useState<any[]>([]);
+  const [structures, setStructures] = useState<any[]>([]);
+  const [selectedPayrun, setSelectedPayrun] = useState<any | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [actionLoading, setActionLoading] = useState<boolean>(false);
+
+  // 2-Step Wizard State
+  const [showWizard, setShowWizard] = useState<boolean>(false);
+  const [wizardStep, setWizardStep] = useState<1 | 2>(1);
+  const [wizardData, setWizardData] = useState({
+    name: '',
+    salaryStructureId: '',
+    periodStart: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10),
+    periodEnd: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().slice(0, 10),
+    selectedEmployeeIds: [] as string[]
+  });
+  const [previewResult, setPreviewResult] = useState<any | null>(null);
+
+  // Payslip Detail Modal
+  const [selectedPayslip, setSelectedPayslip] = useState<any | null>(null);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [pData, sData] = await Promise.all([
+        apiRequest('/payruns'),
+        apiRequest('/salary-structures/structures')
+      ]);
+      setPayruns(pData);
+      setStructures(sData);
+
+      if (sData.length > 0 && !wizardData.salaryStructureId) {
+        setWizardData(prev => ({
+          ...prev,
+          salaryStructureId: sData[0].id,
+          name: `${new Date().toLocaleString('default', { month: 'long' })} ${new Date().getFullYear()} Payroll`
+        }));
+      }
+
+      // If active payrun selected, refresh detail
+      if (selectedPayrun) {
+        const fresh = await apiRequest(`/payruns/${selectedPayrun.id}`);
+        setSelectedPayrun(fresh);
+      }
+    } catch (err) {
+      console.error('Failed to load payruns:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const openPayrunDetail = async (pr: any) => {
+    try {
+      const fullPr = await apiRequest(`/payruns/${pr.id}`);
+      setSelectedPayrun(fullPr);
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  // Step 1: Preview Eligible Employees
+  const handleWizardStep1 = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setActionLoading(true);
+    try {
+      const res = await apiRequest('/payruns/preview', {
+        method: 'POST',
+        body: JSON.stringify({
+          salaryStructureId: wizardData.salaryStructureId,
+          periodStart: wizardData.periodStart,
+          periodEnd: wizardData.periodEnd
+        })
+      });
+      setPreviewResult(res);
+      setWizardData(prev => ({
+        ...prev,
+        selectedEmployeeIds: res.eligibleEmployees.map((e: any) => e.employeeId)
+      }));
+      setWizardStep(2);
+    } catch (err: any) {
+      alert(err.message || 'Failed to preview eligible employees');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Step 2: Confirm Creation
+  const handleWizardConfirm = async () => {
+    setActionLoading(true);
+    try {
+      const newPayrun = await apiRequest('/payruns', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: wizardData.name,
+          salaryStructureId: wizardData.salaryStructureId,
+          periodStart: wizardData.periodStart,
+          periodEnd: wizardData.periodEnd,
+          employeeIds: wizardData.selectedEmployeeIds
+        })
+      });
+      setShowWizard(false);
+      setWizardStep(1);
+      setPreviewResult(null);
+      await fetchData();
+      openPayrunDetail(newPayrun);
+    } catch (err: any) {
+      alert(err.message || 'Failed to create payrun');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Action: Compute
+  const handleCompute = async () => {
+    if (!selectedPayrun) return;
+    setActionLoading(true);
+    try {
+      await apiRequest(`/payruns/${selectedPayrun.id}/compute`, { method: 'POST' });
+      const fresh = await apiRequest(`/payruns/${selectedPayrun.id}`);
+      setSelectedPayrun(fresh);
+      fetchData();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Action: Validate
+  const handleValidate = async () => {
+    if (!selectedPayrun) return;
+    setActionLoading(true);
+    try {
+      const res = await apiRequest(`/payruns/${selectedPayrun.id}/validate`, { method: 'POST' });
+      const fresh = await apiRequest(`/payruns/${selectedPayrun.id}`);
+      setSelectedPayrun(fresh);
+      fetchData();
+      if (res.warningsCount > 0) {
+        alert(`Validation Complete: ${res.warningsCount} warnings logged (non-blocking).`);
+      }
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Action: Mark Paid
+  const handleMarkPaid = async () => {
+    if (!selectedPayrun) return;
+    setActionLoading(true);
+    try {
+      await apiRequest(`/payruns/${selectedPayrun.id}/mark-paid`, { method: 'POST' });
+      const fresh = await apiRequest(`/payruns/${selectedPayrun.id}`);
+      setSelectedPayrun(fresh);
+      fetchData();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Action: Send Payslips
+  const handleSendPayslips = async () => {
+    if (!selectedPayrun) return;
+    setActionLoading(true);
+    try {
+      const res = await apiRequest(`/payruns/${selectedPayrun.id}/send-payslips`, { method: 'POST' });
+      alert(`Success: ${res.message}`);
+      const fresh = await apiRequest(`/payruns/${selectedPayrun.id}`);
+      setSelectedPayrun(fresh);
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Download PDF
+  const handleDownloadPdf = async (payslipId: string, employeeName: string) => {
+    try {
+      const blob = await apiRequest<Blob>(`/payruns/payslips/${payslipId}/pdf`);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Payslip_${employeeName.replace(/\s+/g, '_')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const isPayrollManagerOrAdmin = user?.role === 'HRPayrollManager' || user?.role === 'Admin';
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-800/40 p-5 rounded-2xl border border-slate-800">
+        <div>
+          <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
+            <DollarSign className="text-emerald-400" />
+            Payroll Processing Engine & Payruns
+          </h1>
+          <p className="text-sm text-slate-400">
+            Lifecycle: 2-Step Staged Wizard → Pure Engine Compute → Rule Validation → Mark Paid → Email/PDF Dispatch.
+          </p>
+        </div>
+
+        <button
+          onClick={() => { setShowWizard(true); setWizardStep(1); }}
+          className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-md shadow-emerald-600/20 transition"
+        >
+          <Plus size={16} /> Launch Payrun Wizard
+        </button>
+      </div>
+
+      {/* Main Grid: Payrun List & Active Payrun Workbench */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left: Payrun List */}
+        <div className="space-y-3">
+          <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Payroll History</h2>
+          <div className="space-y-2.5 max-h-[75vh] overflow-y-auto pr-1">
+            {payruns.map((pr) => {
+              const isSelected = selectedPayrun?.id === pr.id;
+              return (
+                <div
+                  key={pr.id}
+                  onClick={() => openPayrunDetail(pr)}
+                  className={`p-4 rounded-2xl border cursor-pointer transition ${
+                    isSelected
+                      ? 'bg-slate-800 border-emerald-500/60 shadow-lg shadow-emerald-950/40'
+                      : 'bg-slate-900/80 border-slate-800 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                      pr.status === 'Paid' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                      pr.status === 'Validated' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' :
+                      pr.status === 'Computed' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' :
+                      'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                    }`}>
+                      {pr.status}
+                    </span>
+                    <span className="text-[10px] text-slate-500 font-mono">
+                      {pr.employees?.length || 0} Employees
+                    </span>
+                  </div>
+
+                  <h3 className="font-bold text-white text-sm">{pr.name}</h3>
+                  <div className="text-[11px] text-slate-400 mt-1 font-mono">
+                    {new Date(pr.periodStart).toISOString().slice(0, 10)} to {new Date(pr.periodEnd).toISOString().slice(0, 10)}
+                  </div>
+                  <div className="text-[10px] text-emerald-400 font-medium mt-1">
+                    Structure: {pr.salaryStructure?.name}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Right: Selected Payrun Processing Workbench */}
+        <div className="lg:col-span-2">
+          {selectedPayrun ? (
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+              {/* Payrun Banner & Actions */}
+              <div className="p-6 bg-slate-800/80 border-b border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-white">{selectedPayrun.name}</h2>
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                      selectedPayrun.status === 'Paid' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                      selectedPayrun.status === 'Validated' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' :
+                      selectedPayrun.status === 'Computed' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' :
+                      'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                    }`}>
+                      {selectedPayrun.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Structure: <strong className="text-slate-200">{selectedPayrun.salaryStructure?.name}</strong> • Period: <span className="font-mono">{new Date(selectedPayrun.periodStart).toISOString().slice(0, 10)} to {new Date(selectedPayrun.periodEnd).toISOString().slice(0, 10)}</span>
+                  </p>
+                </div>
+
+                {/* Processing State Action Buttons */}
+                <div className="flex flex-wrap items-center gap-2">
+                  {selectedPayrun.status !== 'Paid' && (
+                    <button
+                      onClick={handleCompute}
+                      disabled={actionLoading}
+                      className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-md transition"
+                    >
+                      <RefreshCw size={13} className={actionLoading ? 'animate-spin' : ''} />
+                      {selectedPayrun.status === 'Draft' ? 'Run Engine Compute' : 'Re-Compute'}
+                    </button>
+                  )}
+
+                  {selectedPayrun.status === 'Computed' && (
+                    <button
+                      onClick={handleValidate}
+                      disabled={actionLoading}
+                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-md transition"
+                    >
+                      <CheckCircle2 size={13} /> Validate Warnings
+                    </button>
+                  )}
+
+                  {selectedPayrun.status === 'Validated' && isPayrollManagerOrAdmin && (
+                    <button
+                      onClick={handleMarkPaid}
+                      disabled={actionLoading}
+                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-600/30 transition"
+                    >
+                      <DollarSign size={13} /> Mark as Paid
+                    </button>
+                  )}
+
+                  {selectedPayrun.status === 'Paid' && (
+                    <button
+                      onClick={handleSendPayslips}
+                      disabled={actionLoading}
+                      className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-md transition"
+                    >
+                      <Mail size={13} /> Dispatch Emails & PDFs
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Payslips Table */}
+              <div className="p-4 flex-1">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-bold text-slate-300">Itemized Employee Payslips</span>
+                  <span className="text-xs text-slate-400 font-mono">
+                    Total Gross: ${selectedPayrun.payslips?.reduce((s: number, p: any) => s + p.grossTotal, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} | Total Net: ${selectedPayrun.payslips?.reduce((s: number, p: any) => s + p.netTotal, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+
+                <div className="border border-slate-800 rounded-xl overflow-hidden">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-800/80 text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
+                      <tr>
+                        <th className="px-4 py-3">Employee</th>
+                        <th className="px-4 py-3">Worked Days</th>
+                        <th className="px-4 py-3">Gross Salary</th>
+                        <th className="px-4 py-3">Net Take-Home</th>
+                        <th className="px-4 py-3">Audit Warnings</th>
+                        <th className="px-4 py-3 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800 text-slate-300">
+                      {selectedPayrun.payslips?.map((p: any) => (
+                        <tr key={p.id} className="hover:bg-slate-800/40 transition">
+                          <td className="px-4 py-3 font-semibold text-white">
+                            <div>{p.employee?.name}</div>
+                            <div className="text-[10px] text-slate-500 font-normal">{p.employee?.jobPosition}</div>
+                          </td>
+                          <td className="px-4 py-3 font-mono">{p.workedDays} days</td>
+                          <td className="px-4 py-3 font-mono font-semibold">${p.grossTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                          <td className="px-4 py-3 font-mono font-bold text-emerald-400">
+                            ${p.netTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="px-4 py-3">
+                            {p.warnings && p.warnings.length > 0 ? (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1 w-max">
+                                <AlertTriangle size={11} /> {p.warnings.length} Warning(s)
+                              </span>
+                            ) : (
+                              <span className="text-[10px] text-emerald-400 flex items-center gap-1">
+                                <Check size={12} /> Clean
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-right space-x-2">
+                            <button
+                              onClick={() => setSelectedPayslip(p)}
+                              className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-[11px]"
+                            >
+                              Rule Lines
+                            </button>
+                            <button
+                              onClick={() => handleDownloadPdf(p.id, p.employee.name)}
+                              className="p-1 rounded bg-slate-800 hover:bg-emerald-600/20 text-emerald-400 inline-block align-middle"
+                              title="Download PDF Payslip"
+                            >
+                              <Download size={14} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="h-64 flex flex-col items-center justify-center border border-dashed border-slate-800 rounded-2xl text-slate-500 text-xs">
+              <DollarSign size={32} className="mb-2 text-slate-600" />
+              Select a payrun from history or launch the Wizard to process new payroll.
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 2-Step Payrun Wizard Modal */}
+      {showWizard && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-xl p-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-lg font-bold text-white">Payrun Creation Wizard</h2>
+                <p className="text-xs text-slate-400">Step {wizardStep} of 2 • {wizardStep === 1 ? 'Configure Staged Parameters (No DB write)' : 'Review & Confirm Eligible Employees'}</p>
+              </div>
+              <button onClick={() => setShowWizard(false)} className="text-slate-400 hover:text-white">
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Step 1: Configuration Form */}
+            {wizardStep === 1 && (
+              <form onSubmit={handleWizardStep1} className="space-y-4 text-xs">
+                <div>
+                  <label className="block text-slate-400 mb-1">Payrun Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={wizardData.name}
+                    onChange={(e) => setWizardData({ ...wizardData, name: e.target.value })}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 mb-1">Target Salary Structure</label>
+                  <select
+                    value={wizardData.salaryStructureId}
+                    onChange={(e) => setWizardData({ ...wizardData, salaryStructureId: e.target.value })}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white"
+                  >
+                    {structures.map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-400 mb-1">Period Start</label>
+                    <input
+                      type="date"
+                      required
+                      value={wizardData.periodStart}
+                      onChange={(e) => setWizardData({ ...wizardData, periodStart: e.target.value })}
+                      className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-400 mb-1">Period End</label>
+                    <input
+                      type="date"
+                      required
+                      value={wizardData.periodEnd}
+                      onChange={(e) => setWizardData({ ...wizardData, periodEnd: e.target.value })}
+                      className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-4 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setShowWizard(false)}
+                    className="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={actionLoading}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold flex items-center gap-1.5 shadow-md"
+                  >
+                    Next: Filter Eligible Employees <ChevronRight size={14} />
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Step 2: Confirmation & Employee Selection */}
+            {wizardStep === 2 && previewResult && (
+              <div className="space-y-4 text-xs">
+                <div className="p-3 bg-slate-800/60 border border-slate-700 rounded-xl space-y-1">
+                  <div className="text-white font-bold">{wizardData.name}</div>
+                  <div className="text-slate-400 text-[11px]">
+                    Found <strong className="text-emerald-400">{previewResult.eligibleCount}</strong> eligible employees with active contracts. ({previewResult.excludedCount} excluded due to existing payslip).
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 mb-1 font-semibold">Select Employees to Include:</label>
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto p-2 bg-slate-950 border border-slate-800 rounded-xl">
+                    {previewResult.eligibleEmployees.map((emp: any) => {
+                      const isSelected = wizardData.selectedEmployeeIds.includes(emp.employeeId);
+                      return (
+                        <label
+                          key={emp.employeeId}
+                          className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition ${
+                            isSelected ? 'bg-slate-800 border border-emerald-500/30' : 'bg-slate-900/60 opacity-60'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setWizardData(prev => ({ ...prev, selectedEmployeeIds: [...prev.selectedEmployeeIds, emp.employeeId] }));
+                                } else {
+                                  setWizardData(prev => ({ ...prev, selectedEmployeeIds: prev.selectedEmployeeIds.filter(id => id !== emp.employeeId) }));
+                                }
+                              }}
+                              className="rounded text-emerald-500"
+                            />
+                            <span className="font-semibold text-white">{emp.name}</span>
+                            <span className="text-[10px] text-slate-400">({emp.jobPosition})</span>
+                          </div>
+                          <span className="text-[10px] font-mono text-emerald-400 font-bold">${emp.wage.toLocaleString()}/mo</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="flex justify-between gap-2 pt-4 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setWizardStep(1)}
+                    className="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleWizardConfirm}
+                    disabled={wizardData.selectedEmployeeIds.length === 0 || actionLoading}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold shadow-md"
+                  >
+                    {actionLoading ? 'Creating...' : `Confirm & Create Draft Payrun (${wizardData.selectedEmployeeIds.length})`}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Itemized Payslip Rule Breakdown Modal */}
+      {selectedPayslip && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div>
+                <h3 className="text-base font-bold text-white">{selectedPayslip.employee?.name} — Itemized Payslip</h3>
+                <p className="text-xs text-slate-400">Worked Days: {selectedPayslip.workedDays} • Status: {selectedPayslip.status}</p>
+              </div>
+              <button onClick={() => setSelectedPayslip(null)} className="text-slate-400 hover:text-white">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {selectedPayslip.lines?.map((l: any) => {
+                const isDeduction = l.category.toLowerCase() === 'deduction';
+                return (
+                  <div key={l.id} className="flex items-center justify-between p-2 rounded-lg bg-slate-800/60 border border-slate-700/60 text-xs">
+                    <div>
+                      <span className="font-semibold text-white">{l.name}</span>
+                      <span className="text-[10px] text-slate-500 font-mono ml-2">[{l.code}]</span>
+                    </div>
+                    <span className={`font-mono font-bold ${isDeduction ? 'text-rose-400' : 'text-emerald-400'}`}>
+                      {isDeduction ? '-' : ''}${Math.abs(l.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-1 text-xs">
+              <div className="flex justify-between text-slate-400">
+                <span>Gross Earnings:</span>
+                <span className="font-mono text-white">${selectedPayslip.grossTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div className="flex justify-between text-emerald-400 font-bold text-sm pt-1 border-t border-slate-800">
+                <span>Net Take-Home Pay:</span>
+                <span className="font-mono">${selectedPayslip.netTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center pt-2">
+              <button
+                onClick={() => handleDownloadPdf(selectedPayslip.id, selectedPayslip.employee.name)}
+                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-md"
+              >
+                <Download size={14} /> Download Official PDF
+              </button>
+              <button
+                onClick={() => setSelectedPayslip(null)}
+                className="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-xs font-semibold"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
