@@ -7,6 +7,12 @@ import { AuthRequest } from '../middleware/auth';
 export const listTimeOffTypes = async (req: Request, res: Response): Promise<void> => {
   try {
     const types = await prisma.timeOffType.findMany({
+      where: {
+        NOT: [
+          { name: { contains: 'Floating' } },
+          { name: { contains: 'floating' } }
+        ]
+      },
       orderBy: { name: 'asc' }
     });
     res.json(types);
@@ -22,6 +28,12 @@ export const listTimeOffTypesWithBalances = async (req: AuthRequest, res: Respon
   try {
     const targetEmployeeId = (req.query.employeeId as string) || req.user?.employeeId;
     const types = await prisma.timeOffType.findMany({
+      where: {
+        NOT: [
+          { name: { contains: 'Floating' } },
+          { name: { contains: 'floating' } }
+        ]
+      },
       orderBy: { name: 'asc' }
     });
 
@@ -124,6 +136,29 @@ export const createAllocation = async (req: Request, res: Response): Promise<voi
     }
 
     const amount = Number(allocatedAmount);
+
+    // Requirement 4: Check if an allocation already exists for this employee + timeOffType combination
+    const existingAllocation = await prisma.allocation.findFirst({
+      where: {
+        employeeId,
+        timeOffTypeId
+      },
+      include: {
+        employee: true,
+        timeOffType: true
+      }
+    });
+
+    if (existingAllocation) {
+      const empName = existingAllocation.employee?.name || 'this employee';
+      const typeName = existingAllocation.timeOffType?.name || 'this leave type';
+      const rem = existingAllocation.remainingAmount;
+      res.status(400).json({
+        error: `An allocation already exists for ${empName} — ${typeName} (${rem} days remaining). Use Edit on the existing allocation instead.`
+      });
+      return;
+    }
+
     const allocation = await prisma.allocation.create({
       data: {
         employeeId,
@@ -142,6 +177,74 @@ export const createAllocation = async (req: Request, res: Response): Promise<voi
     });
 
     res.status(201).json(allocation);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Update Leave Allocation (Quota & Validity)
+ * HARD RULE: Cannot reduce allocatedAmount below takenAmount
+ */
+export const updateAllocation = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { allocatedAmount, validFrom, validTo, status } = req.body;
+
+    const existing = await prisma.allocation.findUnique({
+      where: { id },
+      include: {
+        employee: true,
+        timeOffType: true
+      }
+    });
+
+    if (!existing) {
+      res.status(404).json({ error: 'Leave allocation not found' });
+      return;
+    }
+
+    let newAllocatedAmount = existing.allocatedAmount;
+    let newRemainingAmount = existing.remainingAmount;
+
+    if (allocatedAmount !== undefined) {
+      const parsedAmount = Number(allocatedAmount);
+      if (isNaN(parsedAmount) || parsedAmount < 0) {
+        res.status(400).json({ error: 'Allocated amount must be a valid non-negative number' });
+        return;
+      }
+
+      // HARD RULE: If newAllocatedAmount < takenAmount (would cause negative remaining balance)
+      if (parsedAmount < existing.takenAmount) {
+        res.status(400).json({
+          error: `Cannot reduce allocation to ${parsedAmount} days — employee has already taken ${existing.takenAmount} days. Minimum allowed allocation is ${existing.takenAmount} days.`
+        });
+        return;
+      }
+
+      newAllocatedAmount = parsedAmount;
+      newRemainingAmount = newAllocatedAmount - existing.takenAmount;
+    }
+
+    const updated = await prisma.allocation.update({
+      where: { id },
+      data: {
+        allocatedAmount: newAllocatedAmount,
+        remainingAmount: newRemainingAmount,
+        ...(validFrom ? { validFrom: new Date(validFrom) } : {}),
+        ...(validTo ? { validTo: new Date(validTo) } : {}),
+        ...(status ? { status } : {})
+      },
+      include: {
+        employee: true,
+        timeOffType: true
+      }
+    });
+
+    res.json({
+      message: 'Leave allocation updated successfully',
+      allocation: updated
+    });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -206,6 +309,12 @@ export const createRequest = async (req: AuthRequest, res: Response): Promise<vo
 
     if (!type) {
       res.status(404).json({ error: 'Selected leave type not found' });
+      return;
+    }
+
+    // Requirement 3: If leave type is "Other", require reason
+    if (type.name.toLowerCase() === 'other' && (!reason || !reason.trim())) {
+      res.status(400).json({ error: 'Please specify reason for Other leave requests' });
       return;
     }
 
@@ -275,7 +384,7 @@ export const approveRequest = async (req: Request, res: Response): Promise<void>
 
       // Deduct from allocation if required
       if (request.timeOffType.requiresAllocation) {
-        const allocation = await tx.allocation.findFirst({
+        let allocation = await tx.allocation.findFirst({
           where: {
             employeeId: request.employeeId,
             timeOffTypeId: request.timeOffTypeId,
@@ -287,8 +396,30 @@ export const approveRequest = async (req: Request, res: Response): Promise<void>
           orderBy: { validTo: 'asc' }
         });
 
+        // Fallback: any active allocation for this employee & type with enough remaining
         if (!allocation) {
-          // Check aggregate if split across allocations
+          allocation = await tx.allocation.findFirst({
+            where: {
+              employeeId: request.employeeId,
+              timeOffTypeId: request.timeOffTypeId,
+              status: 'Approved',
+              remainingAmount: { gte: request.duration }
+            },
+            orderBy: { validTo: 'asc' }
+          });
+        }
+
+        if (allocation) {
+          // Single matching allocation
+          await tx.allocation.update({
+            where: { id: allocation.id },
+            data: {
+              takenAmount: allocation.takenAmount + request.duration,
+              remainingAmount: Math.max(0, allocation.remainingAmount - request.duration)
+            }
+          });
+        } else {
+          // Check aggregate if split across multiple allocations
           const allAllocations = await tx.allocation.findMany({
             where: {
               employeeId: request.employeeId,
@@ -306,7 +437,7 @@ export const approveRequest = async (req: Request, res: Response): Promise<void>
               where: { id: alloc.id },
               data: {
                 takenAmount: alloc.takenAmount + deduct,
-                remainingAmount: alloc.remainingAmount - deduct
+                remainingAmount: Math.max(0, alloc.remainingAmount - deduct)
               }
             });
             needed -= deduct;
@@ -314,17 +445,8 @@ export const approveRequest = async (req: Request, res: Response): Promise<void>
           }
 
           if (needed > 0) {
-            throw new Error(`Insufficient leave balance remaining to approve ${request.duration} ${request.timeOffType.unit}`);
+            throw new Error(`Insufficient leave balance remaining to approve ${request.duration} Days`);
           }
-        } else {
-          // Single matching allocation
-          await tx.allocation.update({
-            where: { id: allocation.id },
-            data: {
-              takenAmount: allocation.takenAmount + request.duration,
-              remainingAmount: allocation.remainingAmount - request.duration
-            }
-          });
         }
       }
 

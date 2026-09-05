@@ -162,7 +162,7 @@ export const DashboardPage: React.FC = () => {
             {kpis.approvedTimeOffDays || 0} <span className="text-xs font-normal text-slate-500 dark:text-purple-300/60">Days</span>
           </div>
           <div className="text-[11px] text-violet-700 dark:text-violet-300 mt-2 font-semibold">
-            + {kpis.approvedTimeOffHours || 0} Hours (Split Units)
+            Total Approved Time Off in Days
           </div>
         </div>
 

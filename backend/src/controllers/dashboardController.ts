@@ -62,11 +62,7 @@ export const getDashboardMetrics = async (req: Request, res: Response): Promise<
     let approvedTimeOffHours = 0;
 
     for (const req of approvedRequests) {
-      if (req.timeOffType.unit === 'Hours') {
-        approvedTimeOffHours += req.duration;
-      } else {
-        approvedTimeOffDays += req.duration;
-      }
+      approvedTimeOffDays += req.duration;
     }
 
     // 4. Attendance Health Index
