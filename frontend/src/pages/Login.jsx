@@ -112,10 +112,10 @@ export default function Login() {
             <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981] animate-pulse"></span>
           </div>
           <h2 className="text-2xl font-bold tracking-[0.25em] text-asset-light uppercase">
-            Starter
+            PeoplePay360
           </h2>
           <p className="text-[10px] text-stone-500 font-mono tracking-[0.18em] uppercase">
-            Hackathon Starter Template
+            HR & Payroll Management Platform
           </p>
         </div>
 
@@ -245,9 +245,10 @@ export default function Login() {
                   className="w-full h-10 bg-white/[0.03] border border-glass-border hover:border-white/20 rounded-md px-3.5 py-2 text-xs text-asset-light focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 transition-all duration-150 pl-10 font-mono capitalize font-semibold appearance-none"
                 >
                   <option value="Admin" className="bg-[#181818] text-stone-300">Admin</option>
+                  <option value="HRManager" className="bg-[#181818] text-stone-300">HRManager</option>
+                  <option value="HRPayrollUser" className="bg-[#181818] text-stone-300">HRPayrollUser</option>
+                  <option value="HRPayrollManager" className="bg-[#181818] text-stone-300">HRPayrollManager</option>
                   <option value="Employee" className="bg-[#181818] text-stone-300">Employee</option>
-                  <option value="AssetManager" className="bg-[#181818] text-stone-300">AssetManager</option>
-                  <option value="DeptHead" className="bg-[#181818] text-stone-300">DeptHead</option>
                 </select>
               </div>
             </div>

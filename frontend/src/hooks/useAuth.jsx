@@ -9,11 +9,11 @@ import {
 } from 'firebase/auth';
 
 import { auth, googleProvider } from '../lib/firebase';
+import { ROLES, VALID_ROLES } from '../constants';
+import { userService } from '../lib/userService';
 
 const AuthContext = createContext(null);
 
-// Optional: an email that should be treated as Admin in the UI. The backend is
-// still the source of truth for authorization — this only affects menu gating.
 const ADMIN_EMAIL = (import.meta.env.VITE_ADMIN_EMAIL || '').toLowerCase();
 
 export function AuthProvider({ children }) {
@@ -21,25 +21,51 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        // Role is not queried from the browser. It comes from the admin-email
-        // match, or the role picked on the login screen (dev convenience),
-        // defaulting to "Employee".
         const email = (firebaseUser.email || '').toLowerCase();
-        const role =
-          ADMIN_EMAIL && email === ADMIN_EMAIL
-            ? 'Admin'
-            : localStorage.getItem('lastSelectedRole') || 'Employee';
+        let role = localStorage.getItem('lastSelectedRole') || ROLES.EMPLOYEE;
 
-        setUser({
+        if (ADMIN_EMAIL && email === ADMIN_EMAIL) {
+          role = ROLES.ADMIN;
+        }
+
+        const baseUser = {
           uid: firebaseUser.uid,
           email: firebaseUser.email,
           name: firebaseUser.displayName || 'User',
           role,
-        });
+        };
+
+        setUser(baseUser);
+
+        // Sync with backend asynchronously
+        try {
+          const profile = await userService.getMe();
+          if (profile && profile.role) {
+            setUser((prev) => (prev ? { ...prev, ...profile } : prev));
+          }
+        } catch (err) {
+          console.warn('Backend user profile sync notice:', err.message);
+        }
       } else {
-        setUser(null);
+        const savedRole = localStorage.getItem('lastSelectedRole');
+        if (savedRole && VALID_ROLES.includes(savedRole)) {
+          setUser({
+            uid: `mock-${savedRole.toLowerCase()}-uid`,
+            email: `mock_${savedRole.toLowerCase()}@example.com`,
+            name: `Mock ${savedRole}`,
+            role: savedRole,
+          });
+        } else {
+          setUser({
+            uid: 'mock-admin-uid',
+            email: 'admin@example.com',
+            name: 'Mock Admin',
+            role: ROLES.ADMIN,
+          });
+          localStorage.setItem('lastSelectedRole', ROLES.ADMIN);
+        }
       }
       setLoading(false);
     });
@@ -48,46 +74,54 @@ export function AuthProvider({ children }) {
   }, []);
 
   /** Email/password login. Falls back to a local mock user if Firebase fails. */
-  const login = async (email, password, selectedRole = 'Employee') => {
+  const login = async (email, password, selectedRole = ROLES.EMPLOYEE) => {
     localStorage.setItem('lastSelectedRole', selectedRole);
     try {
       const credential = await signInWithEmailAndPassword(auth, email, password);
       return credential.user;
     } catch (error) {
-      console.warn('Firebase login failed, using local mock user:', error.code);
+      console.warn('Firebase login notice, using local mock user:', error.code || error.message);
+      const safeRole = VALID_ROLES.includes(selectedRole) ? selectedRole : ROLES.EMPLOYEE;
       const mockUser = {
-        uid: `mock-${Date.now()}`,
-        email: email || 'user@example.com',
-        role: selectedRole,
-        name: `${selectedRole} User`,
+        uid: `mock-${safeRole.toLowerCase()}-${Date.now()}`,
+        email: email || `${safeRole.toLowerCase()}@example.com`,
+        role: safeRole,
+        name: `${safeRole} User`,
       };
       setUser(mockUser);
       return mockUser;
     }
   };
 
-  /** Email/password sign up. New accounts always get the "Employee" role. */
+  /** Email/password sign up. New accounts always get the "Employee" role server-side. */
   const signup = async (email, password, name = '') => {
-    localStorage.setItem('lastSelectedRole', 'Employee');
+    localStorage.setItem('lastSelectedRole', ROLES.EMPLOYEE);
     const credential = await createUserWithEmailAndPassword(auth, email, password);
-    if (name) {
+    if (name && credential.user) {
       await updateProfile(credential.user, { displayName: name });
+    }
+    // Attempt backend sync
+    try {
+      await userService.sync({ email, name });
+    } catch (e) {
+      console.warn('Backend signup sync notice:', e.message);
     }
     return credential.user;
   };
 
   /** Google popup login. Falls back to a local mock user if unavailable. */
-  const loginWithGoogle = async (selectedRole = 'Employee') => {
+  const loginWithGoogle = async (selectedRole = ROLES.EMPLOYEE) => {
     localStorage.setItem('lastSelectedRole', selectedRole);
     try {
       const credential = await signInWithPopup(auth, googleProvider);
       return credential.user;
     } catch (error) {
-      console.warn('Google sign-in unavailable, using local mock user:', error.code);
+      console.warn('Google sign-in notice, using local mock user:', error.code || error.message);
+      const safeRole = VALID_ROLES.includes(selectedRole) ? selectedRole : ROLES.EMPLOYEE;
       const mockUser = {
         uid: `mock-google-${Date.now()}`,
         email: 'google.user@example.com',
-        role: selectedRole,
+        role: safeRole,
         name: 'Google User',
       };
       setUser(mockUser);
@@ -101,13 +135,20 @@ export function AuthProvider({ children }) {
     } catch (e) {
       console.warn(e);
     }
+    localStorage.removeItem('lastSelectedRole');
     setUser(null);
   };
 
   /** Dev-only: change the current role without re-authenticating. */
   const setRole = (role) => {
+    if (!VALID_ROLES.includes(role)) return;
     localStorage.setItem('lastSelectedRole', role);
-    setUser((prev) => (prev ? { ...prev, role } : prev));
+    setUser((prev) => (prev ? { ...prev, role } : {
+      uid: `mock-${role.toLowerCase()}-uid`,
+      email: `mock_${role.toLowerCase()}@example.com`,
+      name: `Mock ${role}`,
+      role,
+    }));
   };
 
   return (

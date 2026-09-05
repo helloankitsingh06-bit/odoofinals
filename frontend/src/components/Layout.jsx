@@ -62,7 +62,7 @@ export default function Layout({ children }) {
         <header className="h-16 my-6 mr-6 ml-3 px-8 flex items-center justify-between glass-panel">
           <div className="flex items-center gap-4">
             <h1 className="text-sm font-bold tracking-wider uppercase text-asset-light">
-              Starter
+              PeoplePay360
             </h1>
             <span className="text-xs text-stone-500 font-mono">
               |
