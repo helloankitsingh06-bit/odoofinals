@@ -10,6 +10,7 @@ export const AttendancePage: React.FC = () => {
   const [activeSession, setActiveSession] = useState<any | null>(null);
   const [showManualModal, setShowManualModal] = useState<boolean>(false);
   const [employees, setEmployees] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   const [manualForm, setManualForm] = useState({
     employeeId: '',
@@ -39,7 +40,15 @@ export const AttendancePage: React.FC = () => {
   useEffect(() => {
     fetchAttendance();
     if (user?.role !== 'Employee') {
-      apiRequest('/employees').then(setEmployees).catch(console.error);
+      apiRequest('/employees').then((emps) => {
+        setEmployees(emps);
+        if (emps && emps.length > 0) {
+          setManualForm(prev => ({
+            ...prev,
+            employeeId: prev.employeeId || emps[0].id
+          }));
+        }
+      }).catch(console.error);
     }
   }, [user]);
 
@@ -63,15 +72,34 @@ export const AttendancePage: React.FC = () => {
 
   const handleCreateManual = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     try {
+      const empId = manualForm.employeeId || (employees.length > 0 ? employees[0].id : '');
+      if (!empId) {
+        setError('Please select an employee');
+        return;
+      }
       await apiRequest('/attendance/manual', {
         method: 'POST',
-        body: JSON.stringify(manualForm)
+        body: JSON.stringify({
+          ...manualForm,
+          employeeId: empId
+        })
       });
       setShowManualModal(false);
       fetchAttendance();
     } catch (err: any) {
-      alert(err.message);
+      setError(err.message || 'Failed to create manual attendance record');
+    }
+  };
+
+  const handleDeleteAttendance = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this attendance record?')) return;
+    try {
+      await apiRequest(`/attendance/${id}`, { method: 'DELETE' });
+      fetchAttendance();
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete attendance record');
     }
   };
 
@@ -94,7 +122,8 @@ export const AttendancePage: React.FC = () => {
             <div className="mt-4 flex gap-2">
               <button
                 onClick={() => {
-                  if (employees.length > 0) setManualForm(prev => ({ ...prev, employeeId: employees[0].id }));
+                  setError(null);
+                  if (employees.length > 0) setManualForm(prev => ({ ...prev, employeeId: prev.employeeId || employees[0].id }));
                   setShowManualModal(true);
                 }}
                 className="flex items-center gap-1.5 px-3.5 py-2 bg-purple-950/60 hover:bg-purple-900/60 text-purple-200 border border-purple-800/50 rounded-xl text-xs font-bold transition shadow-sm"
@@ -163,7 +192,7 @@ export const AttendancePage: React.FC = () => {
               <th className="px-5 py-4">Check Out</th>
               <th className="px-5 py-4">Worked Hours</th>
               <th className="px-5 py-4">Status</th>
-              <th className="px-5 py-4 text-right">Audit Flag</th>
+              <th className="px-5 py-4 text-right">Audit & Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-purple-950 text-purple-100">
@@ -198,11 +227,22 @@ export const AttendancePage: React.FC = () => {
                   </span>
                 </td>
                 <td className="px-5 py-4 text-right">
-                  {att.isManualEdit ? (
-                    <span className="text-[10px] text-amber-300 bg-amber-500/15 border border-amber-400/30 px-2 py-0.5 rounded-md font-semibold">Manual Edit</span>
-                  ) : (
-                    <span className="text-[10px] text-purple-400/50">Biometric/Web</span>
-                  )}
+                  <div className="flex items-center justify-end gap-2">
+                    {att.isManualEdit ? (
+                      <span className="text-[10px] text-amber-300 bg-amber-500/15 border border-amber-400/30 px-2 py-0.5 rounded-md font-semibold">Manual</span>
+                    ) : (
+                      <span className="text-[10px] text-purple-400/50">Biometric</span>
+                    )}
+                    {user?.role !== 'Employee' && (
+                      <button
+                        onClick={() => handleDeleteAttendance(att.id)}
+                        className="text-[11px] text-rose-400/80 hover:text-rose-300 px-2 py-0.5 rounded hover:bg-rose-950/40 transition font-semibold"
+                        title="Delete Record"
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
@@ -214,10 +254,17 @@ export const AttendancePage: React.FC = () => {
       {showManualModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
           <div className="bg-[#090712] border border-purple-800/60 rounded-3xl w-full max-w-md p-6 shadow-2xl">
-            <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+            <h2 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
               <Sparkles size={18} className="text-amber-400" />
               Log Manual Attendance
             </h2>
+
+            {error && (
+              <div className="mb-4 p-3 bg-rose-500/15 border border-rose-500/30 rounded-xl text-rose-300 text-xs">
+                {error}
+              </div>
+            )}
+
             <form onSubmit={handleCreateManual} className="space-y-4 text-xs">
               <div>
                 <label className="block text-purple-300/80 mb-1 font-semibold">Employee</label>

@@ -4,10 +4,12 @@ import {
   createTimeOffType,
   listAllocations,
   createAllocation,
+  deleteAllocation,
   listRequests,
   createRequest,
   approveRequest,
-  refuseRequest
+  refuseRequest,
+  deleteRequest
 } from '../controllers/timeOffController';
 import { authenticateToken, authorizeRoles } from '../middleware/auth';
 import { Role } from '../types';
@@ -31,10 +33,16 @@ router.post(
   authorizeRoles(Role.HRManager, Role.HRPayrollUser, Role.HRPayrollManager, Role.Admin),
   createAllocation
 );
+router.delete(
+  '/allocations/:id',
+  authorizeRoles(Role.HRManager, Role.HRPayrollUser, Role.HRPayrollManager, Role.Admin),
+  deleteAllocation
+);
 
 // Requests
 router.get('/requests', listRequests);
 router.post('/requests', createRequest);
+router.delete('/requests/:id', deleteRequest);
 
 // Approvals & Refusals (HRManager, HRPayrollUser, HRPayrollManager, Admin)
 router.post(

@@ -63,7 +63,7 @@ export function generatePayslipPdfBuffer(data: PayslipPdfData): Promise<Buffer> 
       doc.text(`Department: ${data.employee.department}`, 60, startY + 45);
       doc.text(`Email: ${data.employee.email || 'N/A'}`, 60, startY + 60);
 
-      doc.font('Helvetica').fillColor('#64748B').text(`Base Wage: $${data.contract.wage.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 340, startY + 15);
+      doc.font('Helvetica').fillColor('#64748B').text(`Base Wage: INR ${data.contract.wage.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, 340, startY + 15);
       doc.text(`Worked Days: ${data.workedDays} days`, 340, startY + 30);
       doc.text(`Payslip ID: ${data.payslipId.slice(0, 8)}...`, 340, startY + 45);
 
@@ -74,7 +74,7 @@ export function generatePayslipPdfBuffer(data: PayslipPdfData): Promise<Buffer> 
       doc.text('EARNINGS & ALLOWANCES', 55, tableY + 7);
       doc.text('CODE', 240, tableY + 7);
       doc.text('CATEGORY', 340, tableY + 7);
-      doc.text('AMOUNT ($)', 460, tableY + 7, { width: 80, align: 'right' });
+      doc.text('AMOUNT (INR)', 450, tableY + 7, { width: 90, align: 'right' });
 
       tableY += 28;
 
@@ -92,8 +92,8 @@ export function generatePayslipPdfBuffer(data: PayslipPdfData): Promise<Buffer> 
         doc.text(line.category, 340, tableY);
 
         doc.fillColor(isDeduction ? '#DC2626' : '#0F172A').font('Helvetica-Bold');
-        const formattedAmt = `${isDeduction ? '-' : ''}$${Math.abs(line.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-        doc.text(formattedAmt, 460, tableY, { width: 80, align: 'right' });
+        const formattedAmt = `${isDeduction ? '-' : ''}INR ${Math.abs(line.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+        doc.text(formattedAmt, 440, tableY, { width: 100, align: 'right' });
 
         tableY += 20;
       }
@@ -103,10 +103,10 @@ export function generatePayslipPdfBuffer(data: PayslipPdfData): Promise<Buffer> 
       doc.rect(40, tableY, 515, 65).fillAndStroke('#F8FAFC', '#CBD5E1');
 
       doc.fillColor('#334155').fontSize(10).font('Helvetica-Bold').text('Gross Earnings:', 300, tableY + 12);
-      doc.text(`$${data.grossTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 450, tableY + 12, { align: 'right', width: 90 });
+      doc.text(`INR ${data.grossTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, 430, tableY + 12, { align: 'right', width: 110 });
 
-      doc.fontSize(13).fillColor('#059669').font('Helvetica-Bold').text('NET PAY (TAKE-HOME):', 250, tableY + 36);
-      doc.fontSize(14).text(`$${data.netTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 450, tableY + 34, { align: 'right', width: 90 });
+      doc.fontSize(13).fillColor('#059669').font('Helvetica-Bold').text('NET PAY (TAKE-HOME):', 230, tableY + 36);
+      doc.fontSize(14).text(`INR ${data.netTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, 410, tableY + 34, { align: 'right', width: 130 });
 
       // Warnings (if any)
       if (data.warnings && data.warnings.length > 0) {

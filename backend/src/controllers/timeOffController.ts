@@ -302,11 +302,6 @@ export const refuseRequest = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    if (request.status === TimeOffStatus.Approved) {
-      res.status(400).json({ error: 'Cannot refuse an already approved request directly' });
-      return;
-    }
-
     const updated = await prisma.timeOffRequest.update({
       where: { id },
       data: { status: TimeOffStatus.Refused },
@@ -318,3 +313,54 @@ export const refuseRequest = async (req: Request, res: Response): Promise<void> 
     res.status(500).json({ error: err.message });
   }
 };
+
+export const deleteAllocation = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const alloc = await prisma.allocation.findUnique({ where: { id } });
+    if (!alloc) {
+      res.status(404).json({ error: 'Allocation not found' });
+      return;
+    }
+    await prisma.allocation.delete({ where: { id } });
+    res.json({ message: 'Leave allocation deleted successfully' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const deleteRequest = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const request = await prisma.timeOffRequest.findUnique({ where: { id } });
+    if (!request) {
+      res.status(404).json({ error: 'Time off request not found' });
+      return;
+    }
+
+    // If approved, restore the deducted quota back to the allocation
+    if (request.status === TimeOffStatus.Approved) {
+      const alloc = await prisma.allocation.findFirst({
+        where: {
+          employeeId: request.employeeId,
+          timeOffTypeId: request.timeOffTypeId
+        }
+      });
+      if (alloc) {
+        await prisma.allocation.update({
+          where: { id: alloc.id },
+          data: {
+            takenAmount: Math.max(0, alloc.takenAmount - request.duration),
+            remainingAmount: alloc.remainingAmount + request.duration
+          }
+        });
+      }
+    }
+
+    await prisma.timeOffRequest.delete({ where: { id } });
+    res.json({ message: 'Time off request deleted successfully' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+

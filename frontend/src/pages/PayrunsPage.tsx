@@ -360,7 +360,7 @@ export const PayrunsPage: React.FC = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2">
                   <span className="text-xs font-bold text-amber-300">Itemized Employee Payslips</span>
                   <span className="text-xs text-purple-300/70 font-mono">
-                    Total Gross: ${selectedPayrun.payslips?.reduce((s: number, p: any) => s + p.grossTotal, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} | Total Net: <strong className="text-amber-300">${selectedPayrun.payslips?.reduce((s: number, p: any) => s + p.netTotal, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong>
+                    Total Gross: ₹{selectedPayrun.payslips?.reduce((s: number, p: any) => s + p.grossTotal, 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })} | Total Net: <strong className="text-amber-300">₹{selectedPayrun.payslips?.reduce((s: number, p: any) => s + p.netTotal, 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong>
                   </span>
                 </div>
 
@@ -384,9 +384,9 @@ export const PayrunsPage: React.FC = () => {
                             <div className="text-[10px] text-purple-400/60 font-normal">{p.employee?.jobPosition}</div>
                           </td>
                           <td className="px-4 py-3.5 font-mono text-purple-300">{p.workedDays} days</td>
-                          <td className="px-4 py-3.5 font-mono font-semibold text-purple-200">${p.grossTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                          <td className="px-4 py-3.5 font-mono font-semibold text-purple-200">₹{p.grossTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                           <td className="px-4 py-3.5 font-mono font-black text-amber-300 text-sm">
-                            ${p.netTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            ₹{p.netTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                           </td>
                           <td className="px-4 py-3.5">
                             {p.warnings && p.warnings.length > 0 ? (
@@ -554,7 +554,7 @@ export const PayrunsPage: React.FC = () => {
                             <span className="font-bold text-white">{emp.name}</span>
                             <span className="text-[10px] text-purple-400/70">({emp.jobPosition})</span>
                           </div>
-                          <span className="text-[10px] font-mono text-amber-300 font-bold">${emp.wage.toLocaleString()}/mo</span>
+                          <span className="text-[10px] font-mono text-amber-300 font-bold">₹{emp.wage.toLocaleString('en-IN')}/mo</span>
                         </label>
                       );
                     })}
@@ -611,7 +611,7 @@ export const PayrunsPage: React.FC = () => {
                       <span className="text-[10px] text-purple-400/60 font-mono ml-2">[{l.code}]</span>
                     </div>
                     <span className={`font-mono font-black ${isDeduction ? 'text-rose-400' : 'text-amber-300'}`}>
-                      {isDeduction ? '-' : ''}${Math.abs(l.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                      {isDeduction ? '-' : ''}₹{Math.abs(l.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
                 );
@@ -621,11 +621,11 @@ export const PayrunsPage: React.FC = () => {
             <div className="p-3.5 bg-[#06050b] border border-purple-900/50 rounded-2xl space-y-1 text-xs">
               <div className="flex justify-between text-purple-300/70">
                 <span>Gross Earnings:</span>
-                <span className="font-mono font-bold text-white">${selectedPayslip.grossTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                <span className="font-mono font-bold text-white">₹{selectedPayslip.grossTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
               </div>
               <div className="flex justify-between text-amber-300 font-black text-sm pt-1.5 border-t border-purple-950">
                 <span>Net Take-Home Pay:</span>
-                <span className="font-mono">${selectedPayslip.netTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                <span className="font-mono">₹{selectedPayslip.netTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
 

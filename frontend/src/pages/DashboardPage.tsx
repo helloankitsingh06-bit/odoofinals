@@ -109,7 +109,7 @@ export const DashboardPage: React.FC = () => {
             </div>
           </div>
           <div className="text-2xl font-extrabold text-white tracking-tight">
-            ${kpis.totalNetSalaryPaid?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '0.00'}
+            ₹{kpis.totalNetSalaryPaid?.toLocaleString('en-IN', { minimumFractionDigits: 2 }) || '0.00'}
           </div>
           <div className="text-[11px] text-amber-400 mt-2 flex items-center gap-1 font-medium">
             <CheckCircle2 size={12} /> Status: Paid Payslips
@@ -141,7 +141,7 @@ export const DashboardPage: React.FC = () => {
             </div>
           </div>
           <div className="text-2xl font-extrabold text-white tracking-tight">
-            ${kpis.averageSalaryPaid?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '0.00'}
+            ₹{kpis.averageSalaryPaid?.toLocaleString('en-IN', { minimumFractionDigits: 2 }) || '0.00'}
           </div>
           <div className="text-[11px] text-yellow-400 mt-2 font-medium">
             Per Paid Employee
@@ -201,13 +201,13 @@ export const DashboardPage: React.FC = () => {
                 <BarChart data={charts.departmentSalaryChart}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1d1730" />
                   <XAxis dataKey="department" stroke="#a78bfa" fontSize={11} />
-                  <YAxis stroke="#a78bfa" fontSize={11} tickFormatter={(v) => `$${v / 1000}k`} />
+                  <YAxis stroke="#a78bfa" fontSize={11} tickFormatter={(v) => `₹${v / 1000}k`} />
                   <Tooltip
                     contentStyle={{ backgroundColor: '#0b0914', borderColor: '#4c1d95', borderRadius: '12px', color: '#f5f3ff' }}
                     itemStyle={{ fontSize: '12px' }}
                   />
-                  <Bar dataKey="grossTotal" name="Gross Pay ($)" fill="#c084fc" radius={[6, 6, 0, 0]} />
-                  <Bar dataKey="netTotal" name="Net Pay ($)" fill="#fbbf24" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="grossTotal" name="Gross Pay (₹)" fill="#c084fc" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="netTotal" name="Net Pay (₹)" fill="#fbbf24" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (

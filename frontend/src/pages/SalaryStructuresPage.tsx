@@ -5,7 +5,10 @@ import {
   Layers,
   Plus,
   Check,
-  Sparkles
+  Sparkles,
+  Edit2,
+  Trash2,
+  AlertCircle
 } from 'lucide-react';
 
 export const SalaryStructuresPage: React.FC = () => {
@@ -16,8 +19,21 @@ export const SalaryStructuresPage: React.FC = () => {
 
   // Modals & Testers
   const [showRuleModal, setShowRuleModal] = useState<boolean>(false);
+  const [showEditRuleModal, setShowEditRuleModal] = useState<boolean>(false);
+  const [editingRuleId, setEditingRuleId] = useState<string | null>(null);
   const [showStructureModal, setShowStructureModal] = useState<boolean>(false);
+
   const [ruleForm, setRuleForm] = useState({
+    name: '',
+    code: '',
+    category: 'Allowance',
+    sequence: 1,
+    computeType: 'Fixed',
+    value: 0,
+    formula: ''
+  });
+
+  const [editRuleForm, setEditRuleForm] = useState({
     name: '',
     code: '',
     category: 'Allowance',
@@ -66,7 +82,56 @@ export const SalaryStructuresPage: React.FC = () => {
       setRuleForm({ name: '', code: '', category: 'Allowance', sequence: 1, computeType: 'Fixed', value: 0, formula: '' });
       fetchData();
     } catch (err: any) {
-      alert(err.message);
+      alert(err.message || 'Failed to create rule');
+    }
+  };
+
+  const openEditRuleModal = (rule: any) => {
+    setEditingRuleId(rule.id);
+    setEditRuleForm({
+      name: rule.name || '',
+      code: rule.code || '',
+      category: rule.category || 'Allowance',
+      sequence: rule.sequence || 1,
+      computeType: rule.computeType || 'Fixed',
+      value: rule.value || 0,
+      formula: rule.formula || ''
+    });
+    setShowEditRuleModal(true);
+  };
+
+  const handleUpdateRule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingRuleId) return;
+    try {
+      await apiRequest(`/salary-structures/rules/${editingRuleId}`, {
+        method: 'PUT',
+        body: JSON.stringify(editRuleForm)
+      });
+      setShowEditRuleModal(false);
+      fetchData();
+    } catch (err: any) {
+      alert(err.message || 'Failed to update rule');
+    }
+  };
+
+  const handleDeleteRule = async (id: string, name: string) => {
+    if (!window.confirm(`Are you sure you want to delete salary rule "${name}"?`)) return;
+    try {
+      await apiRequest(`/salary-structures/rules/${id}`, { method: 'DELETE' });
+      fetchData();
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete rule. It may be part of an existing structure.');
+    }
+  };
+
+  const handleDeleteStructure = async (id: string, name: string) => {
+    if (!window.confirm(`Are you sure you want to delete structure "${name}"?`)) return;
+    try {
+      await apiRequest(`/salary-structures/structures/${id}`, { method: 'DELETE' });
+      fetchData();
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete structure.');
     }
   };
 
@@ -104,7 +169,7 @@ export const SalaryStructuresPage: React.FC = () => {
       setValidationResult(null);
       fetchData();
     } catch (err: any) {
-      alert(err.message);
+      alert(err.message || 'Failed to save structure');
     }
   };
 
@@ -140,7 +205,7 @@ export const SalaryStructuresPage: React.FC = () => {
               }}
               className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl text-xs font-black shadow-lg shadow-amber-500/20 transition active:scale-95"
             >
-              <Plus size={15} /> New Structure
+              <Plus size={16} /> New Structure
             </button>
           </div>
         )}
@@ -156,14 +221,25 @@ export const SalaryStructuresPage: React.FC = () => {
             <div key={st.id} className="bg-[#0b0914]/80 border border-purple-900/40 hover:border-amber-400/60 p-5 rounded-3xl shadow-xl transition-all duration-300">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-bold text-white text-base">{st.name}</h3>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-200 border border-purple-500/30">
-                  {st.rules?.length || 0} Ordered Rules
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-200 border border-purple-500/30">
+                    {st.rules?.length || 0} Ordered Rules
+                  </span>
+                  {!isReadOnly && (
+                    <button
+                      onClick={() => handleDeleteStructure(st.id, st.name)}
+                      className="p-1 text-purple-400 hover:text-rose-400 rounded-lg hover:bg-rose-950/40 transition"
+                      title="Delete Structure"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-2 mt-4">
                 <span className="text-[10px] uppercase font-bold text-purple-400/60 tracking-wider">Sequential Calculation Chain:</span>
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 max-h-60 overflow-y-auto">
                   {st.rules?.map((sr: any) => (
                     <div
                       key={sr.id}
@@ -179,7 +255,7 @@ export const SalaryStructuresPage: React.FC = () => {
                         </code>
                       </div>
                       <div className="text-[11px] text-purple-300/80 font-mono">
-                        {sr.salaryRule?.computeType === 'Fixed' && `$${sr.salaryRule?.value || 0}`}
+                        {sr.salaryRule?.computeType === 'Fixed' && `₹${sr.salaryRule?.value?.toLocaleString('en-IN') || 0}`}
                         {sr.salaryRule?.computeType === 'Percentage' && `${sr.salaryRule?.value}% of ${sr.salaryRule?.formula || 'BASIC'}`}
                         {sr.salaryRule?.computeType === 'Formula' && sr.salaryRule?.formula}
                       </div>
@@ -207,7 +283,8 @@ export const SalaryStructuresPage: React.FC = () => {
               <th className="px-5 py-4">Code</th>
               <th className="px-5 py-4">Category</th>
               <th className="px-5 py-4">Computation Type</th>
-              <th className="px-5 py-4 text-right">Value / Expression</th>
+              <th className="px-5 py-4">Value / Expression</th>
+              <th className="px-5 py-4 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-purple-950 text-purple-100">
@@ -238,10 +315,30 @@ export const SalaryStructuresPage: React.FC = () => {
                 <td className="px-5 py-4 text-purple-300/70 font-medium">
                   {rule.computeType}
                 </td>
-                <td className="px-5 py-4 font-mono font-black text-right text-amber-300">
-                  {rule.computeType === 'Fixed' && (rule.value ? `$${rule.value}` : 'Contract Wage')}
+                <td className="px-5 py-4 font-mono font-black text-amber-300">
+                  {rule.computeType === 'Fixed' && (rule.value ? `₹${rule.value.toLocaleString('en-IN')}` : 'Contract Wage')}
                   {rule.computeType === 'Percentage' && `${rule.value}% of ${rule.formula || 'BASIC'}`}
                   {rule.computeType === 'Formula' && <span className="text-purple-300">{rule.formula}</span>}
+                </td>
+                <td className="px-5 py-4 text-right">
+                  {!isReadOnly && (
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => openEditRuleModal(rule)}
+                        className="p-1.5 rounded-lg bg-purple-950/60 hover:bg-amber-400/20 text-purple-300 hover:text-amber-300 border border-purple-900/50 transition font-bold"
+                        title="Edit Rule"
+                      >
+                        <Edit2 size={12} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteRule(rule.id, rule.name)}
+                        className="p-1.5 rounded-lg bg-purple-950/60 hover:bg-rose-500/20 text-purple-300 hover:text-rose-400 border border-purple-900/50 transition font-bold"
+                        title="Delete Rule"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  )}
                 </td>
               </tr>
             ))}
@@ -326,7 +423,7 @@ export const SalaryStructuresPage: React.FC = () => {
 
               {ruleForm.computeType !== 'Formula' && (
                 <div>
-                  <label className="block text-purple-300/80 mb-1 font-semibold">Numeric Value / % Amount</label>
+                  <label className="block text-purple-300/80 mb-1 font-semibold">Numeric Value (₹) / % Amount</label>
                   <input
                     type="number"
                     step="0.01"
@@ -364,6 +461,125 @@ export const SalaryStructuresPage: React.FC = () => {
                   className="px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl font-black shadow-lg shadow-amber-500/20"
                 >
                   Save Rule
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Rule Modal */}
+      {showEditRuleModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+          <div className="bg-[#090712] border border-purple-800/60 rounded-3xl w-full max-w-md p-6 shadow-2xl">
+            <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              <Edit2 size={18} className="text-amber-400" />
+              Edit Salary Rule
+            </h2>
+            <form onSubmit={handleUpdateRule} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-purple-300/80 mb-1 font-semibold">Rule Name</label>
+                <input
+                  type="text"
+                  required
+                  value={editRuleForm.name}
+                  onChange={(e) => setEditRuleForm({ ...editRuleForm, name: e.target.value })}
+                  className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-purple-300/80 mb-1 font-semibold">Code (Unique)</label>
+                  <input
+                    type="text"
+                    required
+                    value={editRuleForm.code}
+                    onChange={(e) => setEditRuleForm({ ...editRuleForm, code: e.target.value.toUpperCase() })}
+                    className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white font-mono uppercase focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-purple-300/80 mb-1 font-semibold">Category</label>
+                  <select
+                    value={editRuleForm.category}
+                    onChange={(e) => setEditRuleForm({ ...editRuleForm, category: e.target.value })}
+                    className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                  >
+                    <option value="Basic">Basic</option>
+                    <option value="Allowance">Allowance</option>
+                    <option value="Gross">Gross</option>
+                    <option value="Deduction">Deduction</option>
+                    <option value="Net">Net</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-purple-300/80 mb-1 font-semibold">Compute Type</label>
+                  <select
+                    value={editRuleForm.computeType}
+                    onChange={(e) => setEditRuleForm({ ...editRuleForm, computeType: e.target.value })}
+                    className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                  >
+                    <option value="Fixed">Fixed</option>
+                    <option value="Percentage">Percentage</option>
+                    <option value="Formula">Formula</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-purple-300/80 mb-1 font-semibold">Execution Sequence</label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={editRuleForm.sequence}
+                    onChange={(e) => setEditRuleForm({ ...editRuleForm, sequence: Number(e.target.value) })}
+                    className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+              </div>
+
+              {editRuleForm.computeType !== 'Formula' && (
+                <div>
+                  <label className="block text-purple-300/80 mb-1 font-semibold">Numeric Value (₹) / % Amount</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={editRuleForm.value}
+                    onChange={(e) => setEditRuleForm({ ...editRuleForm, value: Number(e.target.value) })}
+                    className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+              )}
+
+              {editRuleForm.computeType === 'Formula' && (
+                <div>
+                  <label className="block text-purple-300/80 mb-1 font-semibold">Math Expression Formula</label>
+                  <input
+                    type="text"
+                    required
+                    value={editRuleForm.formula}
+                    onChange={(e) => setEditRuleForm({ ...editRuleForm, formula: e.target.value })}
+                    className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white font-mono focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-4 border-t border-purple-900/40">
+                <button
+                  type="button"
+                  onClick={() => setShowEditRuleModal(false)}
+                  className="px-4 py-2 bg-purple-950/60 border border-purple-900/50 text-purple-300 rounded-xl hover:bg-purple-900/40 font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl font-black shadow-lg shadow-amber-500/20"
+                >
+                  Update Rule
                 </button>
               </div>
             </form>
