@@ -22,12 +22,11 @@ export const previewPayrun = async (req: Request, res: Response): Promise<void> 
     const pStart = new Date(periodStart);
     const pEnd = new Date(periodEnd);
 
-    // Find all active contracts that match this structure and cover the period
+    // Find all active contracts that match this structure
     const contracts = await prisma.contract.findMany({
       where: {
         salaryStructureId,
         status: 'Active',
-        startDate: { lte: pEnd },
         OR: [
           { endDate: null },
           { endDate: { gte: pStart } }
@@ -57,6 +56,25 @@ export const previewPayrun = async (req: Request, res: Response): Promise<void> 
 
     for (const c of contracts) {
       const alreadyHasPayslip = paidEmployeeIds.has(c.employeeId);
+      const contractStartDate = new Date(c.startDate);
+
+      // Eligibility Requirement 1: Contract must start on or before the payrun period start date
+      const hasCompletedServiceTenure = contractStartDate <= pStart;
+
+      // Eligibility Requirement 2: Must have active office attendance / worked days logged during this month
+      const attendancesInPeriod = await prisma.attendance.findMany({
+        where: {
+          employeeId: c.employeeId,
+          checkIn: {
+            gte: pStart,
+            lte: pEnd
+          }
+        }
+      });
+
+      const totalWorkedHours = attendancesInPeriod.reduce((sum, a) => sum + (a.workedHours || 0), 0);
+      const isPresentInMonth = attendancesInPeriod.length > 0;
+
       const empData = {
         employeeId: c.employee.id,
         name: c.employee.name,
@@ -64,6 +82,9 @@ export const previewPayrun = async (req: Request, res: Response): Promise<void> 
         jobPosition: c.employee.jobPosition,
         contractId: c.id,
         wage: c.wage,
+        contractStartDate: c.startDate,
+        workedDays: attendancesInPeriod.length,
+        totalWorkedHours: Math.round(totalWorkedHours * 10) / 10,
         alreadyProcessed: alreadyHasPayslip
       };
 
@@ -71,6 +92,16 @@ export const previewPayrun = async (req: Request, res: Response): Promise<void> 
         excludedEmployees.push({
           ...empData,
           reason: 'Employee already has a payslip generated for this exact period'
+        });
+      } else if (!hasCompletedServiceTenure) {
+        excludedEmployees.push({
+          ...empData,
+          reason: `Contract started on ${contractStartDate.toLocaleDateString()} (after pay cycle start date ${pStart.toLocaleDateString()}). Must complete active service period before payroll eligibility.`
+        });
+      } else if (!isPresentInMonth) {
+        excludedEmployees.push({
+          ...empData,
+          reason: `No attendance records logged for this month (${pStart.toLocaleDateString()} - ${pEnd.toLocaleDateString()}). Employee was not present in the office.`
         });
       } else {
         eligibleEmployees.push(empData);
@@ -109,6 +140,27 @@ export const createPayrun = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
+    // Verify employee eligibility (contract started on or before periodStart)
+    const validContracts = await prisma.contract.findMany({
+      where: {
+        employeeId: { in: employeeIds },
+        salaryStructureId,
+        status: 'Active',
+        startDate: { lte: new Date(periodStart) },
+        OR: [
+          { endDate: null },
+          { endDate: { gte: new Date(periodStart) } }
+        ]
+      }
+    });
+
+    if (validContracts.length === 0) {
+      res.status(400).json({ error: 'None of the selected employees have completed the required tenure (contract start date must be on or before the pay period start date)' });
+      return;
+    }
+
+    const validEmployeeIds = validContracts.map(c => c.employeeId);
+
     const payrun = await prisma.payrun.create({
       data: {
         name,
@@ -117,7 +169,7 @@ export const createPayrun = async (req: Request, res: Response): Promise<void> =
         periodEnd: new Date(periodEnd),
         status: PayrunStatus.Draft,
         employees: {
-          create: employeeIds.map((empId: string) => ({
+          create: validEmployeeIds.map((empId: string) => ({
             employeeId: empId
           }))
         }

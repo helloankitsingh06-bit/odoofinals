@@ -61,6 +61,7 @@ export const LoginPage: React.FC = () => {
 
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingRole, setLoadingRole] = useState<string | null>(null);
   const [hoveredRole, setHoveredRole] = useState<string | null>(null);
 
@@ -137,10 +138,13 @@ export const LoginPage: React.FC = () => {
     e.preventDefault();
     setError(null);
     setSuccessMessage(null);
+    setIsSubmitting(true);
     try {
       await login(loginEmail, loginPassword);
     } catch (err: any) {
-      setError(err.message || 'Login failed. Only registered database users can log in.');
+      setError('Invalid credentials');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -160,11 +164,14 @@ export const LoginPage: React.FC = () => {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       await register(signupName, signupEmail, signupPassword, signupRole);
-      setSuccessMessage('Account created successfully in database!');
+      setSuccessMessage('Account created successfully in database! Logging you in...');
     } catch (err: any) {
       setError(err.message || 'Registration failed. User may already exist in database.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -174,18 +181,20 @@ export const LoginPage: React.FC = () => {
     setLoadingRole(role);
     try {
       await switchRoleQuick(role);
+    } catch (err: any) {
+      setError(
+        'Database has been reset and this pre-seeded demo user does not exist. Please click the "Register" tab above to create a fresh user account.'
+      );
     } finally {
       setLoadingRole(null);
     }
   };
 
-  // Role-based demo logins. Labels are generic and NOT tied to any specific
-  // employee record, so deleting seed people never leaves a stale name here.
   const demoRoles: RoleCard[] = [
     {
       role: 'Employee',
       title: 'Employee Portal',
-      name: 'Employee',
+      name: 'Devon Hayes',
       email: 'employee@peoplepay360.com',
       desc: 'Self-service dashboard, punch clock, time-off requests & personal payslips',
       badge: 'Self-Service',
@@ -195,7 +204,7 @@ export const LoginPage: React.FC = () => {
     {
       role: 'HRManager',
       title: 'HR Manager',
-      name: 'HR Manager',
+      name: 'Marcus Sterling',
       email: 'hrmanager@peoplepay360.com',
       desc: 'Employee directory CRUD, contract management, time-off approvals & schedules',
       badge: 'HR Admin',
@@ -205,7 +214,7 @@ export const LoginPage: React.FC = () => {
     {
       role: 'HRPayrollUser',
       title: 'Payroll Specialist',
-      name: 'HR Payroll User',
+      name: 'Jordan Reed',
       email: 'payrolluser@peoplepay360.com',
       desc: 'Execute payruns, compute salary rule lines, inspect attendance audit warnings',
       badge: 'Payroll Ops',
@@ -215,7 +224,7 @@ export const LoginPage: React.FC = () => {
     {
       role: 'HRPayrollManager',
       title: 'Payroll Director',
-      name: 'HR Payroll Manager',
+      name: 'Sophia Chen',
       email: 'payrollmgr@peoplepay360.com',
       desc: 'Full payroll lifecycle, structure rules configuration, mark as Paid & PDF dispatch',
       badge: 'Full Payroll',
@@ -225,7 +234,7 @@ export const LoginPage: React.FC = () => {
     {
       role: 'Admin',
       title: 'System Administrator',
-      name: 'System Administrator',
+      name: 'Root Admin',
       email: 'admin@peoplepay360.com',
       desc: 'Unrestricted master access, RBAC management, audit trails & security governance',
       badge: 'SuperAdmin',
@@ -350,9 +359,22 @@ export const LoginPage: React.FC = () => {
             )}
 
             {error && (
-              <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-600 dark:text-rose-400 text-sm flex items-center gap-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse shrink-0" />
-                <span>{error}</span>
+              <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-600 dark:text-rose-400 text-xs sm:text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-rose-500 animate-ping shrink-0" />
+                  <span className="font-medium leading-relaxed">{error}</span>
+                </div>
+                {authMode === 'login' && (
+                  <button
+                    onClick={() => {
+                      setError(null);
+                      setAuthMode('signup');
+                    }}
+                    className="shrink-0 px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition shadow-sm cursor-pointer"
+                  >
+                    Register Account →
+                  </button>
+                )}
               </div>
             )}
 
@@ -417,10 +439,10 @@ export const LoginPage: React.FC = () => {
 
                   <button
                     type="submit"
-                    disabled={isLoading || !!loadingRole}
+                    disabled={isSubmitting || !!loadingRole}
                     className="relative w-full py-3.5 px-4 bg-gradient-to-r from-amber-500 to-purple-600 hover:from-amber-400 hover:to-purple-500 text-white font-bold rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-amber-500/25 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2 cursor-pointer shadow-md"
                   >
-                    {isLoading ? (
+                    {isSubmitting ? (
                       <>
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                         <span>Signing in...</span>
@@ -591,10 +613,10 @@ export const LoginPage: React.FC = () => {
 
                   <button
                     type="submit"
-                    disabled={isLoading}
+                    disabled={isSubmitting}
                     className="relative w-full py-3.5 px-4 bg-gradient-to-r from-purple-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-bold rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/25 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2 cursor-pointer shadow-md"
                   >
-                    {isLoading ? (
+                    {isSubmitting ? (
                       <>
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                         <span>Creating account...</span>
