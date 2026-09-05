@@ -8,19 +8,20 @@ import {
   Plus,
   AlertCircle,
   Sparkles,
-  Trash2,
   Award,
   Clock,
-  UserCheck,
   Search,
   ChevronDown,
   User,
-  Filter
+  Layers,
+  CheckCircle2,
+  HelpCircle
 } from 'lucide-react';
 
 export const TimeOffPage: React.FC = () => {
   const { user } = useAuth();
   const [types, setTypes] = useState<any[]>([]);
+  const [typesWithBalances, setTypesWithBalances] = useState<any[]>([]);
   const [allocations, setAllocations] = useState<any[]>([]);
   const [requests, setRequests] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
@@ -32,12 +33,19 @@ export const TimeOffPage: React.FC = () => {
   // Searchable Employee Select state for Allocation Modal
   const [allocEmpSearch, setAllocEmpSearch] = useState('');
   const [isAllocEmpDropdownOpen, setIsAllocEmpDropdownOpen] = useState(false);
-  const allocDropdownRef = useRef<HTMLDivElement>(null);
+  const allocEmpDropdownRef = useRef<HTMLDivElement>(null);
 
   // Searchable Employee Select state for Request Modal
   const [reqEmpSearch, setReqEmpSearch] = useState('');
   const [isReqEmpDropdownOpen, setIsReqEmpDropdownOpen] = useState(false);
-  const reqDropdownRef = useRef<HTMLDivElement>(null);
+  const reqEmpDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Custom Leave Type Dropdown states
+  const [isAllocTypeDropdownOpen, setIsAllocTypeDropdownOpen] = useState(false);
+  const allocTypeDropdownRef = useRef<HTMLDivElement>(null);
+
+  const [isReqTypeDropdownOpen, setIsReqTypeDropdownOpen] = useState(false);
+  const reqTypeDropdownRef = useRef<HTMLDivElement>(null);
 
   // Requests Table Search & Filter
   const [requestSearch, setRequestSearch] = useState('');
@@ -75,12 +83,15 @@ export const TimeOffPage: React.FC = () => {
       setRequests(rData);
       setEmployees(eData);
 
-      if (tData.length > 0 && !requestForm.timeOffTypeId) {
-        setRequestForm(prev => ({ ...prev, timeOffTypeId: tData[0].id }));
+      if (tData.length > 0) {
+        if (!requestForm.timeOffTypeId) {
+          setRequestForm(prev => ({ ...prev, timeOffTypeId: tData[0].id }));
+        }
+        if (!allocationForm.timeOffTypeId) {
+          setAllocationForm(prev => ({ ...prev, timeOffTypeId: tData[0].id }));
+        }
       }
-      if (tData.length > 0 && !allocationForm.timeOffTypeId) {
-        setAllocationForm(prev => ({ ...prev, timeOffTypeId: tData[0].id }));
-      }
+
       if (eData.length > 0) {
         if (!requestForm.employeeId) {
           setRequestForm(prev => ({ ...prev, employeeId: user?.employeeId || eData[0].id }));
@@ -100,14 +111,40 @@ export const TimeOffPage: React.FC = () => {
     fetchData();
   }, [user]);
 
-  // Click outside to close dropdowns
+  // Fetch live leave type balances for selected employee
+  const fetchBalancesForEmployee = async (empId: string) => {
+    if (!empId) return;
+    try {
+      const balances = await apiRequest(`/time-off/types/balances?employeeId=${empId}`);
+      setTypesWithBalances(balances);
+    } catch {
+      // fallback to standard types if balance route fails
+      setTypesWithBalances(types);
+    }
+  };
+
+  useEffect(() => {
+    const targetEmpId = requestForm.employeeId || user?.employeeId || (employees[0]?.id || '');
+    if (targetEmpId) {
+      fetchBalancesForEmployee(targetEmpId);
+    }
+  }, [requestForm.employeeId, user, employees, showRequestModal]);
+
+  // Click outside to close all dropdowns
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (allocDropdownRef.current && !allocDropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (allocEmpDropdownRef.current && !allocEmpDropdownRef.current.contains(target)) {
         setIsAllocEmpDropdownOpen(false);
       }
-      if (reqDropdownRef.current && !reqDropdownRef.current.contains(event.target as Node)) {
+      if (reqEmpDropdownRef.current && !reqEmpDropdownRef.current.contains(target)) {
         setIsReqEmpDropdownOpen(false);
+      }
+      if (allocTypeDropdownRef.current && !allocTypeDropdownRef.current.contains(target)) {
+        setIsAllocTypeDropdownOpen(false);
+      }
+      if (reqTypeDropdownRef.current && !reqTypeDropdownRef.current.contains(target)) {
+        setIsReqTypeDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -127,6 +164,9 @@ export const TimeOffPage: React.FC = () => {
       });
       setShowRequestModal(false);
       fetchData();
+      if (requestForm.employeeId) {
+        fetchBalancesForEmployee(requestForm.employeeId);
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to submit request');
     }
@@ -197,6 +237,7 @@ export const TimeOffPage: React.FC = () => {
     );
   });
   const selectedAllocEmployee = employees.find(e => e.id === allocationForm.employeeId);
+  const selectedAllocType = types.find(t => t.id === allocationForm.timeOffTypeId);
 
   const filteredReqEmployees = employees.filter(emp => {
     const q = reqEmpSearch.toLowerCase().trim();
@@ -207,7 +248,10 @@ export const TimeOffPage: React.FC = () => {
       (emp.jobPosition && emp.jobPosition.toLowerCase().includes(q))
     );
   });
-  const selectedReqEmployee = employees.find(e => e.id === requestForm.employeeId);
+  const currentReqEmpId = requestForm.employeeId || user?.employeeId || (employees[0]?.id || '');
+  const selectedReqEmployee = employees.find(e => e.id === currentReqEmpId);
+  const availableTypesList = typesWithBalances.length > 0 ? typesWithBalances : types;
+  const selectedReqType = availableTypesList.find(t => t.id === requestForm.timeOffTypeId) || availableTypesList[0];
 
   const filteredRequests = requests.filter(req => {
     const q = requestSearch.toLowerCase().trim();
@@ -243,19 +287,27 @@ export const TimeOffPage: React.FC = () => {
                 setError(null);
                 setAllocationForm(prev => ({
                   ...prev,
-                  employeeId: prev.employeeId || (employees[0]?.id || '')
+                  employeeId: prev.employeeId || (employees[0]?.id || ''),
+                  timeOffTypeId: prev.timeOffTypeId || (types[0]?.id || '')
                 }));
                 setShowAllocationModal(true);
               }}
-              className="flex items-center gap-1.5 px-4 py-2 bg-purple-900/50 hover:bg-purple-800/60 border border-purple-700/50 text-purple-200 rounded-xl text-xs font-bold transition active:scale-95"
+              className="flex items-center gap-1.5 px-4 py-2 bg-purple-900/50 hover:bg-purple-800/60 border border-purple-700/50 text-purple-200 rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer"
             >
               <Award size={15} className="text-amber-400" /> Grant Leave Allocation
             </button>
           )}
 
           <button
-            onClick={() => { setError(null); setShowRequestModal(true); }}
-            className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl text-xs font-black shadow-lg shadow-amber-500/20 transition active:scale-95"
+            onClick={() => {
+              setError(null);
+              const targetEmpId = requestForm.employeeId || user?.employeeId || (employees[0]?.id || '');
+              if (targetEmpId) {
+                fetchBalancesForEmployee(targetEmpId);
+              }
+              setShowRequestModal(true);
+            }}
+            className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl text-xs font-black shadow-lg shadow-amber-500/20 transition active:scale-95 cursor-pointer"
           >
             <Plus size={16} /> Request Time Off
           </button>
@@ -264,40 +316,40 @@ export const TimeOffPage: React.FC = () => {
 
       {/* Allocation Cards */}
       <div>
-        <h2 className="text-xs font-black text-amber-300 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-          <Sparkles size={13} className="text-purple-400" /> Active Leave Allocations & Balances
+        <h2 className="text-xs font-black text-amber-500 dark:text-amber-300 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+          <Sparkles size={13} className="text-purple-500 dark:text-purple-400" /> Active Leave Allocations & Balances
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {allocations.map((alloc) => (
             <div
               key={alloc.id}
-              className="bg-[#0b0914]/80 border border-purple-900/40 hover:border-amber-400/60 p-5 rounded-3xl relative overflow-hidden shadow-xl transition-all duration-300 hover:scale-[1.01]"
+              className="bg-white/90 dark:bg-[#0b0914]/80 border border-purple-100 dark:border-purple-900/40 hover:border-amber-400/60 p-5 rounded-3xl relative overflow-hidden shadow-md dark:shadow-xl transition-all duration-300 hover:scale-[1.01]"
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-white">{alloc.timeOffType?.name}</span>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-200 border border-purple-500/30">
+                <span className="text-xs font-bold text-slate-900 dark:text-white">{alloc.timeOffType?.name}</span>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/15 text-purple-700 dark:text-purple-200 border border-purple-500/30">
                   {alloc.timeOffType?.unit}
                 </span>
               </div>
 
               <div className="my-3">
-                <div className="text-3xl font-black text-amber-300 font-mono">
-                  {alloc.remainingAmount} <span className="text-xs font-normal text-purple-300/60">available</span>
+                <div className="text-3xl font-black text-amber-600 dark:text-amber-300 font-mono">
+                  {alloc.remainingAmount} <span className="text-xs font-normal text-slate-500 dark:text-purple-300/60">available</span>
                 </div>
-                <div className="text-xs text-purple-300/70 mt-1">
-                  Employee: <strong className="text-white">{alloc.employee?.name}</strong>
+                <div className="text-xs text-slate-600 dark:text-purple-300/70 mt-1">
+                  Employee: <strong className="text-slate-900 dark:text-white">{alloc.employee?.name}</strong>
                 </div>
               </div>
 
               {/* Progress Bar */}
-              <div className="w-full bg-[#06050b] border border-purple-950 h-2 rounded-full overflow-hidden mt-3">
+              <div className="w-full bg-slate-100 dark:bg-[#06050b] border border-purple-100 dark:border-purple-950 h-2 rounded-full overflow-hidden mt-3">
                 <div
                   className="bg-gradient-to-r from-purple-500 via-amber-400 to-yellow-300 h-full rounded-full transition-all duration-500"
-                  style={{ width: `${Math.min(100, (alloc.remainingAmount / alloc.allocatedAmount) * 100)}%` }}
+                  style={{ width: `${Math.min(100, Math.max(0, ((alloc.remainingAmount || 0) / (alloc.allocatedAmount || 1)) * 100))}%` }}
                 ></div>
               </div>
 
-              <div className="flex justify-between text-[10px] text-purple-400/70 mt-2 font-medium">
+              <div className="flex justify-between text-[10px] text-slate-500 dark:text-purple-400/70 mt-2 font-medium">
                 <span>Taken: {alloc.takenAmount} {alloc.timeOffType?.unit}</span>
                 <span>Total: {alloc.allocatedAmount} {alloc.timeOffType?.unit}</span>
               </div>
@@ -496,7 +548,7 @@ export const TimeOffPage: React.FC = () => {
 
             <form onSubmit={handleCreateAllocation} className="space-y-4 text-xs">
               {/* Searchable Employee Combobox */}
-              <div className="relative" ref={allocDropdownRef}>
+              <div className="relative" ref={allocEmpDropdownRef}>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="text-slate-700 dark:text-purple-300/80 font-semibold text-xs flex items-center gap-1.5">
                     <User size={13} className="text-amber-500 dark:text-amber-400" />
@@ -507,7 +559,10 @@ export const TimeOffPage: React.FC = () => {
                   </span>
                 </div>
 
-                <div className="relative">
+                <div
+                  className="relative cursor-pointer"
+                  onClick={() => setIsAllocEmpDropdownOpen(true)}
+                >
                   <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-purple-400/70 pointer-events-none" />
                   <input
                     type="text"
@@ -517,26 +572,27 @@ export const TimeOffPage: React.FC = () => {
                       setIsAllocEmpDropdownOpen(true);
                     }}
                     onFocus={() => setIsAllocEmpDropdownOpen(true)}
-                    placeholder={selectedAllocEmployee ? `${selectedAllocEmployee.name} (${selectedAllocEmployee.department})` : "Type name or department to search..."}
-                    className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl pl-10 pr-9 py-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-purple-300/60 focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsAllocEmpDropdownOpen(true);
+                    }}
+                    placeholder={selectedAllocEmployee ? `${selectedAllocEmployee.name} (${selectedAllocEmployee.department || 'General'})` : "Type name or department to search..."}
+                    className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl pl-10 pr-9 py-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-purple-300/60 focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium cursor-pointer"
                   />
-                  {allocEmpSearch ? (
-                    <button
-                      type="button"
-                      onClick={() => setAllocEmpSearch('')}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
-                    >
-                      <X size={13} />
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setIsAllocEmpDropdownOpen(!isAllocEmpDropdownOpen)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
-                    >
-                      <ChevronDown size={14} />
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (allocEmpSearch) {
+                        setAllocEmpSearch('');
+                      } else {
+                        setIsAllocEmpDropdownOpen(!isAllocEmpDropdownOpen);
+                      }
+                    }}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
+                  >
+                    {allocEmpSearch ? <X size={13} /> : <ChevronDown size={14} className={`transition-transform duration-200 ${isAllocEmpDropdownOpen ? 'rotate-180 text-amber-500' : ''}`} />}
+                  </button>
                 </div>
 
                 {selectedAllocEmployee && !isAllocEmpDropdownOpen && (
@@ -546,13 +602,16 @@ export const TimeOffPage: React.FC = () => {
                       Selected: <strong>{selectedAllocEmployee.name}</strong>
                     </span>
                     <span className="text-slate-500 dark:text-purple-400/60 font-mono text-[10px]">
-                      {selectedAllocEmployee.department}
+                      {selectedAllocEmployee.department || 'General'}
                     </span>
                   </div>
                 )}
 
                 {isAllocEmpDropdownOpen && (
-                  <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white dark:bg-[#0e0c18] border border-purple-200 dark:border-purple-800/80 rounded-2xl shadow-2xl max-h-48 overflow-y-auto p-1.5 space-y-1 text-xs">
+                  <div
+                    onMouseDown={(e) => e.stopPropagation()}
+                    className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white dark:bg-[#0e0c18] border border-purple-200 dark:border-purple-800/80 rounded-2xl shadow-2xl max-h-52 overflow-y-auto p-1.5 space-y-1 text-xs animate-fadeIn"
+                  >
                     {filteredAllocEmployees.length > 0 ? (
                       filteredAllocEmployees.map((e) => {
                         const isSelected = allocationForm.employeeId === e.id;
@@ -576,7 +635,7 @@ export const TimeOffPage: React.FC = () => {
                               <div>
                                 <div className="font-bold text-slate-900 dark:text-white text-xs">{e.name}</div>
                                 <div className="text-[10px] text-slate-500 dark:text-purple-400/70 font-normal">
-                                  {e.jobPosition ? `${e.jobPosition} • ` : ''}{e.department}
+                                  {e.jobPosition ? `${e.jobPosition} • ` : ''}{e.department || 'General'}
                                 </div>
                               </div>
                             </div>
@@ -593,18 +652,60 @@ export const TimeOffPage: React.FC = () => {
                 )}
               </div>
 
-              <div>
-                <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Leave Type</label>
-                <select
-                  required
-                  value={allocationForm.timeOffTypeId}
-                  onChange={(e) => setAllocationForm({ ...allocationForm, timeOffTypeId: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium cursor-pointer"
+              {/* Custom Leave Type Dropdown */}
+              <div className="relative" ref={allocTypeDropdownRef}>
+                <label className="block text-slate-700 dark:text-purple-300/80 mb-1.5 font-semibold text-xs flex items-center gap-1.5">
+                  <Layers size={13} className="text-amber-500 dark:text-amber-400" />
+                  Leave Type
+                </label>
+
+                <div
+                  onClick={() => setIsAllocTypeDropdownOpen(!isAllocTypeDropdownOpen)}
+                  className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white font-medium cursor-pointer flex items-center justify-between hover:border-amber-400 transition"
                 >
-                  {types.map(t => (
-                    <option key={t.id} value={t.id} className="bg-white dark:bg-[#0b0914] text-slate-900 dark:text-white">{t.name} ({t.unit})</option>
-                  ))}
-                </select>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-xs">{selectedAllocType?.name || 'Select Leave Type'}</span>
+                    {selectedAllocType && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300">
+                        {selectedAllocType.unit}
+                      </span>
+                    )}
+                  </div>
+                  <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${isAllocTypeDropdownOpen ? 'rotate-180 text-amber-500' : ''}`} />
+                </div>
+
+                {isAllocTypeDropdownOpen && (
+                  <div
+                    onMouseDown={(e) => e.stopPropagation()}
+                    className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white dark:bg-[#0e0c18] border border-purple-200 dark:border-purple-800/80 rounded-2xl shadow-2xl max-h-52 overflow-y-auto p-1.5 space-y-1 text-xs animate-fadeIn"
+                  >
+                    {types.map(t => {
+                      const isSelected = allocationForm.timeOffTypeId === t.id;
+                      return (
+                        <div
+                          key={t.id}
+                          onClick={() => {
+                            setAllocationForm({ ...allocationForm, timeOffTypeId: t.id });
+                            setIsAllocTypeDropdownOpen(false);
+                          }}
+                          className={`p-2.5 rounded-xl flex items-center justify-between cursor-pointer transition ${
+                            isSelected
+                              ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 font-bold border border-amber-500/30'
+                              : 'text-slate-800 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/50'
+                          }`}
+                        >
+                          <div>
+                            <div className="font-bold text-slate-900 dark:text-white text-xs">{t.name}</div>
+                            <div className="text-[10px] text-slate-500 dark:text-purple-400/70">
+                              Unit: {t.unit} • {t.requiresApproval ? 'Requires HR Approval' : 'Auto Approved'}
+                            </div>
+                          </div>
+                          {isSelected && <Check size={14} className="text-amber-500 dark:text-amber-400 shrink-0" />}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -665,26 +766,43 @@ export const TimeOffPage: React.FC = () => {
 
       {/* Request Modal */}
       {showRequestModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-md p-4">
-          <div className="bg-white dark:bg-[#090712] border border-purple-200 dark:border-purple-800/60 rounded-3xl w-full max-w-md p-6 shadow-2xl transition-colors duration-300">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-2">
-              <Sparkles size={18} className="text-amber-500 dark:text-amber-400" />
-              Request Time Off
-            </h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-md p-4 overflow-y-auto">
+          <div
+            className="fixed inset-0"
+            onClick={() => setShowRequestModal(false)}
+          />
+          <div className="relative bg-white dark:bg-[#090712] border border-purple-200 dark:border-purple-800/60 rounded-3xl w-full max-w-md p-6 shadow-2xl z-10 transition-colors duration-300">
+            <div className="flex items-center justify-between pb-3 mb-4 border-b border-purple-100 dark:border-purple-900/50">
+              <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <div className="p-1.5 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-400/30">
+                  <Sparkles size={16} />
+                </div>
+                Request Time Off
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowRequestModal(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-purple-50 dark:hover:bg-purple-950/60 transition cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
             <p className="text-xs text-slate-500 dark:text-purple-300/60 mb-4 font-medium">
-              Submits request for HR approval. Live balance will be deducted upon approval.
+              Submit your time off request for approval. Live leave balance will be automatically checked and deducted upon approval.
             </p>
 
             {error && (
-              <div className="mb-4 p-3.5 bg-rose-500/15 border border-rose-500/30 rounded-2xl text-rose-600 dark:text-rose-300 text-xs flex items-start gap-2">
-                <AlertCircle size={16} className="shrink-0 mt-0.5" />
+              <div className="mb-4 p-3.5 bg-rose-50 dark:bg-rose-500/15 border border-rose-200 dark:border-rose-500/30 rounded-2xl text-rose-700 dark:text-rose-300 text-xs flex items-start gap-2">
+                <AlertCircle size={16} className="shrink-0 mt-0.5 text-rose-500" />
                 <span>{error}</span>
               </div>
             )}
 
             <form onSubmit={handleCreateRequest} className="space-y-4 text-xs">
-              {canManage && (
-                <div className="relative" ref={reqDropdownRef}>
+              {/* Searchable Employee Combobox (for Managers/HR) */}
+              {canManage ? (
+                <div className="relative" ref={reqEmpDropdownRef}>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="text-slate-700 dark:text-purple-300/80 font-semibold text-xs flex items-center gap-1.5">
                       <User size={13} className="text-amber-500 dark:text-amber-400" />
@@ -695,7 +813,10 @@ export const TimeOffPage: React.FC = () => {
                     </span>
                   </div>
 
-                  <div className="relative">
+                  <div
+                    className="relative cursor-pointer"
+                    onClick={() => setIsReqEmpDropdownOpen(true)}
+                  >
                     <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-purple-400/70 pointer-events-none" />
                     <input
                       type="text"
@@ -705,26 +826,27 @@ export const TimeOffPage: React.FC = () => {
                         setIsReqEmpDropdownOpen(true);
                       }}
                       onFocus={() => setIsReqEmpDropdownOpen(true)}
-                      placeholder={selectedReqEmployee ? `${selectedReqEmployee.name} (${selectedReqEmployee.department})` : "Type name or department to search..."}
-                      className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl pl-10 pr-9 py-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-purple-300/60 focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsReqEmpDropdownOpen(true);
+                      }}
+                      placeholder={selectedReqEmployee ? `${selectedReqEmployee.name} (${selectedReqEmployee.department || 'General'})` : "Type name or department to search..."}
+                      className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl pl-10 pr-9 py-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-purple-300/60 focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium cursor-pointer"
                     />
-                    {reqEmpSearch ? (
-                      <button
-                        type="button"
-                        onClick={() => setReqEmpSearch('')}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
-                      >
-                        <X size={13} />
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setIsReqEmpDropdownOpen(!isReqEmpDropdownOpen)}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
-                      >
-                        <ChevronDown size={14} />
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (reqEmpSearch) {
+                          setReqEmpSearch('');
+                        } else {
+                          setIsReqEmpDropdownOpen(!isReqEmpDropdownOpen);
+                        }
+                      }}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
+                    >
+                      {reqEmpSearch ? <X size={13} /> : <ChevronDown size={14} className={`transition-transform duration-200 ${isReqEmpDropdownOpen ? 'rotate-180 text-amber-500' : ''}`} />}
+                    </button>
                   </div>
 
                   {selectedReqEmployee && !isReqEmpDropdownOpen && (
@@ -734,13 +856,16 @@ export const TimeOffPage: React.FC = () => {
                         Selected: <strong>{selectedReqEmployee.name}</strong>
                       </span>
                       <span className="text-slate-500 dark:text-purple-400/60 font-mono text-[10px]">
-                        {selectedReqEmployee.department}
+                        {selectedReqEmployee.department || 'General'}
                       </span>
                     </div>
                   )}
 
                   {isReqEmpDropdownOpen && (
-                    <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white dark:bg-[#0e0c18] border border-purple-200 dark:border-purple-800/80 rounded-2xl shadow-2xl max-h-48 overflow-y-auto p-1.5 space-y-1 text-xs">
+                    <div
+                      onMouseDown={(e) => e.stopPropagation()}
+                      className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white dark:bg-[#0e0c18] border border-purple-200 dark:border-purple-800/80 rounded-2xl shadow-2xl max-h-52 overflow-y-auto p-1.5 space-y-1 text-xs animate-fadeIn"
+                    >
                       {filteredReqEmployees.length > 0 ? (
                         filteredReqEmployees.map((e) => {
                           const isSelected = requestForm.employeeId === e.id;
@@ -750,6 +875,7 @@ export const TimeOffPage: React.FC = () => {
                               onClick={() => {
                                 setRequestForm({ ...requestForm, employeeId: e.id });
                                 setIsReqEmpDropdownOpen(false);
+                                fetchBalancesForEmployee(e.id);
                               }}
                               className={`p-2 rounded-xl flex items-center justify-between cursor-pointer transition ${
                                 isSelected
@@ -764,7 +890,7 @@ export const TimeOffPage: React.FC = () => {
                                 <div>
                                   <div className="font-bold text-slate-900 dark:text-white text-xs">{e.name}</div>
                                   <div className="text-[10px] text-slate-500 dark:text-purple-400/70 font-normal">
-                                    {e.jobPosition ? `${e.jobPosition} • ` : ''}{e.department}
+                                    {e.jobPosition ? `${e.jobPosition} • ` : ''}{e.department || 'General'}
                                   </div>
                                 </div>
                               </div>
@@ -780,19 +906,104 @@ export const TimeOffPage: React.FC = () => {
                     </div>
                   )}
                 </div>
+              ) : (
+                <div className="px-3 py-2 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-900/40 flex items-center justify-between text-xs">
+                  <span className="font-semibold text-purple-900 dark:text-purple-200 flex items-center gap-2">
+                    <User size={14} className="text-amber-500" />
+                    Requesting as: <strong>{selectedReqEmployee?.name || user?.email}</strong>
+                  </span>
+                  <span className="text-slate-500 dark:text-purple-400/60 font-mono text-[11px]">
+                    {selectedReqEmployee?.department || 'Employee'}
+                  </span>
+                </div>
               )}
 
-              <div>
-                <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Time Off Type</label>
-                <select
-                  value={requestForm.timeOffTypeId}
-                  onChange={(e) => setRequestForm({ ...requestForm, timeOffTypeId: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium cursor-pointer"
+              {/* Rich Leave Type Dropdown with Live Remaining Balances */}
+              <div className="relative" ref={reqTypeDropdownRef}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-slate-700 dark:text-purple-300/80 font-semibold text-xs flex items-center gap-1.5">
+                    <Layers size={13} className="text-amber-500 dark:text-amber-400" />
+                    Leave Type & Quota
+                  </label>
+                  {selectedReqType && selectedReqType.remainingBalance !== undefined && (
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      selectedReqType.remainingBalance > 0
+                        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                        : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
+                    }`}>
+                      {selectedReqType.remainingBalance} {selectedReqType.unit} left
+                    </span>
+                  )}
+                </div>
+
+                <div
+                  onClick={() => setIsReqTypeDropdownOpen(!isReqTypeDropdownOpen)}
+                  className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white font-medium cursor-pointer flex items-center justify-between hover:border-amber-400 transition"
                 >
-                  {types.map(t => (
-                    <option key={t.id} value={t.id} className="bg-white dark:bg-[#0b0914] text-slate-900 dark:text-white">{t.name} ({t.unit})</option>
-                  ))}
-                </select>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-xs">{selectedReqType?.name || 'Select Leave Type'}</span>
+                    {selectedReqType && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300">
+                        {selectedReqType.unit}
+                      </span>
+                    )}
+                  </div>
+                  <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${isReqTypeDropdownOpen ? 'rotate-180 text-amber-500' : ''}`} />
+                </div>
+
+                {isReqTypeDropdownOpen && (
+                  <div
+                    onMouseDown={(e) => e.stopPropagation()}
+                    className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white dark:bg-[#0e0c18] border border-purple-200 dark:border-purple-800/80 rounded-2xl shadow-2xl max-h-56 overflow-y-auto p-1.5 space-y-1.5 text-xs animate-fadeIn"
+                  >
+                    {availableTypesList.map(t => {
+                      const isSelected = requestForm.timeOffTypeId === t.id;
+                      const hasBal = t.remainingBalance !== undefined;
+                      const remaining = t.remainingBalance ?? 0;
+                      return (
+                        <div
+                          key={t.id}
+                          onClick={() => {
+                            setRequestForm({ ...requestForm, timeOffTypeId: t.id });
+                            setIsReqTypeDropdownOpen(false);
+                          }}
+                          className={`p-2.5 rounded-xl flex items-center justify-between cursor-pointer transition ${
+                            isSelected
+                              ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 font-bold border border-amber-500/30'
+                              : 'text-slate-800 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/50'
+                          }`}
+                        >
+                          <div>
+                            <div className="font-bold text-slate-900 dark:text-white text-xs flex items-center gap-2">
+                              {t.name}
+                              <span className="text-[10px] font-mono font-normal text-slate-500 dark:text-purple-400/60">({t.unit})</span>
+                            </div>
+                            <div className="text-[10px] text-slate-500 dark:text-purple-400/70 mt-0.5">
+                              {hasBal ? (
+                                <span>Allocated: {t.allocatedAmount || 0} • Taken: {t.takenAmount || 0}</span>
+                              ) : (
+                                <span>{t.requiresApproval ? 'Requires Manager Approval' : 'Auto Approved'}</span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {hasBal && (
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                remaining > 0
+                                  ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
+                                  : 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30'
+                              }`}>
+                                {remaining} {t.unit}
+                              </span>
+                            )}
+                            {isSelected && <Check size={14} className="text-amber-500 dark:text-amber-400 shrink-0" />}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -819,7 +1030,16 @@ export const TimeOffPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Duration (Days / Hours)</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-slate-700 dark:text-purple-300/80 font-semibold">
+                    Duration ({selectedReqType?.unit || 'Days'})
+                  </label>
+                  {selectedReqType && selectedReqType.remainingBalance !== undefined && (
+                    <span className="text-[10px] text-slate-500 dark:text-purple-400/60 font-mono">
+                      Max available: {selectedReqType.remainingBalance} {selectedReqType.unit}
+                    </span>
+                  )}
+                </div>
                 <input
                   type="number"
                   step="0.5"
@@ -864,3 +1084,4 @@ export const TimeOffPage: React.FC = () => {
     </div>
   );
 };
+

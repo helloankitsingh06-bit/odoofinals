@@ -6,7 +6,7 @@ import {
   updateEmployee,
   deleteEmployee
 } from '../controllers/employeeController';
-import { authenticateToken, authorizeRoles } from '../middleware/auth';
+import { authenticateToken, authorizeRoles, AuthRequest } from '../middleware/auth';
 import { Role } from '../types';
 
 const router = Router();
@@ -21,7 +21,7 @@ router.get(
 
 router.get(
   '/:id',
-  (req, res, next) => {
+  (req: AuthRequest, res, next) => {
     // If Employee, allow if it's their own id
     if (req.user?.role === Role.Employee) {
       if (req.user.employeeId !== req.params.id) {

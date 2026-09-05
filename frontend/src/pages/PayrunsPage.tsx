@@ -254,19 +254,17 @@ export const PayrunsPage: React.FC = () => {
                 <div
                   key={pr.id}
                   onClick={() => openPayrunDetail(pr)}
-                  className={`p-4 rounded-3xl border cursor-pointer transition-all duration-300 ${
-                    isSelected
+                  className={`p-4 rounded-3xl border cursor-pointer transition-all duration-300 ${isSelected
                       ? 'bg-purple-50/80 dark:bg-[#151126] border-amber-500/60 dark:border-amber-400/60 shadow-md dark:shadow-xl shadow-amber-500/10 scale-[1.01]'
                       : 'bg-white dark:bg-[#0b0914]/80 border-purple-100 dark:border-purple-900/40 hover:border-purple-300 dark:hover:border-purple-700/60 shadow-sm hover:shadow-md'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                      pr.status === 'Paid' ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30' :
-                      pr.status === 'Validated' ? 'bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-200 border border-purple-200 dark:border-purple-500/30' :
-                      pr.status === 'Computed' ? 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-200 border border-indigo-200 dark:border-indigo-500/30' :
-                      'bg-slate-100 dark:bg-purple-950 text-slate-600 dark:text-purple-400 border border-slate-200 dark:border-purple-900/40'
-                    }`}>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${pr.status === 'Paid' ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30' :
+                        pr.status === 'Validated' ? 'bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-200 border border-purple-200 dark:border-purple-500/30' :
+                          pr.status === 'Computed' ? 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-200 border border-indigo-200 dark:border-indigo-500/30' :
+                            'bg-slate-100 dark:bg-purple-950 text-slate-600 dark:text-purple-400 border border-slate-200 dark:border-purple-900/40'
+                      }`}>
                       {pr.status}
                     </span>
                     <span className="text-[10px] text-slate-500 dark:text-purple-400/60 font-mono font-medium">
@@ -296,12 +294,11 @@ export const PayrunsPage: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2">
                     <h2 className="text-xl font-bold text-slate-900 dark:text-white">{selectedPayrun.name}</h2>
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                      selectedPayrun.status === 'Paid' ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30' :
-                      selectedPayrun.status === 'Validated' ? 'bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-200 border border-purple-200 dark:border-purple-500/30' :
-                      selectedPayrun.status === 'Computed' ? 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-200 border border-indigo-200 dark:border-indigo-500/30' :
-                      'bg-slate-100 dark:bg-purple-950 text-slate-600 dark:text-purple-400 border border-slate-200 dark:border-purple-900/40'
-                    }`}>
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${selectedPayrun.status === 'Paid' ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30' :
+                        selectedPayrun.status === 'Validated' ? 'bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-200 border border-purple-200 dark:border-purple-500/30' :
+                          selectedPayrun.status === 'Computed' ? 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-200 border border-indigo-200 dark:border-indigo-500/30' :
+                            'bg-slate-100 dark:bg-purple-950 text-slate-600 dark:text-purple-400 border border-slate-200 dark:border-purple-900/40'
+                      }`}>
                       {selectedPayrun.status}
                     </span>
                   </div>
@@ -534,9 +531,8 @@ export const PayrunsPage: React.FC = () => {
                       return (
                         <label
                           key={emp.employeeId}
-                          className={`flex items-center justify-between p-2.5 rounded-xl cursor-pointer transition ${
-                            isSelected ? 'bg-purple-100 dark:bg-purple-950/60 border border-amber-500/40 dark:border-amber-400/40 shadow-sm' : 'bg-white dark:bg-[#08070e] opacity-70 border border-slate-200 dark:border-transparent'
-                          }`}
+                          className={`flex items-center justify-between p-2.5 rounded-xl cursor-pointer transition ${isSelected ? 'bg-purple-100 dark:bg-purple-950/60 border border-amber-500/40 dark:border-amber-400/40 shadow-sm' : 'bg-white dark:bg-[#08070e] opacity-70 border border-slate-200 dark:border-transparent'
+                            }`}
                         >
                           <div className="flex items-center gap-2">
                             <input

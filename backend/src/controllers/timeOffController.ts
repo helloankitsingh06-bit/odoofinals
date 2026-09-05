@@ -15,6 +15,49 @@ export const listTimeOffTypes = async (req: Request, res: Response): Promise<voi
   }
 };
 
+/**
+ * List Leave Types along with live remaining balances for a specific employee
+ */
+export const listTimeOffTypesWithBalances = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const targetEmployeeId = (req.query.employeeId as string) || req.user?.employeeId;
+    const types = await prisma.timeOffType.findMany({
+      orderBy: { name: 'asc' }
+    });
+
+    if (!targetEmployeeId) {
+      res.json(types.map(t => ({ ...t, remainingBalance: 0, allocatedAmount: 0, takenAmount: 0, hasAllocation: false })));
+      return;
+    }
+
+    const allocations = await prisma.allocation.findMany({
+      where: {
+        employeeId: targetEmployeeId,
+        status: 'Approved'
+      }
+    });
+
+    const typesWithBalances = types.map(t => {
+      const matching = allocations.filter(a => a.timeOffTypeId === t.id);
+      const totalRemaining = matching.reduce((acc, a) => acc + (a.remainingAmount || 0), 0);
+      const totalAllocated = matching.reduce((acc, a) => acc + (a.allocatedAmount || 0), 0);
+      const totalTaken = matching.reduce((acc, a) => acc + (a.takenAmount || 0), 0);
+
+      return {
+        ...t,
+        remainingBalance: totalRemaining,
+        allocatedAmount: totalAllocated,
+        takenAmount: totalTaken,
+        hasAllocation: matching.length > 0
+      };
+    });
+
+    res.json(typesWithBalances);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 export const createTimeOffType = async (req: Request, res: Response): Promise<void> => {
   try {
     const { name, unit = 'Days', requiresAllocation = true, requiresApproval = true, payrollIntegrated = true } = req.body;
@@ -138,17 +181,31 @@ export const listRequests = async (req: AuthRequest, res: Response): Promise<voi
 export const createRequest = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const employeeId = req.body.employeeId || req.user?.employeeId;
-    const { timeOffTypeId, startDate, endDate, duration, reason } = req.body;
+    const { timeOffTypeId, timeOffTypeName, startDate, endDate, duration, reason } = req.body;
 
-    if (!employeeId || !timeOffTypeId || !startDate || !endDate || duration === undefined) {
-      res.status(400).json({ error: 'All request fields are required' });
+    if (!employeeId || (!timeOffTypeId && !timeOffTypeName) || !startDate || !endDate || duration === undefined) {
+      res.status(400).json({ error: 'Employee, leave type, start date, end date, and duration are required' });
       return;
     }
 
     const dur = Number(duration);
-    const type = await prisma.timeOffType.findUnique({ where: { id: timeOffTypeId } });
+    if (isNaN(dur) || dur <= 0) {
+      res.status(400).json({ error: 'Duration must be a positive number greater than zero' });
+      return;
+    }
+
+    // Resolve time off type by ID or Name
+    let type = null;
+    if (timeOffTypeId) {
+      type = await prisma.timeOffType.findUnique({ where: { id: timeOffTypeId } });
+    } else if (timeOffTypeName) {
+      type = await prisma.timeOffType.findFirst({
+        where: { name: { contains: String(timeOffTypeName) } }
+      });
+    }
+
     if (!type) {
-      res.status(404).json({ error: 'Time off type not found' });
+      res.status(404).json({ error: 'Selected leave type not found' });
       return;
     }
 
@@ -157,7 +214,7 @@ export const createRequest = async (req: AuthRequest, res: Response): Promise<vo
       const activeAllocations = await prisma.allocation.findMany({
         where: {
           employeeId,
-          timeOffTypeId,
+          timeOffTypeId: type.id,
           status: 'Approved',
           validFrom: { lte: new Date(endDate) },
           validTo: { gte: new Date(startDate) }
@@ -167,7 +224,7 @@ export const createRequest = async (req: AuthRequest, res: Response): Promise<vo
       const totalRemaining = activeAllocations.reduce((sum, a) => sum + a.remainingAmount, 0);
       if (totalRemaining < dur) {
         res.status(400).json({
-          error: `Insufficient leave balance. Requested: ${dur} ${type.unit}, Available: ${totalRemaining} ${type.unit}`
+          error: `Insufficient leave balance for ${type.name}. Requested: ${dur} ${type.unit}, Available: ${totalRemaining} ${type.unit}`
         });
         return;
       }
@@ -176,7 +233,7 @@ export const createRequest = async (req: AuthRequest, res: Response): Promise<vo
     const request = await prisma.timeOffRequest.create({
       data: {
         employeeId,
-        timeOffTypeId,
+        timeOffTypeId: type.id,
         startDate: new Date(startDate),
         endDate: new Date(endDate),
         duration: dur,

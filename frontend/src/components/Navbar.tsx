@@ -46,38 +46,6 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
 
   return (
     <header className="sticky top-0 z-40 bg-white/90 dark:bg-[#08070d]/90 backdrop-blur-2xl border-b border-purple-100 dark:border-purple-900/30 shadow-md dark:shadow-2xl transition-colors duration-300">
-      {/* Top Info Bar */}
-      <div className="bg-purple-50/80 dark:bg-[#040307] px-4 py-1.5 text-xs flex flex-wrap items-center justify-between border-b border-purple-100 dark:border-purple-950/80 text-slate-600 dark:text-slate-400 transition-colors duration-300 gap-2">
-        <div className="flex items-center space-x-2.5">
-          <span className="flex h-2 w-2 relative">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 dark:bg-amber-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500 dark:bg-amber-400"></span>
-          </span>
-          <span className="font-semibold text-purple-900 dark:text-amber-300 tracking-wide flex items-center gap-1">
-            <Sparkles size={12} className="text-amber-500 dark:text-purple-400" />
-            PeoplePay360 Relational Engine
-          </span>
-          <span className="text-slate-300 dark:text-slate-700">|</span>
-          <span className="text-purple-700/70 dark:text-purple-300/70 text-[11px] hidden sm:inline">PostgreSQL / Prisma Relational Architecture</span>
-        </div>
-
-        <div className="flex items-center space-x-2.5 py-0.5">
-          {user && (
-            <div className="flex items-center space-x-1.5">
-              <span className="text-slate-500 dark:text-slate-400 font-medium text-[11px] flex items-center gap-1">
-                <ShieldCheck size={13} className="text-amber-500 dark:text-amber-400" /> Active Role:
-              </span>
-              <span className="px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-gradient-to-r from-amber-500/15 to-purple-500/15 text-purple-950 dark:text-amber-200 border border-amber-500/40 dark:border-amber-400/40 shadow-sm">
-                {ROLE_DISPLAY_NAMES[user.role] || user.role}
-              </span>
-            </div>
-          )}
-
-          <span className="text-slate-300 dark:text-slate-700">|</span>
-          <ThemeToggle size="sm" />
-        </div>
-      </div>
-
       {/* Main Nav */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
@@ -118,6 +86,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
           </nav>
 
           <div className="flex items-center space-x-3">
+            <ThemeToggle size="sm" />
             {user ? (
               <div className="flex items-center gap-3 pl-1">
                 <div className="text-right hidden sm:block">

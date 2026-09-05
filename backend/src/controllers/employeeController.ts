@@ -68,7 +68,7 @@ export const getEmployeeById = async (req: Request, res: Response): Promise<void
         },
         attendances: {
           orderBy: { checkIn: 'desc' },
-          take: 30
+          take: 100
         },
         payslips: {
           orderBy: { periodStart: 'desc' },

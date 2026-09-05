@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   listTimeOffTypes,
+  listTimeOffTypesWithBalances,
   createTimeOffType,
   listAllocations,
   createAllocation,
@@ -20,6 +21,7 @@ router.use(authenticateToken);
 
 // Types
 router.get('/types', listTimeOffTypes);
+router.get('/types/balances', listTimeOffTypesWithBalances);
 router.post(
   '/types',
   authorizeRoles(Role.HRManager, Role.HRPayrollUser, Role.HRPayrollManager, Role.Admin),
