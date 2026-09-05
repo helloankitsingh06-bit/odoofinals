@@ -16,8 +16,8 @@ const MainApp: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-500"></div>
+      <div className="min-h-screen bg-[#05040a] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-purple-400 border-r-amber-400"></div>
       </div>
     );
   }
@@ -32,7 +32,7 @@ const MainApp: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0b0f19] text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-[#05040a] text-slate-100 flex flex-col selection:bg-purple-500/30 selection:text-amber-200">
       <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'dashboard' && <DashboardPage />}
