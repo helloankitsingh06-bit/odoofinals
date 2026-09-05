@@ -1,17 +1,5 @@
-const { auth } = require('../../firebase');
-
-/**
- * Why does role/auth enforcement have to live on the backend?
- *
- * 1. Client-side checks are cosmetic. Hiding a button or blocking a route in the
- *    browser is trivially bypassed with dev tools or a crafted fetch().
- * 2. The database is only as safe as the endpoints in front of it. Without route
- *    guards, anyone can call the API directly.
- * 3. Firebase issues signed ID tokens. Verifying them server-side is the only
- *    place identity and role can actually be trusted.
- */
-
-const VALID_MOCK_ROLES = ['Admin', 'AssetManager', 'DeptHead', 'Employee'];
+const { auth, db } = require('../../firebase');
+const { VALID_ROLES, ROLES } = require('../constants');
 
 function adminEmail() {
   return (process.env.ADMIN_EMAIL || '').toLowerCase();
@@ -23,19 +11,12 @@ function adminEmail() {
  * Firebase session to exercise protected routes.
  */
 function buildMockUser(role) {
-  if (role === 'Admin') {
-    return {
-      uid: 'mock-admin-uid',
-      email: adminEmail() || 'admin@example.com',
-      role: 'Admin',
-      name: 'Mock Admin',
-    };
-  }
+  const safeRole = VALID_ROLES.includes(role) ? role : ROLES.EMPLOYEE;
   return {
-    uid: `mock-${role.toLowerCase()}-uid`,
-    email: `mock_${role.toLowerCase()}@example.com`,
-    role,
-    name: `Mock ${role}`,
+    uid: `mock-${safeRole.toLowerCase()}-uid`,
+    email: safeRole === ROLES.ADMIN ? (adminEmail() || 'admin@example.com') : `mock_${safeRole.toLowerCase()}@example.com`,
+    role: safeRole,
+    name: `Mock ${safeRole}`,
   };
 }
 
@@ -44,10 +25,12 @@ function buildMockUser(role) {
  * - Requires an `Authorization: Bearer <token>` header.
  * - `mock-<Role>` tokens are accepted for dev/testing, but rejected in
  *   production unless ALLOW_MOCK_AUTH === 'true'.
- * - Real tokens are verified with the Firebase Admin SDK. The configured
- *   ADMIN_EMAIL gets role 'Admin'; every other authenticated user gets
- *   role 'Employee'. Adapt this to your own role source (custom claims,
- *   a Firestore "users" collection, etc.) once you know the domain.
+ * - Real tokens are verified with the Firebase Admin SDK.
+ * - Role is resolved in order:
+ *   1. Explicit custom claim on token (`decoded.role`)
+ *   2. Firestore user doc (`users/{uid}.role`)
+ *   3. Configured ADMIN_EMAIL -> 'Admin'
+ *   4. Default -> 'Employee'
  */
 async function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -75,9 +58,7 @@ async function verifyToken(req, res, next) {
     }
 
     const requestedRole = token.replace('mock-', '');
-    const role = VALID_MOCK_ROLES.includes(requestedRole)
-      ? requestedRole
-      : 'Employee';
+    const role = VALID_ROLES.includes(requestedRole) ? requestedRole : ROLES.EMPLOYEE;
 
     req.user = buildMockUser(role);
     return next();
@@ -88,18 +69,36 @@ async function verifyToken(req, res, next) {
     const decoded = await auth.verifyIdToken(token);
     const email = (decoded.email || '').toLowerCase();
 
-    if (!email) {
+    if (!email && !decoded.uid) {
       return res.status(400).json({
         error: 'Bad Request',
-        message: 'Authentication token is missing an email address',
+        message: 'Authentication token is missing identity information',
       });
     }
 
-    // Role resolution: prefer an explicit custom claim, then the configured
-    // admin email, then default everyone else to 'Employee'.
-    decoded.role =
-      decoded.role || (email === adminEmail() ? 'Admin' : 'Employee');
+    let resolvedRole = decoded.role;
 
+    // If custom claim not present on token, check Firestore users collection
+    if (!resolvedRole && db) {
+      try {
+        const userDoc = await db.collection('users').doc(decoded.uid).get();
+        if (userDoc.exists) {
+          const userData = userDoc.data();
+          if (userData.role && VALID_ROLES.includes(userData.role)) {
+            resolvedRole = userData.role;
+          }
+        }
+      } catch (dbErr) {
+        console.warn('Could not query Firestore for user role fallback:', dbErr.message);
+      }
+    }
+
+    // Fallback: Admin email check or default to Employee
+    if (!resolvedRole) {
+      resolvedRole = (email && email === adminEmail()) ? ROLES.ADMIN : ROLES.EMPLOYEE;
+    }
+
+    decoded.role = resolvedRole;
     req.user = decoded;
     return next();
   } catch (error) {
@@ -123,26 +122,34 @@ function requireRole(allowedRoles, label) {
     if (!allowedRoles.includes(req.user.role)) {
       return res.status(403).json({
         error: 'Forbidden',
-        message: `Access denied: requires ${label}`,
+        message: `Access denied: requires ${label || allowedRoles.join(' or ')}`,
       });
     }
     next();
   };
 }
 
-const requireAdmin = requireRole(['Admin'], 'Admin role');
-const requireAssetManager = requireRole(
-  ['Admin', 'AssetManager'],
-  'AssetManager or Admin role'
+const requireAdmin = requireRole([ROLES.ADMIN], 'Admin role');
+const requireHRManager = requireRole([ROLES.ADMIN, ROLES.HR_MANAGER], 'HRManager or Admin role');
+const requireHRPayrollUser = requireRole(
+  [ROLES.ADMIN, ROLES.HR_PAYROLL_USER, ROLES.HR_PAYROLL_MANAGER],
+  'HRPayrollUser, HRPayrollManager, or Admin role'
 );
-const requireDeptHead = requireRole(
-  ['Admin', 'DeptHead'],
-  'DeptHead or Admin role'
+const requireHRPayrollManager = requireRole(
+  [ROLES.ADMIN, ROLES.HR_PAYROLL_MANAGER],
+  'HRPayrollManager or Admin role'
+);
+const requireHRorPayroll = requireRole(
+  [ROLES.ADMIN, ROLES.HR_MANAGER, ROLES.HR_PAYROLL_USER, ROLES.HR_PAYROLL_MANAGER],
+  'HR, Payroll, or Admin role'
 );
 
 module.exports = {
   verifyToken,
+  requireRole,
   requireAdmin,
-  requireAssetManager,
-  requireDeptHead,
+  requireHRManager,
+  requireHRPayrollUser,
+  requireHRPayrollManager,
+  requireHRorPayroll,
 };

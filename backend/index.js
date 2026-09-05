@@ -10,6 +10,7 @@ require('./firebase');
 
 const { verifyToken } = require('./src/middleware/auth');
 const itemRoutes = require('./routes/itemRoutes');
+const userRoutes = require('./routes/userRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -33,6 +34,9 @@ app.get('/api/me', verifyToken, (req, res) => {
     role: req.user.role || 'Employee',
   });
 });
+
+// User and Auth routes
+app.use('/api/users', userRoutes);
 
 // Generic CRUD example. Copy this pattern for real domain entities.
 app.use('/api/items', itemRoutes);
