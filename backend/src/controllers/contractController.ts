@@ -39,16 +39,47 @@ export const createContract = async (req: Request, res: Response): Promise<void>
       status = 'Active'
     } = req.body;
 
-    if (!employeeId || !startDate || !wage || !salaryStructureId || !department || !jobPosition) {
+    if (!employeeId || !startDate || wage === undefined || wage === null || !salaryStructureId || !department || !jobPosition) {
       res.status(400).json({ error: 'All contract fields are required' });
       return;
     }
 
     const start = new Date(startDate);
-    const end = endDate ? new Date(endDate) : null;
+    if (isNaN(start.getTime())) {
+      res.status(400).json({ error: 'Invalid contract start date format' });
+      return;
+    }
+
+    let end: Date | null = null;
+    if (endDate) {
+      end = new Date(endDate);
+      if (isNaN(end.getTime())) {
+        res.status(400).json({ error: 'Invalid contract end date format' });
+        return;
+      }
+    }
 
     if (end && end < start) {
       res.status(400).json({ error: 'Contract end date cannot be earlier than start date' });
+      return;
+    }
+
+    const numericWage = Number(wage);
+    if (isNaN(numericWage) || numericWage <= 0) {
+      res.status(400).json({ error: 'Contract wage must be a positive number' });
+      return;
+    }
+
+    // Verify employee and salary structure exist
+    const employee = await prisma.employee.findUnique({ where: { id: employeeId } });
+    if (!employee) {
+      res.status(404).json({ error: 'Employee not found' });
+      return;
+    }
+
+    const structure = await prisma.salaryStructure.findUnique({ where: { id: salaryStructureId } });
+    if (!structure) {
+      res.status(404).json({ error: 'Salary structure not found' });
       return;
     }
 
@@ -81,10 +112,10 @@ export const createContract = async (req: Request, res: Response): Promise<void>
         employeeId,
         startDate: start,
         endDate: end,
-        wage: Number(wage),
+        wage: numericWage,
         salaryStructureId,
-        department,
-        jobPosition,
+        department: department.trim(),
+        jobPosition: jobPosition.trim(),
         status
       },
       include: {
@@ -118,12 +149,48 @@ export const updateContract = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const start = startDate ? new Date(startDate) : existing.startDate;
-    const end = endDate !== undefined ? (endDate ? new Date(endDate) : null) : existing.endDate;
+    let start = existing.startDate;
+    if (startDate) {
+      start = new Date(startDate);
+      if (isNaN(start.getTime())) {
+        res.status(400).json({ error: 'Invalid contract start date format' });
+        return;
+      }
+    }
+
+    let end = existing.endDate;
+    if (endDate !== undefined) {
+      if (endDate) {
+        end = new Date(endDate);
+        if (isNaN(end.getTime())) {
+          res.status(400).json({ error: 'Invalid contract end date format' });
+          return;
+        }
+      } else {
+        end = null;
+      }
+    }
 
     if (end && end < start) {
       res.status(400).json({ error: 'Contract end date cannot be earlier than start date' });
       return;
+    }
+
+    let numericWage: number | undefined = undefined;
+    if (wage !== undefined) {
+      numericWage = Number(wage);
+      if (isNaN(numericWage) || numericWage <= 0) {
+        res.status(400).json({ error: 'Contract wage must be a positive number' });
+        return;
+      }
+    }
+
+    if (salaryStructureId) {
+      const structure = await prisma.salaryStructure.findUnique({ where: { id: salaryStructureId } });
+      if (!structure) {
+        res.status(404).json({ error: 'Salary structure not found' });
+        return;
+      }
     }
 
     // Overlap validation if status is Active
@@ -144,7 +211,7 @@ export const updateContract = async (req: Request, res: Response): Promise<void>
 
         if (start <= cEnd && targetEnd >= cStart) {
           res.status(400).json({
-            error: `Contract dates overlap with active contract ${c.id}`
+            error: `Contract overlaps with existing Active contract (${c.id}) spanning ${cStart.toISOString().slice(0, 10)} to ${c.endDate ? new Date(c.endDate).toISOString().slice(0, 10) : 'Open-Ended'}. Please expire or adjust dates.`
           });
           return;
         }
@@ -156,10 +223,10 @@ export const updateContract = async (req: Request, res: Response): Promise<void>
       data: {
         startDate: start,
         endDate: end,
-        wage: wage !== undefined ? Number(wage) : undefined,
+        wage: numericWage !== undefined ? numericWage : undefined,
         salaryStructureId: salaryStructureId || undefined,
-        department: department || undefined,
-        jobPosition: jobPosition || undefined,
+        department: department !== undefined ? department.trim() : undefined,
+        jobPosition: jobPosition !== undefined ? jobPosition.trim() : undefined,
         status: targetStatus
       },
       include: {

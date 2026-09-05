@@ -101,17 +101,43 @@ export const createEmployee = async (req: Request, res: Response): Promise<void>
       status = 'Active'
     } = req.body;
 
-    if (!name || !department || !jobPosition) {
-      res.status(400).json({ error: 'Name, department, and job position are required' });
+    if (!name || typeof name !== 'string' || !name.trim() ||
+        !department || typeof department !== 'string' || !department.trim() ||
+        !jobPosition || typeof jobPosition !== 'string' || !jobPosition.trim()) {
+      res.status(400).json({ error: 'Name, department, and job position are required and cannot be empty' });
       return;
+    }
+
+    if (email && typeof email === 'string' && email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email.trim())) {
+        res.status(400).json({ error: 'Invalid email address format' });
+        return;
+      }
+    }
+
+    if (managerId) {
+      const manager = await prisma.employee.findUnique({ where: { id: managerId } });
+      if (!manager) {
+        res.status(404).json({ error: 'Reporting manager not found' });
+        return;
+      }
+    }
+
+    if (workingScheduleId) {
+      const schedule = await prisma.workingSchedule.findUnique({ where: { id: workingScheduleId } });
+      if (!schedule) {
+        res.status(404).json({ error: 'Working schedule not found' });
+        return;
+      }
     }
 
     const employee = await prisma.employee.create({
       data: {
-        name,
-        email: email || null,
-        department,
-        jobPosition,
+        name: name.trim(),
+        email: email && typeof email === 'string' && email.trim() ? email.trim() : null,
+        department: department.trim(),
+        jobPosition: jobPosition.trim(),
         managerId: managerId || null,
         workingScheduleId: workingScheduleId || null,
         status
@@ -141,19 +167,54 @@ export const updateEmployee = async (req: Request, res: Response): Promise<void>
       status
     } = req.body;
 
+    const existing = await prisma.employee.findUnique({ where: { id } });
+    if (!existing) {
+      res.status(404).json({ error: 'Employee not found' });
+      return;
+    }
+
     // Prevent self-management loop
     if (managerId && managerId === id) {
       res.status(400).json({ error: 'An employee cannot be their own manager' });
       return;
     }
 
+    if (name !== undefined && (typeof name !== 'string' || !name.trim())) {
+      res.status(400).json({ error: 'Employee name cannot be empty' });
+      return;
+    }
+
+    if (email !== undefined && email !== null && typeof email === 'string' && email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email.trim())) {
+        res.status(400).json({ error: 'Invalid email address format' });
+        return;
+      }
+    }
+
+    if (managerId) {
+      const manager = await prisma.employee.findUnique({ where: { id: managerId } });
+      if (!manager) {
+        res.status(404).json({ error: 'Reporting manager not found' });
+        return;
+      }
+    }
+
+    if (workingScheduleId) {
+      const schedule = await prisma.workingSchedule.findUnique({ where: { id: workingScheduleId } });
+      if (!schedule) {
+        res.status(404).json({ error: 'Working schedule not found' });
+        return;
+      }
+    }
+
     const updated = await prisma.employee.update({
       where: { id },
       data: {
-        name,
-        email: email !== undefined ? email : undefined,
-        department,
-        jobPosition,
+        name: name !== undefined ? name.trim() : undefined,
+        email: email !== undefined ? (email ? email.trim() : null) : undefined,
+        department: department !== undefined ? department.trim() : undefined,
+        jobPosition: jobPosition !== undefined ? jobPosition.trim() : undefined,
         managerId: managerId !== undefined ? managerId : undefined,
         workingScheduleId: workingScheduleId !== undefined ? workingScheduleId : undefined,
         status
