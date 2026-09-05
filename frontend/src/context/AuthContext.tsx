@@ -22,6 +22,7 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   login: (email: string, password?: string) => Promise<void>;
+  register: (name: string, email: string, password: string, role?: UserRole) => Promise<void>;
   logout: () => void;
   switchRoleQuick: (role: UserRole) => Promise<void>;
 }
@@ -76,6 +77,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const register = async (name: string, email: string, password: string, role: UserRole = 'Employee') => {
+    setIsLoading(true);
+    try {
+      const data = await apiRequest('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ name, email, password, role })
+      });
+      localStorage.setItem('peoplepay360_token', data.token);
+      setToken(data.token);
+      setUser(data.user);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('peoplepay360_token');
     setToken(null);
@@ -90,7 +106,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, logout, switchRoleQuick }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout, switchRoleQuick }}>
       {children}
     </AuthContext.Provider>
   );
