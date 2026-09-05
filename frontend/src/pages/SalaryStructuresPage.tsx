@@ -113,13 +113,13 @@ export const SalaryStructuresPage: React.FC = () => {
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#0b0914]/80 p-5 rounded-3xl border border-purple-900/40 backdrop-blur-xl shadow-2xl">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/90 dark:bg-[#0b0914]/80 p-5 rounded-3xl border border-purple-100 dark:border-purple-900/40 backdrop-blur-xl shadow-lg dark:shadow-2xl transition-colors duration-300">
         <div>
-          <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
-            <Layers className="text-amber-400" />
+          <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+            <Layers className="text-amber-500 dark:text-amber-400" />
             Salary Rules & Structures Architecture
           </h1>
-          <p className="text-sm text-purple-200/60">
+          <p className="text-sm text-slate-600 dark:text-purple-200/60 font-medium mt-0.5">
             Ordered salary execution sequence with AST formula evaluation and circular reference validation.
           </p>
         </div>
@@ -128,7 +128,7 @@ export const SalaryStructuresPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowRuleModal(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-purple-950/60 hover:bg-purple-900/60 text-purple-200 border border-purple-800/50 rounded-xl text-xs font-bold transition shadow-sm"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/60 text-purple-800 dark:text-purple-200 border border-purple-200 dark:border-purple-800/50 rounded-xl text-xs font-bold transition shadow-sm cursor-pointer"
             >
               <Plus size={15} /> New Salary Rule
             </button>
@@ -138,7 +138,7 @@ export const SalaryStructuresPage: React.FC = () => {
                 setValidationResult(null);
                 setShowStructureModal(true);
               }}
-              className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl text-xs font-black shadow-lg shadow-amber-500/20 transition active:scale-95"
+              className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl text-xs font-black shadow-md shadow-amber-500/20 transition active:scale-95 cursor-pointer"
             >
               <Plus size={15} /> New Structure
             </button>
@@ -148,37 +148,37 @@ export const SalaryStructuresPage: React.FC = () => {
 
       {/* Salary Structures Section */}
       <div className="space-y-4">
-        <h2 className="text-xs font-black text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
-          <Sparkles size={13} className="text-purple-400" /> Configured Salary Structures
+        <h2 className="text-xs font-black text-amber-700 dark:text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+          <Sparkles size={13} className="text-purple-600 dark:text-purple-400" /> Configured Salary Structures
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {structures.map((st) => (
-            <div key={st.id} className="bg-[#0b0914]/80 border border-purple-900/40 hover:border-amber-400/60 p-5 rounded-3xl shadow-xl transition-all duration-300">
+            <div key={st.id} className="bg-white dark:bg-[#0b0914]/80 border border-purple-100 dark:border-purple-900/40 hover:border-amber-400/60 p-5 rounded-3xl shadow-sm hover:shadow-md dark:shadow-xl transition-all duration-300">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-bold text-white text-base">{st.name}</h3>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-200 border border-purple-500/30">
+                <h3 className="font-bold text-slate-900 dark:text-white text-base">{st.name}</h3>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-200 border border-purple-200 dark:border-purple-500/30">
                   {st.rules?.length || 0} Ordered Rules
                 </span>
               </div>
 
               <div className="space-y-2 mt-4">
-                <span className="text-[10px] uppercase font-bold text-purple-400/60 tracking-wider">Sequential Calculation Chain:</span>
+                <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-purple-400/60 tracking-wider">Sequential Calculation Chain:</span>
                 <div className="space-y-1.5">
                   {st.rules?.map((sr: any) => (
                     <div
                       key={sr.id}
-                      className="p-2.5 rounded-xl bg-[#06050b] border border-purple-900/40 flex items-center justify-between text-xs"
+                      className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/40 flex items-center justify-between text-xs"
                     >
                       <div className="flex items-center gap-2">
-                        <span className="h-5 w-5 rounded-lg bg-purple-950 text-amber-300 font-mono text-[10px] flex items-center justify-center font-bold">
+                        <span className="h-5 w-5 rounded-lg bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-amber-300 font-mono text-[10px] flex items-center justify-center font-bold">
                           {sr.position}
                         </span>
-                        <span className="font-semibold text-white">{sr.salaryRule?.name}</span>
-                        <code className="text-[10px] text-amber-300 bg-amber-400/10 border border-amber-400/20 px-1.5 py-0.5 rounded font-mono">
+                        <span className="font-semibold text-slate-900 dark:text-white">{sr.salaryRule?.name}</span>
+                        <code className="text-[10px] text-amber-700 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded font-mono font-bold">
                           {sr.salaryRule?.code}
                         </code>
                       </div>
-                      <div className="text-[11px] text-purple-300/80 font-mono">
+                      <div className="text-[11px] text-slate-600 dark:text-purple-300/80 font-mono font-medium">
                         {sr.salaryRule?.computeType === 'Fixed' && `$${sr.salaryRule?.value || 0}`}
                         {sr.salaryRule?.computeType === 'Percentage' && `${sr.salaryRule?.value}% of ${sr.salaryRule?.formula || 'BASIC'}`}
                         {sr.salaryRule?.computeType === 'Formula' && sr.salaryRule?.formula}
@@ -193,14 +193,14 @@ export const SalaryStructuresPage: React.FC = () => {
       </div>
 
       {/* Salary Rules Library Table */}
-      <div className="bg-[#0b0914]/80 border border-purple-900/40 rounded-3xl overflow-hidden shadow-2xl">
-        <div className="p-4 bg-[#06050b] border-b border-purple-900/50 flex items-center justify-between">
-          <span className="text-xs font-bold text-amber-300">Salary Rule Definitions Library</span>
-          <span className="text-xs text-purple-400/60 font-medium">{rules.length} Rules Registered</span>
+      <div className="bg-white dark:bg-[#0b0914]/80 border border-purple-100 dark:border-purple-900/40 rounded-3xl overflow-hidden shadow-md dark:shadow-2xl transition-colors duration-300">
+        <div className="p-4 bg-purple-50/70 dark:bg-[#06050b] border-b border-purple-100 dark:border-purple-900/50 flex items-center justify-between">
+          <span className="text-xs font-bold text-amber-700 dark:text-amber-300">Salary Rule Definitions Library</span>
+          <span className="text-xs text-slate-500 dark:text-purple-400/60 font-medium">{rules.length} Rules Registered</span>
         </div>
 
         <table className="w-full text-left text-xs">
-          <thead className="bg-[#06050b] text-purple-300/70 font-bold uppercase tracking-wider text-[10px]">
+          <thead className="bg-purple-50/70 dark:bg-[#06050b] text-purple-900 dark:text-purple-300/70 font-bold uppercase tracking-wider text-[10px] border-b border-purple-100 dark:border-purple-900/50">
             <tr>
               <th className="px-5 py-4">Sequence</th>
               <th className="px-5 py-4">Rule Name</th>
@@ -210,38 +210,38 @@ export const SalaryStructuresPage: React.FC = () => {
               <th className="px-5 py-4 text-right">Value / Expression</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-purple-950 text-purple-100">
+          <tbody className="divide-y divide-purple-100 dark:divide-purple-950 text-slate-800 dark:text-purple-100 font-medium">
             {rules.map((rule) => (
-              <tr key={rule.id} className="hover:bg-purple-950/20 transition">
-                <td className="px-5 py-4 font-mono font-bold text-purple-400/60">
+              <tr key={rule.id} className="hover:bg-purple-50/50 dark:hover:bg-purple-950/20 transition">
+                <td className="px-5 py-4 font-mono font-bold text-slate-500 dark:text-purple-400/60">
                   #{rule.sequence}
                 </td>
-                <td className="px-5 py-4 font-bold text-white">
+                <td className="px-5 py-4 font-bold text-slate-900 dark:text-white">
                   {rule.name}
                 </td>
                 <td className="px-5 py-4">
-                  <span className="px-2 py-0.5 rounded-md bg-amber-400/10 text-amber-300 border border-amber-400/20 font-mono text-[11px] font-bold">
+                  <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 font-mono text-[11px] font-bold">
                     {rule.code}
                   </span>
                 </td>
                 <td className="px-5 py-4">
                   <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                    rule.category === 'Basic' ? 'bg-purple-500/20 text-purple-200 border border-purple-500/30' :
-                    rule.category === 'Allowance' ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30' :
-                    rule.category === 'Deduction' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' :
-                    rule.category === 'Gross' ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
-                    'bg-purple-600/20 text-purple-200 border border-purple-600/30'
+                    rule.category === 'Basic' ? 'bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-200 border border-purple-200 dark:border-purple-500/30' :
+                    rule.category === 'Allowance' ? 'bg-amber-100 dark:bg-amber-400/20 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-400/30' :
+                    rule.category === 'Deduction' ? 'bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-500/30' :
+                    rule.category === 'Gross' ? 'bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-500/30' :
+                    'bg-purple-100 dark:bg-purple-600/20 text-purple-700 dark:text-purple-200 border border-purple-200 dark:border-purple-600/30'
                   }`}>
                     {rule.category}
                   </span>
                 </td>
-                <td className="px-5 py-4 text-purple-300/70 font-medium">
+                <td className="px-5 py-4 text-slate-600 dark:text-purple-300/70 font-medium">
                   {rule.computeType}
                 </td>
-                <td className="px-5 py-4 font-mono font-black text-right text-amber-300">
+                <td className="px-5 py-4 font-mono font-black text-right text-amber-600 dark:text-amber-300">
                   {rule.computeType === 'Fixed' && (rule.value ? `$${rule.value}` : 'Contract Wage')}
                   {rule.computeType === 'Percentage' && `${rule.value}% of ${rule.formula || 'BASIC'}`}
-                  {rule.computeType === 'Formula' && <span className="text-purple-300">{rule.formula}</span>}
+                  {rule.computeType === 'Formula' && <span className="text-purple-700 dark:text-purple-300">{rule.formula}</span>}
                 </td>
               </tr>
             ))}
@@ -251,43 +251,43 @@ export const SalaryStructuresPage: React.FC = () => {
 
       {/* Create Rule Modal */}
       {showRuleModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-          <div className="bg-[#090712] border border-purple-800/60 rounded-3xl w-full max-w-md p-6 shadow-2xl">
-            <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-              <Sparkles size={18} className="text-amber-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-md p-4">
+          <div className="bg-white dark:bg-[#090712] border border-purple-200 dark:border-purple-800/60 rounded-3xl w-full max-w-md p-6 shadow-2xl transition-colors duration-300">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+              <Sparkles size={18} className="text-amber-500 dark:text-amber-400" />
               Create Salary Rule
             </h2>
             <form onSubmit={handleCreateRule} className="space-y-4 text-xs">
               <div>
-                <label className="block text-purple-300/80 mb-1 font-semibold">Rule Name</label>
+                <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Rule Name</label>
                 <input
                   type="text"
                   required
                   value={ruleForm.name}
                   onChange={(e) => setRuleForm({ ...ruleForm, name: e.target.value })}
-                  className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                  className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium"
                   placeholder="e.g. Travel Allowance"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-purple-300/80 mb-1 font-semibold">Code (Unique)</label>
+                  <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Code (Unique)</label>
                   <input
                     type="text"
                     required
                     value={ruleForm.code}
                     onChange={(e) => setRuleForm({ ...ruleForm, code: e.target.value.toUpperCase() })}
-                    className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white font-mono uppercase focus:outline-none focus:border-amber-400"
+                    className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white font-mono uppercase focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium"
                     placeholder="TRAVEL"
                   />
                 </div>
                 <div>
-                  <label className="block text-purple-300/80 mb-1 font-semibold">Category</label>
+                  <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Category</label>
                   <select
                     value={ruleForm.category}
                     onChange={(e) => setRuleForm({ ...ruleForm, category: e.target.value })}
-                    className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                    className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium cursor-pointer"
                   >
                     <option value="Basic">Basic</option>
                     <option value="Allowance">Allowance</option>
@@ -300,11 +300,11 @@ export const SalaryStructuresPage: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-purple-300/80 mb-1 font-semibold">Compute Type</label>
+                  <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Compute Type</label>
                   <select
                     value={ruleForm.computeType}
                     onChange={(e) => setRuleForm({ ...ruleForm, computeType: e.target.value })}
-                    className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                    className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium cursor-pointer"
                   >
                     <option value="Fixed">Fixed</option>
                     <option value="Percentage">Percentage</option>
@@ -312,56 +312,56 @@ export const SalaryStructuresPage: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-purple-300/80 mb-1 font-semibold">Execution Sequence</label>
+                  <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Execution Sequence</label>
                   <input
                     type="number"
                     min="1"
                     required
                     value={ruleForm.sequence}
                     onChange={(e) => setRuleForm({ ...ruleForm, sequence: Number(e.target.value) })}
-                    className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                    className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium"
                   />
                 </div>
               </div>
 
               {ruleForm.computeType !== 'Formula' && (
                 <div>
-                  <label className="block text-purple-300/80 mb-1 font-semibold">Numeric Value / % Amount</label>
+                  <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Numeric Value / % Amount</label>
                   <input
                     type="number"
                     step="0.01"
                     value={ruleForm.value}
                     onChange={(e) => setRuleForm({ ...ruleForm, value: Number(e.target.value) })}
-                    className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                    className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium"
                   />
                 </div>
               )}
 
               {ruleForm.computeType === 'Formula' && (
                 <div>
-                  <label className="block text-purple-300/80 mb-1 font-semibold">Math Expression Formula</label>
+                  <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Math Expression Formula</label>
                   <input
                     type="text"
                     required
                     value={ruleForm.formula}
                     onChange={(e) => setRuleForm({ ...ruleForm, formula: e.target.value })}
-                    className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white font-mono focus:outline-none focus:border-amber-400"
+                    className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium"
                     placeholder="e.g. BASIC + HRA - PF"
                   />
                 </div>
               )}
 
-              <div className="flex justify-end gap-2 pt-4 border-t border-purple-900/40">
+              <div className="flex justify-end gap-2 pt-4 border-t border-purple-100 dark:border-purple-900/40">
                 <button
                   type="button"
                   onClick={() => setShowRuleModal(false)}
-                  className="px-4 py-2 bg-purple-950/60 border border-purple-900/50 text-purple-300 rounded-xl hover:bg-purple-900/40 font-bold"
+                  className="px-4 py-2 bg-slate-100 dark:bg-purple-950/60 border border-slate-200 dark:border-purple-900/50 text-slate-600 dark:text-purple-300 rounded-xl hover:bg-slate-200 dark:hover:bg-purple-900/40 font-bold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl font-black shadow-lg shadow-amber-500/20"
+                  className="px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl font-black shadow-md shadow-amber-500/20 cursor-pointer"
                 >
                   Save Rule
                 </button>
@@ -373,39 +373,39 @@ export const SalaryStructuresPage: React.FC = () => {
 
       {/* Create Structure Modal with Live Dry-Run Validation */}
       {showStructureModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-          <div className="bg-[#090712] border border-purple-800/60 rounded-3xl w-full max-w-xl p-6 shadow-2xl">
-            <h2 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
-              <Sparkles size={18} className="text-amber-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-md p-4">
+          <div className="bg-white dark:bg-[#090712] border border-purple-200 dark:border-purple-800/60 rounded-3xl w-full max-w-xl p-6 shadow-2xl transition-colors duration-300">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+              <Sparkles size={18} className="text-amber-500 dark:text-amber-400" />
               Build Salary Structure
             </h2>
-            <p className="text-xs text-purple-300/60 mb-4">
+            <p className="text-xs text-slate-500 dark:text-purple-300/60 mb-4 font-medium">
               Select and sequence rules. Run dry-run validation to test for forward dependencies.
             </p>
 
             <form onSubmit={handleCreateStructure} className="space-y-4 text-xs">
               <div>
-                <label className="block text-purple-300/80 mb-1 font-semibold">Structure Name</label>
+                <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Structure Name</label>
                 <input
                   type="text"
                   required
                   value={structureForm.name}
                   onChange={(e) => setStructureForm({ ...structureForm, name: e.target.value })}
-                  className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                  className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium"
                   placeholder="e.g. Executive Compensation Package"
                 />
               </div>
 
               <div>
-                <label className="block text-purple-300/80 mb-1 font-semibold">Ordered Rule Sequence:</label>
-                <div className="space-y-2 max-h-48 overflow-y-auto p-2.5 bg-[#06050b] border border-purple-900/50 rounded-2xl">
+                <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Ordered Rule Sequence:</label>
+                <div className="space-y-2 max-h-48 overflow-y-auto p-2.5 bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-2xl">
                   {rules.map((r) => {
                     const isChecked = structureForm.ruleIds.includes(r.id);
                     return (
                       <label
                         key={r.id}
                         className={`flex items-center justify-between p-2.5 rounded-xl cursor-pointer transition ${
-                          isChecked ? 'bg-purple-950/60 border border-amber-400/40 shadow-sm' : 'bg-[#08070e] opacity-60'
+                          isChecked ? 'bg-purple-100 dark:bg-purple-950/60 border border-amber-500/40 dark:border-amber-400/40 shadow-sm' : 'bg-white dark:bg-[#08070e] opacity-70 border border-slate-200 dark:border-transparent'
                         }`}
                       >
                         <div className="flex items-center gap-2">
@@ -421,10 +421,10 @@ export const SalaryStructuresPage: React.FC = () => {
                             }}
                             className="rounded text-amber-500"
                           />
-                          <span className="font-semibold text-white">{r.name}</span>
-                          <span className="text-[10px] text-amber-300 font-mono">[{r.code}]</span>
+                          <span className="font-semibold text-slate-900 dark:text-white">{r.name}</span>
+                          <span className="text-[10px] text-amber-700 dark:text-amber-300 font-mono font-bold">[{r.code}]</span>
                         </div>
-                        <span className="text-[10px] text-purple-400/70 font-mono">{r.computeType}</span>
+                        <span className="text-[10px] text-slate-500 dark:text-purple-400/70 font-mono font-medium">{r.computeType}</span>
                       </label>
                     );
                   })}
@@ -432,14 +432,14 @@ export const SalaryStructuresPage: React.FC = () => {
               </div>
 
               {/* Dry-run Validator Feedback */}
-              <div className="p-3.5 bg-[#06050b] border border-purple-900/50 rounded-2xl">
+              <div className="p-3.5 bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-2xl">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-purple-200">Dry-Run Dependency Check</span>
+                  <span className="text-xs font-bold text-slate-800 dark:text-purple-200">Dry-Run Dependency Check</span>
                   <button
                     type="button"
                     onClick={handleDryRunValidate}
                     disabled={validating}
-                    className="px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-[11px] font-bold shadow"
+                    className="px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-[11px] font-bold shadow-sm cursor-pointer"
                   >
                     {validating ? 'Checking...' : 'Run Dry Validation'}
                   </button>
@@ -447,11 +447,11 @@ export const SalaryStructuresPage: React.FC = () => {
 
                 {validationResult && (
                   <div className={`mt-2.5 p-3 rounded-xl text-[11px] ${
-                    validationResult.valid ? 'bg-amber-400/15 text-amber-300 border border-amber-400/30' : 'bg-rose-500/20 text-rose-300'
+                    validationResult.valid ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30' : 'bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-500/40'
                   }`}>
                     {validationResult.valid ? (
                       <div className="flex items-center gap-1.5 font-bold">
-                        <Check size={14} className="text-amber-400" /> Structure rules sequence is mathematically sound with 0 forward reference errors!
+                        <Check size={14} className="text-amber-600 dark:text-amber-400" /> Structure rules sequence is mathematically sound with 0 forward reference errors!
                       </div>
                     ) : (
                       <div>
@@ -463,18 +463,18 @@ export const SalaryStructuresPage: React.FC = () => {
                 )}
               </div>
 
-              <div className="flex justify-end gap-2 pt-4 border-t border-purple-900/40">
+              <div className="flex justify-end gap-2 pt-4 border-t border-purple-100 dark:border-purple-900/40">
                 <button
                   type="button"
                   onClick={() => setShowStructureModal(false)}
-                  className="px-4 py-2 bg-purple-950/60 border border-purple-900/50 text-purple-300 rounded-xl hover:bg-purple-900/40 font-bold"
+                  className="px-4 py-2 bg-slate-100 dark:bg-purple-950/60 border border-slate-200 dark:border-purple-900/50 text-slate-600 dark:text-purple-300 rounded-xl hover:bg-slate-200 dark:hover:bg-purple-900/40 font-bold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={validationResult?.valid === false}
-                  className="px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 disabled:opacity-50 text-slate-950 rounded-xl font-black shadow-lg shadow-amber-500/20"
+                  className="px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 disabled:opacity-50 text-slate-950 rounded-xl font-black shadow-md shadow-amber-500/20 cursor-pointer"
                 >
                   Save Structure
                 </button>

@@ -95,29 +95,37 @@ export const EmployeesPage: React.FC = () => {
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#0b0914]/80 p-5 rounded-3xl border border-purple-900/40 backdrop-blur-xl shadow-2xl">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/90 dark:bg-[#0b0914]/80 p-5 rounded-3xl border border-purple-100 dark:border-purple-900/40 backdrop-blur-xl shadow-lg dark:shadow-2xl transition-colors duration-300">
         <div>
-          <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
-            <Users className="text-amber-400" />
+          <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+            <Users className="text-amber-500 dark:text-amber-400" />
             Employee Management Hub
           </h1>
-          <p className="text-sm text-purple-200/60">
+          <p className="text-sm text-slate-600 dark:text-purple-200/60 font-medium mt-0.5">
             Central repository for employee records, manager hierarchies, and linked payroll entities.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex bg-[#06050b] border border-purple-900/50 rounded-xl p-1">
+          <div className="flex bg-slate-100 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl p-1">
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-1.5 rounded-lg transition ${viewMode === 'grid' ? 'bg-purple-900/60 text-amber-300 shadow' : 'text-purple-300/60 hover:text-white'}`}
+              className={`p-1.5 rounded-lg transition cursor-pointer ${
+                viewMode === 'grid'
+                  ? 'bg-purple-600 text-white dark:bg-purple-900/60 dark:text-amber-300 shadow-sm'
+                  : 'text-slate-500 dark:text-purple-300/60 hover:text-slate-900 dark:hover:text-white'
+              }`}
               title="Kanban Grid"
             >
               <LayoutGrid size={16} />
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`p-1.5 rounded-lg transition ${viewMode === 'list' ? 'bg-purple-900/60 text-amber-300 shadow' : 'text-purple-300/60 hover:text-white'}`}
+              className={`p-1.5 rounded-lg transition cursor-pointer ${
+                viewMode === 'list'
+                  ? 'bg-purple-600 text-white dark:bg-purple-900/60 dark:text-amber-300 shadow-sm'
+                  : 'text-slate-500 dark:text-purple-300/60 hover:text-slate-900 dark:hover:text-white'
+              }`}
               title="Table List"
             >
               <List size={16} />
@@ -126,7 +134,7 @@ export const EmployeesPage: React.FC = () => {
 
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl text-xs font-black shadow-lg shadow-amber-500/20 transition active:scale-95"
+            className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl text-xs font-black shadow-md shadow-amber-500/20 transition active:scale-95 cursor-pointer"
           >
             <Plus size={16} /> Add Employee
           </button>
@@ -136,28 +144,28 @@ export const EmployeesPage: React.FC = () => {
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="relative w-full sm:w-80">
-          <Search size={15} className="absolute left-3.5 top-3 text-purple-400/60" />
+          <Search size={15} className="absolute left-3.5 top-3 text-slate-400 dark:text-purple-400/60" />
           <input
             type="text"
             placeholder="Search by name, title, email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-[#07050d] border border-purple-900/50 rounded-2xl pl-10 pr-3 py-2.5 text-xs text-white placeholder-purple-300/40 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/40 transition"
+            className="w-full bg-white dark:bg-[#07050d] border border-slate-200 dark:border-purple-900/50 rounded-2xl pl-10 pr-3 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-purple-300/40 focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 focus:ring-1 focus:ring-amber-400/40 transition font-medium"
           />
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <span className="text-xs text-purple-300/70 whitespace-nowrap">Filter Dept:</span>
+          <span className="text-xs text-slate-600 dark:text-purple-300/70 whitespace-nowrap font-medium">Filter Dept:</span>
           <select
             value={departmentFilter}
             onChange={(e) => setDepartmentFilter(e.target.value)}
-            className="bg-[#07050d] border border-purple-900/50 rounded-2xl px-3 py-2.5 text-xs text-amber-300 font-semibold focus:outline-none"
+            className="bg-white dark:bg-[#07050d] border border-slate-200 dark:border-purple-900/50 rounded-2xl px-3 py-2.5 text-xs text-amber-600 dark:text-amber-300 font-bold focus:outline-none cursor-pointer"
           >
-            <option value="All" className="bg-[#0b0914] text-purple-100">All Departments</option>
-            <option value="Engineering" className="bg-[#0b0914] text-purple-100">Engineering</option>
-            <option value="Human Resources" className="bg-[#0b0914] text-purple-100">Human Resources</option>
-            <option value="Finance & Payroll" className="bg-[#0b0914] text-purple-100">Finance & Payroll</option>
-            <option value="Executive" className="bg-[#0b0914] text-purple-100">Executive</option>
+            <option value="All" className="bg-white dark:bg-[#0b0914] text-slate-900 dark:text-purple-100">All Departments</option>
+            <option value="Engineering" className="bg-white dark:bg-[#0b0914] text-slate-900 dark:text-purple-100">Engineering</option>
+            <option value="Human Resources" className="bg-white dark:bg-[#0b0914] text-slate-900 dark:text-purple-100">Human Resources</option>
+            <option value="Finance & Payroll" className="bg-white dark:bg-[#0b0914] text-slate-900 dark:text-purple-100">Finance & Payroll</option>
+            <option value="Executive" className="bg-white dark:bg-[#0b0914] text-slate-900 dark:text-purple-100">Executive</option>
           </select>
         </div>
       </div>
@@ -171,33 +179,33 @@ export const EmployeesPage: React.FC = () => {
               <div
                 key={emp.id}
                 onClick={() => openEmployeeHub(emp)}
-                className="bg-[#0b0914]/80 border border-purple-900/40 hover:border-amber-400/60 p-5 rounded-3xl cursor-pointer transition-all duration-300 group relative hover:shadow-xl hover:shadow-amber-500/5 hover:scale-[1.01]"
+                className="bg-white dark:bg-[#0b0914]/80 border border-purple-100 dark:border-purple-900/40 hover:border-amber-400/60 p-5 rounded-3xl cursor-pointer transition-all duration-300 group relative shadow-sm hover:shadow-md dark:shadow-xl hover:scale-[1.01]"
               >
                 <div className="flex items-start justify-between mb-3">
-                  <div className="h-11 w-11 rounded-2xl bg-gradient-to-tr from-purple-700 via-fuchsia-600 to-amber-400 flex items-center justify-center text-slate-950 font-black text-sm shadow-md shadow-purple-500/20">
+                  <div className="h-11 w-11 rounded-2xl bg-gradient-to-tr from-purple-600 via-fuchsia-500 to-amber-400 flex items-center justify-center text-white dark:text-slate-950 font-black text-sm shadow-md shadow-purple-500/20">
                     {emp.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
                   </div>
                   <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                    emp.status === 'Active' ? 'bg-amber-400/15 text-amber-300 border border-amber-400/30' : 'bg-purple-950/40 text-purple-400 border border-purple-900/40'
+                    emp.status === 'Active' ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30' : 'bg-slate-100 dark:bg-purple-950/40 text-slate-600 dark:text-purple-400 border border-slate-200 dark:border-purple-900/40'
                   }`}>
                     {emp.status}
                   </span>
                 </div>
 
-                <h3 className="font-bold text-white text-base group-hover:text-amber-300 transition">{emp.name}</h3>
-                <p className="text-xs text-purple-200/70 font-medium mt-0.5">{emp.jobPosition}</p>
-                <div className="text-[11px] text-purple-400/60 flex items-center gap-1 mt-1">
+                <h3 className="font-bold text-slate-900 dark:text-white text-base group-hover:text-amber-600 dark:group-hover:text-amber-300 transition">{emp.name}</h3>
+                <p className="text-xs text-slate-600 dark:text-purple-200/70 font-medium mt-0.5">{emp.jobPosition}</p>
+                <div className="text-[11px] text-slate-500 dark:text-purple-400/60 flex items-center gap-1 mt-1 font-medium">
                   <Building2 size={12} /> {emp.department}
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-purple-900/40 flex items-center justify-between text-xs">
+                <div className="mt-4 pt-3 border-t border-purple-100 dark:border-purple-900/40 flex items-center justify-between text-xs">
                   <div>
-                    <span className="text-purple-400/60 text-[10px] block font-medium">Contract Wage</span>
-                    <span className="text-amber-300 font-bold font-mono">
+                    <span className="text-slate-400 dark:text-purple-400/60 text-[10px] block font-medium">Contract Wage</span>
+                    <span className="text-amber-600 dark:text-amber-300 font-bold font-mono">
                       {activeContract ? `$${activeContract.wage.toLocaleString()}/mo` : 'No Active Contract'}
                     </span>
                   </div>
-                  <div className="flex items-center text-purple-300 group-hover:text-amber-300 transition text-[11px] font-semibold">
+                  <div className="flex items-center text-purple-700 dark:text-purple-300 group-hover:text-amber-600 dark:group-hover:text-amber-300 transition text-[11px] font-bold">
                     Open Hub <ChevronRight size={14} />
                   </div>
                 </div>
@@ -206,9 +214,9 @@ export const EmployeesPage: React.FC = () => {
           })}
         </div>
       ) : (
-        <div className="bg-[#0b0914]/80 border border-purple-900/40 rounded-3xl overflow-hidden shadow-2xl">
+        <div className="bg-white dark:bg-[#0b0914]/80 border border-purple-100 dark:border-purple-900/40 rounded-3xl overflow-hidden shadow-md dark:shadow-2xl transition-colors duration-300">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#06050b] text-purple-300/70 font-bold uppercase tracking-wider text-[10px]">
+            <thead className="bg-purple-50/70 dark:bg-[#06050b] text-purple-900 dark:text-purple-300/70 font-bold uppercase tracking-wider text-[10px] border-b border-purple-100 dark:border-purple-900/50">
               <tr>
                 <th className="px-5 py-4">Employee</th>
                 <th className="px-5 py-4">Department</th>
@@ -218,32 +226,32 @@ export const EmployeesPage: React.FC = () => {
                 <th className="px-5 py-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-purple-950 text-purple-100/90">
+            <tbody className="divide-y divide-purple-100 dark:divide-purple-950 text-slate-800 dark:text-purple-100/90 font-medium">
               {filteredEmployees.map((emp) => {
                 const activeContract = emp.contracts?.find((c: any) => c.status === 'Active');
                 return (
-                  <tr key={emp.id} className="hover:bg-purple-950/20 transition">
-                    <td className="px-5 py-4 font-medium text-white flex items-center gap-2.5">
-                      <div className="h-8 w-8 rounded-xl bg-gradient-to-tr from-purple-700 to-amber-400 text-slate-950 flex items-center justify-center font-bold text-xs shadow-sm">
+                  <tr key={emp.id} className="hover:bg-purple-50/50 dark:hover:bg-purple-950/20 transition">
+                    <td className="px-5 py-4 font-medium flex items-center gap-2.5">
+                      <div className="h-8 w-8 rounded-xl bg-gradient-to-tr from-purple-600 to-amber-500 text-white flex items-center justify-center font-bold text-xs shadow-sm">
                         {emp.name[0]}
                       </div>
                       <div>
-                        <div className="font-bold text-white">{emp.name}</div>
-                        <div className="text-[11px] text-purple-400/60">{emp.email || 'No email'}</div>
+                        <div className="font-bold text-slate-900 dark:text-white">{emp.name}</div>
+                        <div className="text-[11px] text-slate-500 dark:text-purple-400/60">{emp.email || 'No email'}</div>
                       </div>
                     </td>
-                    <td className="px-5 py-4 text-purple-200">{emp.department}</td>
-                    <td className="px-5 py-4 text-purple-200">{emp.jobPosition}</td>
-                    <td className="px-5 py-4 text-purple-300/70">
+                    <td className="px-5 py-4 text-slate-700 dark:text-purple-200">{emp.department}</td>
+                    <td className="px-5 py-4 text-slate-700 dark:text-purple-200">{emp.jobPosition}</td>
+                    <td className="px-5 py-4 text-slate-500 dark:text-purple-300/70">
                       {emp.workingSchedule ? `${emp.workingSchedule.name} (${emp.workingSchedule.totalWeeklyHours}h)` : 'None'}
                     </td>
-                    <td className="px-5 py-4 font-mono text-amber-300 font-bold">
-                      {activeContract ? `$${activeContract.wage.toLocaleString()}` : <span className="text-purple-400/50 font-sans">N/A</span>}
+                    <td className="px-5 py-4 font-mono text-amber-600 dark:text-amber-300 font-bold">
+                      {activeContract ? `$${activeContract.wage.toLocaleString()}` : <span className="text-slate-400 dark:text-purple-400/50 font-sans">N/A</span>}
                     </td>
                     <td className="px-5 py-4 text-right">
                       <button
                         onClick={() => openEmployeeHub(emp)}
-                        className="px-3 py-1.5 rounded-xl bg-purple-950/60 hover:bg-amber-400/20 text-amber-300 border border-purple-900/50 hover:border-amber-400/50 font-bold text-[11px] transition shadow-sm"
+                        className="px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/60 hover:bg-amber-100 dark:hover:bg-amber-400/20 text-purple-800 dark:text-amber-300 border border-purple-200 dark:border-purple-900/50 hover:border-amber-400/50 font-bold text-[11px] transition shadow-sm cursor-pointer"
                       >
                         View Hub
                       </button>
@@ -258,80 +266,80 @@ export const EmployeesPage: React.FC = () => {
 
       {/* Slide-over / Modal for Central Employee Hub */}
       {selectedEmployee && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto">
-          <div className="bg-[#090712] border border-purple-800/60 rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-md p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-[#090712] border border-purple-200 dark:border-purple-800/60 rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col transition-colors duration-300">
             {/* Hub Header */}
-            <div className="p-6 bg-[#0e0c1a] border-b border-purple-900/50 flex items-center justify-between">
+            <div className="p-6 bg-purple-50/70 dark:bg-[#0e0c1a] border-b border-purple-100 dark:border-purple-900/50 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-2xl bg-gradient-to-tr from-amber-400 via-yellow-300 to-purple-400 flex items-center justify-center text-slate-950 font-black text-lg shadow-lg">
+                <div className="h-12 w-12 rounded-2xl bg-gradient-to-tr from-amber-400 via-yellow-300 to-purple-500 flex items-center justify-center text-slate-950 font-black text-lg shadow-lg">
                   {selectedEmployee.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                     {selectedEmployee.name}
-                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-400/15 text-amber-300 border border-amber-400/30">
+                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
                       {selectedEmployee.status}
                     </span>
                   </h2>
-                  <p className="text-xs text-purple-300/70">{selectedEmployee.jobPosition} • {selectedEmployee.department}</p>
+                  <p className="text-xs text-slate-600 dark:text-purple-300/70 font-medium">{selectedEmployee.jobPosition} • {selectedEmployee.department}</p>
                 </div>
               </div>
               <button
                 onClick={() => setSelectedEmployee(null)}
-                className="p-2 text-purple-400 hover:text-white rounded-xl hover:bg-purple-900/40 transition"
+                className="p-2 text-slate-400 dark:text-purple-400 hover:text-slate-900 dark:hover:text-white rounded-xl hover:bg-purple-100 dark:hover:bg-purple-900/40 transition cursor-pointer"
               >
                 <X size={20} />
               </button>
             </div>
 
             {/* Smart Hub Navigation Buttons */}
-            <div className="flex border-b border-purple-900/50 px-6 bg-[#06050b] gap-2 overflow-x-auto">
+            <div className="flex border-b border-purple-100 dark:border-purple-900/50 px-6 bg-slate-50 dark:bg-[#06050b] gap-2 overflow-x-auto">
               <button
                 onClick={() => setActiveHubTab('overview')}
-                className={`py-3 px-3.5 text-xs font-bold border-b-2 flex items-center gap-1.5 transition whitespace-nowrap ${
+                className={`py-3 px-3.5 text-xs font-bold border-b-2 flex items-center gap-1.5 transition whitespace-nowrap cursor-pointer ${
                   activeHubTab === 'overview'
-                    ? 'border-amber-400 text-amber-300'
-                    : 'border-transparent text-purple-400/70 hover:text-white'
+                    ? 'border-amber-500 text-amber-700 dark:text-amber-300 dark:border-amber-400'
+                    : 'border-transparent text-slate-500 dark:text-purple-400/70 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <UserCheck size={14} /> Overview
               </button>
               <button
                 onClick={() => setActiveHubTab('contracts')}
-                className={`py-3 px-3.5 text-xs font-bold border-b-2 flex items-center gap-1.5 transition whitespace-nowrap ${
+                className={`py-3 px-3.5 text-xs font-bold border-b-2 flex items-center gap-1.5 transition whitespace-nowrap cursor-pointer ${
                   activeHubTab === 'contracts'
-                    ? 'border-amber-400 text-amber-300'
-                    : 'border-transparent text-purple-400/70 hover:text-white'
+                    ? 'border-amber-500 text-amber-700 dark:text-amber-300 dark:border-amber-400'
+                    : 'border-transparent text-slate-500 dark:text-purple-400/70 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <Briefcase size={14} /> Contracts ({selectedEmployee.contracts?.length || 0})
               </button>
               <button
                 onClick={() => setActiveHubTab('attendance')}
-                className={`py-3 px-3.5 text-xs font-bold border-b-2 flex items-center gap-1.5 transition whitespace-nowrap ${
+                className={`py-3 px-3.5 text-xs font-bold border-b-2 flex items-center gap-1.5 transition whitespace-nowrap cursor-pointer ${
                   activeHubTab === 'attendance'
-                    ? 'border-amber-400 text-amber-300'
-                    : 'border-transparent text-purple-400/70 hover:text-white'
+                    ? 'border-amber-500 text-amber-700 dark:text-amber-300 dark:border-amber-400'
+                    : 'border-transparent text-slate-500 dark:text-purple-400/70 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <Clock size={14} /> Attendance ({selectedEmployee.attendances?.length || 0})
               </button>
               <button
                 onClick={() => setActiveHubTab('leave')}
-                className={`py-3 px-3.5 text-xs font-bold border-b-2 flex items-center gap-1.5 transition whitespace-nowrap ${
+                className={`py-3 px-3.5 text-xs font-bold border-b-2 flex items-center gap-1.5 transition whitespace-nowrap cursor-pointer ${
                   activeHubTab === 'leave'
-                    ? 'border-amber-400 text-amber-300'
-                    : 'border-transparent text-purple-400/70 hover:text-white'
+                    ? 'border-amber-500 text-amber-700 dark:text-amber-300 dark:border-amber-400'
+                    : 'border-transparent text-slate-500 dark:text-purple-400/70 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <Calendar size={14} /> Time Off & Balances
               </button>
               <button
                 onClick={() => setActiveHubTab('payslips')}
-                className={`py-3 px-3.5 text-xs font-bold border-b-2 flex items-center gap-1.5 transition whitespace-nowrap ${
+                className={`py-3 px-3.5 text-xs font-bold border-b-2 flex items-center gap-1.5 transition whitespace-nowrap cursor-pointer ${
                   activeHubTab === 'payslips'
-                    ? 'border-amber-400 text-amber-300'
-                    : 'border-transparent text-purple-400/70 hover:text-white'
+                    ? 'border-amber-500 text-amber-700 dark:text-amber-300 dark:border-amber-400'
+                    : 'border-transparent text-slate-500 dark:text-purple-400/70 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <DollarSign size={14} /> Payslips ({selectedEmployee.payslips?.length || 0})
@@ -342,36 +350,36 @@ export const EmployeesPage: React.FC = () => {
             <div className="p-6 flex-1 space-y-4">
               {activeHubTab === 'overview' && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                  <div className="p-4 rounded-2xl bg-[#0b0914] border border-purple-900/50 space-y-2">
-                    <span className="text-amber-300 font-bold block text-[11px] uppercase tracking-wider">Organizational Details</span>
-                    <div><strong className="text-purple-300/70">Department:</strong> {selectedEmployee.department}</div>
-                    <div><strong className="text-purple-300/70">Role Title:</strong> {selectedEmployee.jobPosition}</div>
-                    <div><strong className="text-purple-300/70">Email Address:</strong> {selectedEmployee.email || 'N/A'}</div>
-                    <div><strong className="text-purple-300/70">Reporting Manager:</strong> {selectedEmployee.manager?.name || 'Top Level / None'}</div>
+                  <div className="p-4 rounded-2xl bg-purple-50/50 dark:bg-[#0b0914] border border-purple-100 dark:border-purple-900/50 space-y-2">
+                    <span className="text-amber-700 dark:text-amber-300 font-bold block text-[11px] uppercase tracking-wider">Organizational Details</span>
+                    <div><strong className="text-slate-600 dark:text-purple-300/70">Department:</strong> <span className="text-slate-900 dark:text-white font-medium">{selectedEmployee.department}</span></div>
+                    <div><strong className="text-slate-600 dark:text-purple-300/70">Role Title:</strong> <span className="text-slate-900 dark:text-white font-medium">{selectedEmployee.jobPosition}</span></div>
+                    <div><strong className="text-slate-600 dark:text-purple-300/70">Email Address:</strong> <span className="text-slate-900 dark:text-white font-medium">{selectedEmployee.email || 'N/A'}</span></div>
+                    <div><strong className="text-slate-600 dark:text-purple-300/70">Reporting Manager:</strong> <span className="text-slate-900 dark:text-white font-medium">{selectedEmployee.manager?.name || 'Top Level / None'}</span></div>
                   </div>
-                  <div className="p-4 rounded-2xl bg-[#0b0914] border border-purple-900/50 space-y-2">
-                    <span className="text-amber-300 font-bold block text-[11px] uppercase tracking-wider">Working Schedule</span>
-                    <div><strong className="text-purple-300/70">Schedule Name:</strong> {selectedEmployee.workingSchedule?.name || 'Standard'}</div>
-                    <div><strong className="text-purple-300/70">Weekly Hours:</strong> {selectedEmployee.workingSchedule?.totalWeeklyHours || 40} hrs/week</div>
-                    <div><strong className="text-purple-300/70">Subordinates:</strong> {selectedEmployee.subordinates?.length || 0} direct reports</div>
+                  <div className="p-4 rounded-2xl bg-purple-50/50 dark:bg-[#0b0914] border border-purple-100 dark:border-purple-900/50 space-y-2">
+                    <span className="text-amber-700 dark:text-amber-300 font-bold block text-[11px] uppercase tracking-wider">Working Schedule</span>
+                    <div><strong className="text-slate-600 dark:text-purple-300/70">Schedule Name:</strong> <span className="text-slate-900 dark:text-white font-medium">{selectedEmployee.workingSchedule?.name || 'Standard'}</span></div>
+                    <div><strong className="text-slate-600 dark:text-purple-300/70">Weekly Hours:</strong> <span className="text-slate-900 dark:text-white font-medium">{selectedEmployee.workingSchedule?.totalWeeklyHours || 40} hrs/week</span></div>
+                    <div><strong className="text-slate-600 dark:text-purple-300/70">Subordinates:</strong> <span className="text-slate-900 dark:text-white font-medium">{selectedEmployee.subordinates?.length || 0} direct reports</span></div>
                   </div>
                 </div>
               )}
 
               {activeHubTab === 'contracts' && (
                 <div className="space-y-3">
-                  <span className="text-xs font-bold text-amber-300">Contract History</span>
+                  <span className="text-xs font-bold text-amber-700 dark:text-amber-300">Contract History</span>
                   {selectedEmployee.contracts?.map((c: any) => (
-                    <div key={c.id} className="p-4 bg-[#0b0914] border border-purple-900/50 rounded-2xl flex items-center justify-between text-xs">
+                    <div key={c.id} className="p-4 bg-purple-50/50 dark:bg-[#0b0914] border border-purple-100 dark:border-purple-900/50 rounded-2xl flex items-center justify-between text-xs">
                       <div>
-                        <div className="font-black text-amber-300 font-mono text-sm">${c.wage.toLocaleString()}/month</div>
-                        <div className="text-purple-300/70 text-[11px] mt-0.5">
+                        <div className="font-black text-amber-700 dark:text-amber-300 font-mono text-sm">${c.wage.toLocaleString()}/month</div>
+                        <div className="text-slate-500 dark:text-purple-300/70 text-[11px] mt-0.5 font-medium">
                           {new Date(c.startDate).toISOString().slice(0, 10)} to {c.endDate ? new Date(c.endDate).toISOString().slice(0, 10) : 'Ongoing'}
                         </div>
-                        <div className="text-[10px] text-purple-300 font-medium mt-1">Structure: {c.salaryStructure?.name}</div>
+                        <div className="text-[10px] text-purple-700 dark:text-purple-300 font-semibold mt-1">Structure: {c.salaryStructure?.name}</div>
                       </div>
                       <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                        c.status === 'Active' ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30' : 'bg-purple-950 text-purple-400'
+                        c.status === 'Active' ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30' : 'bg-slate-100 dark:bg-purple-950 text-slate-600 dark:text-purple-400'
                       }`}>
                         {c.status}
                       </span>
@@ -383,15 +391,15 @@ export const EmployeesPage: React.FC = () => {
               {activeHubTab === 'leave' && (
                 <div className="space-y-4">
                   <div>
-                    <span className="text-xs font-bold text-amber-300 block mb-2">Live Allocation Balances</span>
+                    <span className="text-xs font-bold text-amber-700 dark:text-amber-300 block mb-2">Live Allocation Balances</span>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       {selectedEmployee.allocations?.map((a: any) => (
-                        <div key={a.id} className="p-4 bg-[#0b0914] border border-purple-900/50 rounded-2xl">
-                          <div className="text-[11px] text-purple-300/70 font-semibold">{a.timeOffType.name}</div>
-                          <div className="text-xl font-black text-amber-300 mt-1">
-                            {a.remainingAmount} <span className="text-xs text-purple-300/60 font-normal">{a.timeOffType.unit} left</span>
+                        <div key={a.id} className="p-4 bg-purple-50/50 dark:bg-[#0b0914] border border-purple-100 dark:border-purple-900/50 rounded-2xl">
+                          <div className="text-[11px] text-slate-600 dark:text-purple-300/70 font-semibold">{a.timeOffType.name}</div>
+                          <div className="text-xl font-black text-amber-600 dark:text-amber-300 mt-1">
+                            {a.remainingAmount} <span className="text-xs text-slate-500 dark:text-purple-300/60 font-normal">{a.timeOffType.unit} left</span>
                           </div>
-                          <div className="text-[10px] text-purple-400/60 mt-1">
+                          <div className="text-[10px] text-slate-400 dark:text-purple-400/60 mt-1 font-medium">
                             Allocated: {a.allocatedAmount} | Taken: {a.takenAmount}
                           </div>
                         </div>
@@ -403,16 +411,16 @@ export const EmployeesPage: React.FC = () => {
 
               {activeHubTab === 'payslips' && (
                 <div className="space-y-2.5">
-                  <span className="text-xs font-bold text-amber-300 block">Generated Payslips</span>
+                  <span className="text-xs font-bold text-amber-700 dark:text-amber-300 block">Generated Payslips</span>
                   {selectedEmployee.payslips?.map((p: any) => (
-                    <div key={p.id} className="p-4 bg-[#0b0914] border border-purple-900/50 rounded-2xl flex items-center justify-between text-xs">
+                    <div key={p.id} className="p-4 bg-purple-50/50 dark:bg-[#0b0914] border border-purple-100 dark:border-purple-900/50 rounded-2xl flex items-center justify-between text-xs">
                       <div>
-                        <span className="font-bold text-white">{p.payrun?.name || 'Regular Payrun'}</span>
-                        <div className="text-purple-300/70 text-[11px] mt-0.5">
-                          Gross: ${p.grossTotal.toLocaleString()} • Net Take-Home: <strong className="text-amber-300">${p.netTotal.toLocaleString()}</strong>
+                        <span className="font-bold text-slate-900 dark:text-white">{p.payrun?.name || 'Regular Payrun'}</span>
+                        <div className="text-slate-500 dark:text-purple-300/70 text-[11px] mt-0.5 font-medium">
+                          Gross: ${p.grossTotal.toLocaleString()} • Net Take-Home: <strong className="text-amber-600 dark:text-amber-300">${p.netTotal.toLocaleString()}</strong>
                         </div>
                       </div>
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-200 border border-purple-500/30">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-200 border border-purple-200 dark:border-purple-500/30">
                         {p.status}
                       </span>
                     </div>
@@ -426,74 +434,74 @@ export const EmployeesPage: React.FC = () => {
 
       {/* Create Employee Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-          <div className="bg-[#090712] border border-purple-800/60 rounded-3xl w-full max-w-md p-6 shadow-2xl">
-            <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-              <Sparkles size={18} className="text-amber-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-md p-4">
+          <div className="bg-white dark:bg-[#090712] border border-purple-200 dark:border-purple-800/60 rounded-3xl w-full max-w-md p-6 shadow-2xl transition-colors duration-300">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+              <Sparkles size={18} className="text-amber-500 dark:text-amber-400" />
               Create New Employee
             </h2>
             <form onSubmit={handleCreateEmployee} className="space-y-4 text-xs">
               <div>
-                <label className="block text-purple-300/80 mb-1 font-semibold">Full Name</label>
+                <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Full Name</label>
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                  className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium"
                   placeholder="e.g. Maya Lin"
                 />
               </div>
 
               <div>
-                <label className="block text-purple-300/80 mb-1 font-semibold">Email Address</label>
+                <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Email Address</label>
                 <input
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                  className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium"
                   placeholder="e.g. maya.lin@peoplepay360.com"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-purple-300/80 mb-1 font-semibold">Department</label>
+                  <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Department</label>
                   <select
                     value={formData.department}
                     onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                    className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                    className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium cursor-pointer"
                   >
-                    <option value="Engineering">Engineering</option>
-                    <option value="Human Resources">Human Resources</option>
-                    <option value="Finance & Payroll">Finance & Payroll</option>
-                    <option value="Executive">Executive</option>
+                    <option value="Engineering" className="bg-white dark:bg-[#0b0914] text-slate-900 dark:text-white">Engineering</option>
+                    <option value="Human Resources" className="bg-white dark:bg-[#0b0914] text-slate-900 dark:text-white">Human Resources</option>
+                    <option value="Finance & Payroll" className="bg-white dark:bg-[#0b0914] text-slate-900 dark:text-white">Finance & Payroll</option>
+                    <option value="Executive" className="bg-white dark:bg-[#0b0914] text-slate-900 dark:text-white">Executive</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-purple-300/80 mb-1 font-semibold">Job Position</label>
+                  <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Job Position</label>
                   <input
                     type="text"
                     required
                     value={formData.jobPosition}
                     onChange={(e) => setFormData({ ...formData, jobPosition: e.target.value })}
-                    className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                    className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium"
                     placeholder="e.g. Systems Engineer"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-4 border-t border-purple-900/40">
+              <div className="flex justify-end gap-2 pt-4 border-t border-purple-100 dark:border-purple-900/40">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 bg-purple-950/60 border border-purple-900/50 text-purple-300 rounded-xl hover:bg-purple-900/40 font-bold"
+                  className="px-4 py-2 bg-slate-100 dark:bg-purple-950/60 border border-slate-200 dark:border-purple-900/50 text-slate-600 dark:text-purple-300 rounded-xl hover:bg-slate-200 dark:hover:bg-purple-900/40 font-bold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl font-black shadow-lg shadow-amber-500/20"
+                  className="px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl font-black shadow-md shadow-amber-500/20 cursor-pointer"
                 >
                   Save Employee
                 </button>

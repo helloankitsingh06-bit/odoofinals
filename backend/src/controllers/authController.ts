@@ -178,6 +178,55 @@ export const getMe = async (req: AuthRequest, res: Response): Promise<void> => {
   }
 };
 
+export const resetPassword = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email, newPassword } = req.body;
+
+    if (!email) {
+      res.status(400).json({ error: 'Email address is required' });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: { employee: true }
+    });
+
+    if (!user) {
+      res.status(404).json({ error: 'No account found with this email address' });
+      return;
+    }
+
+    if (!newPassword) {
+      res.json({
+        exists: true,
+        name: user.name,
+        role: user.role,
+        message: 'Account verified. You may proceed to set a new password.'
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      res.status(400).json({ error: 'New password must be at least 6 characters' });
+      return;
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({
+      where: { email },
+      data: { passwordHash }
+    });
+
+    res.json({
+      message: 'Password has been successfully updated. You can now log in with your new password.',
+      email: user.email
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 export const listUsers = async (req: Request, res: Response): Promise<void> => {
   try {
     const users = await prisma.user.findMany({
@@ -205,3 +254,4 @@ export const listUsers = async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ error: err.message });
   }
 };
+

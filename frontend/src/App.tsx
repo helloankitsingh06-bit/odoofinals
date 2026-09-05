@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { Navbar } from './components/Navbar';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -16,8 +17,8 @@ const MainApp: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#05040a] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-purple-400 border-r-amber-400"></div>
+      <div className="min-h-screen bg-[#f6f5fa] dark:bg-[#05040a] flex items-center justify-center transition-colors duration-300">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-purple-600 dark:border-purple-400 border-r-amber-500 dark:border-r-amber-400"></div>
       </div>
     );
   }
@@ -32,7 +33,7 @@ const MainApp: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#05040a] text-slate-100 flex flex-col selection:bg-purple-500/30 selection:text-amber-200">
+    <div className="min-h-screen bg-[#f6f5fa] dark:bg-[#05040a] text-slate-900 dark:text-slate-100 flex flex-col selection:bg-purple-500/30 selection:text-amber-600 dark:selection:text-amber-200 transition-colors duration-300">
       <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'dashboard' && <DashboardPage />}
@@ -49,9 +50,11 @@ const MainApp: React.FC = () => {
 
 export const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <MainApp />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <MainApp />
+      </AuthProvider>
+    </ThemeProvider>
   );
 };
 

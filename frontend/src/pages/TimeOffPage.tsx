@@ -91,20 +91,20 @@ export const TimeOffPage: React.FC = () => {
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#0b0914]/80 p-5 rounded-3xl border border-purple-900/40 backdrop-blur-xl shadow-2xl">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/90 dark:bg-[#0b0914]/80 p-5 rounded-3xl border border-purple-100 dark:border-purple-900/40 backdrop-blur-xl shadow-lg dark:shadow-2xl transition-colors duration-300">
         <div>
-          <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
-            <Calendar className="text-amber-400" />
+          <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+            <Calendar className="text-amber-500 dark:text-amber-400" />
             Time Off & Leave Balances
           </h1>
-          <p className="text-sm text-purple-200/60">
+          <p className="text-sm text-slate-600 dark:text-purple-200/60 font-medium mt-0.5">
             Live leave allocation accounting: approvals automatically decrement remaining balances in real time.
           </p>
         </div>
 
         <button
           onClick={() => { setError(null); setShowRequestModal(true); }}
-          className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl text-xs font-black shadow-lg shadow-amber-500/20 transition active:scale-95"
+          className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl text-xs font-black shadow-md shadow-amber-500/20 transition active:scale-95 cursor-pointer"
         >
           <Plus size={16} /> Request Time Off
         </button>
@@ -112,40 +112,40 @@ export const TimeOffPage: React.FC = () => {
 
       {/* Allocation Cards */}
       <div>
-        <h2 className="text-xs font-black text-amber-300 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-          <Sparkles size={13} className="text-purple-400" /> Active Leave Allocations & Balances
+        <h2 className="text-xs font-black text-amber-700 dark:text-amber-300 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+          <Sparkles size={13} className="text-purple-600 dark:text-purple-400" /> Active Leave Allocations & Balances
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {allocations.map((alloc) => (
             <div
               key={alloc.id}
-              className="bg-[#0b0914]/80 border border-purple-900/40 hover:border-amber-400/60 p-5 rounded-3xl relative overflow-hidden shadow-xl transition-all duration-300 hover:scale-[1.01]"
+              className="bg-white dark:bg-[#0b0914]/80 border border-purple-100 dark:border-purple-900/40 hover:border-amber-400/60 p-5 rounded-3xl relative overflow-hidden shadow-sm hover:shadow-md dark:shadow-xl transition-all duration-300 hover:scale-[1.01]"
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-white">{alloc.timeOffType?.name}</span>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-200 border border-purple-500/30">
+                <span className="text-xs font-bold text-slate-900 dark:text-white">{alloc.timeOffType?.name}</span>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-200 border border-purple-200 dark:border-purple-500/30">
                   {alloc.timeOffType?.unit}
                 </span>
               </div>
 
               <div className="my-3">
-                <div className="text-3xl font-black text-amber-300 font-mono">
-                  {alloc.remainingAmount} <span className="text-xs font-normal text-purple-300/60">available</span>
+                <div className="text-3xl font-black text-amber-600 dark:text-amber-300 font-mono">
+                  {alloc.remainingAmount} <span className="text-xs font-normal text-slate-500 dark:text-purple-300/60">available</span>
                 </div>
-                <div className="text-xs text-purple-300/70 mt-1">
-                  Employee: <strong className="text-white">{alloc.employee?.name}</strong>
+                <div className="text-xs text-slate-600 dark:text-purple-300/70 mt-1 font-medium">
+                  Employee: <strong className="text-slate-900 dark:text-white">{alloc.employee?.name}</strong>
                 </div>
               </div>
 
               {/* Progress Bar */}
-              <div className="w-full bg-[#06050b] border border-purple-950 h-2 rounded-full overflow-hidden mt-3">
+              <div className="w-full bg-slate-100 dark:bg-[#06050b] border border-slate-200 dark:border-purple-950 h-2 rounded-full overflow-hidden mt-3">
                 <div
-                  className="bg-gradient-to-r from-purple-500 via-amber-400 to-yellow-300 h-full rounded-full transition-all duration-500"
+                  className="bg-gradient-to-r from-purple-600 via-amber-500 to-yellow-400 h-full rounded-full transition-all duration-500"
                   style={{ width: `${Math.min(100, (alloc.remainingAmount / alloc.allocatedAmount) * 100)}%` }}
                 ></div>
               </div>
 
-              <div className="flex justify-between text-[10px] text-purple-400/70 mt-2 font-medium">
+              <div className="flex justify-between text-[10px] text-slate-500 dark:text-purple-400/70 mt-2 font-medium">
                 <span>Taken: {alloc.takenAmount} {alloc.timeOffType?.unit}</span>
                 <span>Total: {alloc.allocatedAmount} {alloc.timeOffType?.unit}</span>
               </div>
@@ -155,14 +155,14 @@ export const TimeOffPage: React.FC = () => {
       </div>
 
       {/* Requests Table */}
-      <div className="bg-[#0b0914]/80 border border-purple-900/40 rounded-3xl overflow-hidden shadow-2xl">
-        <div className="p-4 bg-[#06050b] border-b border-purple-900/50 flex items-center justify-between">
-          <span className="text-xs font-bold text-amber-300">Time Off Requests Workflow</span>
-          <span className="text-xs text-purple-400/60 font-medium">{requests.length} Total Requests</span>
+      <div className="bg-white dark:bg-[#0b0914]/80 border border-purple-100 dark:border-purple-900/40 rounded-3xl overflow-hidden shadow-md dark:shadow-2xl transition-colors duration-300">
+        <div className="p-4 bg-purple-50/70 dark:bg-[#06050b] border-b border-purple-100 dark:border-purple-900/50 flex items-center justify-between">
+          <span className="text-xs font-bold text-amber-700 dark:text-amber-300">Time Off Requests Workflow</span>
+          <span className="text-xs text-slate-500 dark:text-purple-400/60 font-medium">{requests.length} Total Requests</span>
         </div>
 
         <table className="w-full text-left text-xs">
-          <thead className="bg-[#06050b] text-purple-300/70 font-bold uppercase tracking-wider text-[10px]">
+          <thead className="bg-purple-50/70 dark:bg-[#06050b] text-purple-900 dark:text-purple-300/70 font-bold uppercase tracking-wider text-[10px] border-b border-purple-100 dark:border-purple-900/50">
             <tr>
               <th className="px-5 py-4">Employee</th>
               <th className="px-5 py-4">Leave Type</th>
@@ -173,29 +173,29 @@ export const TimeOffPage: React.FC = () => {
               {canApprove && <th className="px-5 py-4 text-right">Approval Action</th>}
             </tr>
           </thead>
-          <tbody className="divide-y divide-purple-950 text-purple-100">
+          <tbody className="divide-y divide-purple-100 dark:divide-purple-950 text-slate-800 dark:text-purple-100 font-medium">
             {requests.map((req) => (
-              <tr key={req.id} className="hover:bg-purple-950/20 transition">
-                <td className="px-5 py-4 font-bold text-white">
+              <tr key={req.id} className="hover:bg-purple-50/50 dark:hover:bg-purple-950/20 transition">
+                <td className="px-5 py-4 font-bold text-slate-900 dark:text-white">
                   {req.employee?.name}
                 </td>
-                <td className="px-5 py-4 text-amber-300 font-bold">
+                <td className="px-5 py-4 text-amber-600 dark:text-amber-300 font-bold">
                   {req.timeOffType?.name}
                 </td>
-                <td className="px-5 py-4 font-mono text-purple-300/80">
+                <td className="px-5 py-4 font-mono text-slate-600 dark:text-purple-300/80">
                   {new Date(req.startDate).toISOString().slice(0, 10)} → {new Date(req.endDate).toISOString().slice(0, 10)}
                 </td>
-                <td className="px-5 py-4 font-bold font-mono text-white">
+                <td className="px-5 py-4 font-bold font-mono text-slate-900 dark:text-white">
                   {req.duration} {req.timeOffType?.unit}
                 </td>
-                <td className="px-5 py-4 text-purple-300/70 max-w-xs truncate">
+                <td className="px-5 py-4 text-slate-600 dark:text-purple-300/70 max-w-xs truncate">
                   {req.reason || '—'}
                 </td>
                 <td className="px-5 py-4">
                   <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                    req.status === 'Approved' ? 'bg-amber-400/15 text-amber-300 border border-amber-400/30' :
-                    req.status === 'Refused' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' :
-                    'bg-purple-500/20 text-purple-200 border border-purple-500/30'
+                    req.status === 'Approved' ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30' :
+                    req.status === 'Refused' ? 'bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-500/30' :
+                    'bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-200 border border-purple-200 dark:border-purple-500/30'
                   }`}>
                     {req.status}
                   </span>
@@ -206,19 +206,19 @@ export const TimeOffPage: React.FC = () => {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => handleApprove(req.id)}
-                          className="px-3 py-1 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl text-[11px] font-black flex items-center gap-1 transition shadow-sm"
+                          className="px-3 py-1 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl text-[11px] font-black flex items-center gap-1 transition shadow-sm cursor-pointer"
                         >
                           <Check size={13} /> Approve (Deduct)
                         </button>
                         <button
                           onClick={() => handleRefuse(req.id)}
-                          className="px-3 py-1 bg-rose-600/80 hover:bg-rose-600 text-white rounded-xl text-[11px] font-bold flex items-center gap-1 transition"
+                          className="px-3 py-1 bg-rose-600/80 hover:bg-rose-600 text-white rounded-xl text-[11px] font-bold flex items-center gap-1 transition cursor-pointer"
                         >
                           <X size={13} /> Refuse
                         </button>
                       </div>
                     ) : (
-                      <span className="text-[10px] text-purple-400/50 font-mono">Completed</span>
+                      <span className="text-[10px] text-slate-400 dark:text-purple-400/50 font-mono">Completed</span>
                     )}
                   </td>
                 )}
@@ -230,18 +230,18 @@ export const TimeOffPage: React.FC = () => {
 
       {/* Request Modal */}
       {showRequestModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-          <div className="bg-[#090712] border border-purple-800/60 rounded-3xl w-full max-w-md p-6 shadow-2xl">
-            <h2 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
-              <Sparkles size={18} className="text-amber-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-md p-4">
+          <div className="bg-white dark:bg-[#090712] border border-purple-200 dark:border-purple-800/60 rounded-3xl w-full max-w-md p-6 shadow-2xl transition-colors duration-300">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-2">
+              <Sparkles size={18} className="text-amber-500 dark:text-amber-400" />
               Request Time Off
             </h2>
-            <p className="text-xs text-purple-300/60 mb-4">
+            <p className="text-xs text-slate-500 dark:text-purple-300/60 mb-4 font-medium">
               Submits request for HR approval. Live balance will be deducted upon approval.
             </p>
 
             {error && (
-              <div className="mb-4 p-3.5 bg-rose-500/15 border border-rose-500/30 rounded-2xl text-rose-300 text-xs flex items-start gap-2">
+              <div className="mb-4 p-3.5 bg-rose-500/15 border border-rose-500/30 rounded-2xl text-rose-600 dark:text-rose-300 text-xs flex items-start gap-2">
                 <AlertCircle size={16} className="shrink-0 mt-0.5" />
                 <span>{error}</span>
               </div>
@@ -249,43 +249,43 @@ export const TimeOffPage: React.FC = () => {
 
             <form onSubmit={handleCreateRequest} className="space-y-4 text-xs">
               <div>
-                <label className="block text-purple-300/80 mb-1 font-semibold">Time Off Type</label>
+                <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Time Off Type</label>
                 <select
                   value={requestForm.timeOffTypeId}
                   onChange={(e) => setRequestForm({ ...requestForm, timeOffTypeId: e.target.value })}
-                  className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                  className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium cursor-pointer"
                 >
                   {types.map(t => (
-                    <option key={t.id} value={t.id}>{t.name} ({t.unit})</option>
+                    <option key={t.id} value={t.id} className="bg-white dark:bg-[#0b0914] text-slate-900 dark:text-white">{t.name} ({t.unit})</option>
                   ))}
                 </select>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-purple-300/80 mb-1 font-semibold">Start Date</label>
+                  <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Start Date</label>
                   <input
                     type="date"
                     required
                     value={requestForm.startDate}
                     onChange={(e) => setRequestForm({ ...requestForm, startDate: e.target.value })}
-                    className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                    className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium"
                   />
                 </div>
                 <div>
-                  <label className="block text-purple-300/80 mb-1 font-semibold">End Date</label>
+                  <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">End Date</label>
                   <input
                     type="date"
                     required
                     value={requestForm.endDate}
                     onChange={(e) => setRequestForm({ ...requestForm, endDate: e.target.value })}
-                    className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                    className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-purple-300/80 mb-1 font-semibold">Duration (Days / Hours)</label>
+                <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Duration (Days / Hours)</label>
                 <input
                   type="number"
                   step="0.5"
@@ -293,32 +293,32 @@ export const TimeOffPage: React.FC = () => {
                   required
                   value={requestForm.duration}
                   onChange={(e) => setRequestForm({ ...requestForm, duration: Number(e.target.value) })}
-                  className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                  className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium"
                 />
               </div>
 
               <div>
-                <label className="block text-purple-300/80 mb-1 font-semibold">Reason / Notes</label>
+                <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Reason / Notes</label>
                 <textarea
                   value={requestForm.reason}
                   onChange={(e) => setRequestForm({ ...requestForm, reason: e.target.value })}
-                  className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                  className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium"
                   placeholder="e.g. Annual summer family vacation"
                   rows={3}
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-4 border-t border-purple-900/40">
+              <div className="flex justify-end gap-2 pt-4 border-t border-purple-100 dark:border-purple-900/40">
                 <button
                   type="button"
                   onClick={() => setShowRequestModal(false)}
-                  className="px-4 py-2 bg-purple-950/60 border border-purple-900/50 text-purple-300 rounded-xl hover:bg-purple-900/40 font-bold"
+                  className="px-4 py-2 bg-slate-100 dark:bg-purple-950/60 border border-slate-200 dark:border-purple-900/50 text-slate-600 dark:text-purple-300 rounded-xl hover:bg-slate-200 dark:hover:bg-purple-900/40 font-bold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl font-black shadow-lg shadow-amber-500/20"
+                  className="px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl font-black shadow-md shadow-amber-500/20 cursor-pointer"
                 >
                   Submit Request
                 </button>
