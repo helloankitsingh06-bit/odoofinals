@@ -9,6 +9,7 @@ import {
   deleteAllocation,
   listRequests,
   createRequest,
+  updateRequest,
   approveRequest,
   refuseRequest,
   deleteRequest
@@ -55,6 +56,16 @@ router.delete(
 // Requests
 router.get('/requests', listRequests);
 router.post('/requests', createRequest);
+router.patch(
+  '/requests/:id',
+  authorizeRoles(Role.HRManager, Role.HRPayrollUser, Role.HRPayrollManager, Role.Admin),
+  updateRequest
+);
+router.put(
+  '/requests/:id',
+  authorizeRoles(Role.HRManager, Role.HRPayrollUser, Role.HRPayrollManager, Role.Admin),
+  updateRequest
+);
 router.delete('/requests/:id', deleteRequest);
 
 // Approvals & Refusals (HRManager, HRPayrollUser, HRPayrollManager, Admin)

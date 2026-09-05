@@ -105,6 +105,9 @@ export const TimeOffPage: React.FC = () => {
   // Employee Allocation Cards Search
   const [employeeCardSearch, setEmployeeCardSearch] = useState('');
 
+  // Unpaid Leave Toggle State
+  const [isUnpaidLeave, setIsUnpaidLeave] = useState(false);
+
   const [requestForm, setRequestForm] = useState({
     employeeId: '',
     timeOffTypeId: '',
@@ -113,6 +116,22 @@ export const TimeOffPage: React.FC = () => {
     duration: 1,
     reason: ''
   });
+
+  const toggleUnpaidLeave = () => {
+    const nextVal = !isUnpaidLeave;
+    setIsUnpaidLeave(nextVal);
+    if (nextVal) {
+      const unpaidType = types.find(t => t.name.toLowerCase().includes('unpaid') || !t.requiresAllocation);
+      if (unpaidType) {
+        setRequestForm(prev => ({ ...prev, timeOffTypeId: unpaidType.id }));
+      }
+    } else {
+      const defaultAllocType = types.find(t => t.requiresAllocation) || types[0];
+      if (defaultAllocType) {
+        setRequestForm(prev => ({ ...prev, timeOffTypeId: defaultAllocType.id }));
+      }
+    }
+  };
 
   // Helper: Calculate inclusive days between two YYYY-MM-DD date strings
   const calculateDaysBetween = (startStr: string, endStr: string): number => {
@@ -169,6 +188,125 @@ export const TimeOffPage: React.FC = () => {
       duration: dur,
       endDate: newEndDate
     }));
+  };
+
+  // Edit Time Off Request Modal State (Admin/HR can edit unpaid leaves and other leaves)
+  const [showEditRequestModal, setShowEditRequestModal] = useState(false);
+  const [editingRequest, setEditingRequest] = useState<any>(null);
+  const [editRequestForm, setEditRequestForm] = useState({
+    id: '',
+    employeeName: '',
+    timeOffTypeName: '',
+    isUnpaid: false,
+    startDate: '',
+    endDate: '',
+    duration: 1,
+    reason: '',
+    status: 'Pending'
+  });
+  const [isSavingEditRequest, setIsSavingEditRequest] = useState(false);
+  const [editRequestError, setEditRequestError] = useState<string | null>(null);
+
+  const openEditRequestModal = (req: any) => {
+    setEditingRequest(req);
+    const isUnpaid = !req.timeOffType?.requiresAllocation || req.timeOffType?.name?.toLowerCase().includes('unpaid');
+    setEditRequestForm({
+      id: req.id,
+      employeeName: req.employee?.name || 'Employee',
+      timeOffTypeName: req.timeOffType?.name || 'Leave',
+      isUnpaid,
+      startDate: new Date(req.startDate).toISOString().slice(0, 10),
+      endDate: new Date(req.endDate).toISOString().slice(0, 10),
+      duration: req.duration,
+      reason: req.reason || '',
+      status: req.status
+    });
+    setEditRequestError(null);
+    setShowEditRequestModal(true);
+  };
+
+  const handleEditRequestStartDateChange = (newStartDate: string) => {
+    const newEndDate = calculateEndDateFromDuration(newStartDate, editRequestForm.duration || 1);
+    setEditRequestForm(prev => ({
+      ...prev,
+      startDate: newStartDate,
+      endDate: newEndDate
+    }));
+  };
+
+  const handleEditRequestEndDateChange = (newEndDate: string) => {
+    let startStr = editRequestForm.startDate;
+    if (newEndDate < startStr) {
+      startStr = newEndDate;
+    }
+    const newDuration = calculateDaysBetween(startStr, newEndDate);
+    setEditRequestForm(prev => ({
+      ...prev,
+      startDate: startStr,
+      endDate: newEndDate,
+      duration: newDuration
+    }));
+  };
+
+  const handleEditRequestDurationChange = (newDurVal: number) => {
+    const dur = Math.max(0.5, newDurVal);
+    const newEndDate = calculateEndDateFromDuration(editRequestForm.startDate, dur);
+    setEditRequestForm(prev => ({
+      ...prev,
+      duration: dur,
+      endDate: newEndDate
+    }));
+  };
+
+  const handleSaveEditRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editRequestForm.id) return;
+    setIsSavingEditRequest(true);
+    setEditRequestError(null);
+    try {
+      await apiRequest(`/time-off/requests/${editRequestForm.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          startDate: editRequestForm.startDate,
+          endDate: editRequestForm.endDate,
+          duration: Number(editRequestForm.duration),
+          reason: editRequestForm.reason,
+          status: editRequestForm.status
+        })
+      });
+      setShowEditRequestModal(false);
+      fetchData();
+    } catch (err: any) {
+      setEditRequestError(err.message || 'Failed to update request');
+    } finally {
+      setIsSavingEditRequest(false);
+    }
+  };
+
+  // Quick edit for an employee's unpaid leaves from their card
+  const handleEditUnpaidLeave = (emp: any) => {
+    const empUnpaid = requests.filter(
+      (r) =>
+        r.employeeId === emp.id &&
+        (!r.timeOffType?.requiresAllocation || r.timeOffType?.name?.toLowerCase().includes('unpaid'))
+    );
+    if (empUnpaid.length > 0) {
+      // Edit the most recent unpaid request for this employee
+      openEditRequestModal(empUnpaid[0]);
+    } else {
+      // If none taken yet, open Request modal prefilled for Unpaid Leave
+      const unpaidType = types.find(t => t.name.toLowerCase().includes('unpaid') || !t.requiresAllocation);
+      setRequestForm({
+        employeeId: emp.id,
+        timeOffTypeId: unpaidType ? unpaidType.id : (types[0]?.id || ''),
+        startDate: new Date().toISOString().slice(0, 10),
+        endDate: new Date().toISOString().slice(0, 10),
+        duration: 1,
+        reason: ''
+      });
+      setIsUnpaidLeave(true);
+      setShowRequestModal(true);
+    }
   };
 
   const [allocationForm, setAllocationForm] = useState({
@@ -275,7 +413,15 @@ export const TimeOffPage: React.FC = () => {
     e.preventDefault();
     setError(null);
     try {
-      const typeId = requestForm.timeOffTypeId || (types[0]?.id ?? '');
+      let typeId = requestForm.timeOffTypeId;
+      if (isUnpaidLeave) {
+        const unpaidType = types.find(t => t.name.toLowerCase().includes('unpaid') || !t.requiresAllocation);
+        if (unpaidType) typeId = unpaidType.id;
+      }
+      if (!typeId) {
+        typeId = types[0]?.id ?? '';
+      }
+
       await apiRequest('/time-off/requests', {
         method: 'POST',
         body: JSON.stringify({
@@ -285,6 +431,7 @@ export const TimeOffPage: React.FC = () => {
         })
       });
       setShowRequestModal(false);
+      setIsUnpaidLeave(false);
       fetchData();
       if (requestForm.employeeId) {
         fetchBalancesForEmployee(requestForm.employeeId);
@@ -416,7 +563,9 @@ export const TimeOffPage: React.FC = () => {
   const handleSlotAmountChange = (slotNum: 1 | 2 | 3, val: number) => {
     const updater = (prev: any) => {
       let err = null;
-      if (val < prev.taken) {
+      const type = types.find(t => t.id === prev.typeId);
+      const isUnpaid = type && (!type.requiresAllocation || type.name.toLowerCase().includes('unpaid'));
+      if (!isUnpaid && val < prev.taken) {
         err = `Cannot reduce allocation to ${val} days — employee has already taken ${prev.taken} days. Minimum allowed allocation is ${prev.taken} days.`;
       }
       return { ...prev, amount: val, error: err };
@@ -451,18 +600,21 @@ export const TimeOffPage: React.FC = () => {
       const slot = { ...slots[i] };
       if (!slot.typeId) continue;
 
-      if (slot.amount < slot.taken) {
+      const type = types.find(t => t.id === slot.typeId);
+      const isUnpaid = type && (!type.requiresAllocation || type.name.toLowerCase().includes('unpaid'));
+
+      if (!isUnpaid && slot.amount < slot.taken) {
         slot.error = `Cannot reduce allocation to ${slot.amount} days — employee has already taken ${slot.taken} days. Minimum allowed allocation is ${slot.taken} days.`;
         updatedSlots[i] = slot;
         anyError = true;
         continue;
       }
 
-      if (slot.allocationId && slot.amount === slot.initialAmount && !slot.error) {
+      if (slot.allocationId && slot.amount === slot.initialAmount && !slot.error && !isUnpaid) {
         continue;
       }
 
-      if (!slot.allocationId && slot.amount === 0) {
+      if (!slot.allocationId && slot.amount === 0 && !isUnpaid) {
         continue;
       }
 
@@ -636,7 +788,7 @@ export const TimeOffPage: React.FC = () => {
           )}
 
           <button
-            onClick={() => { setError(null); setShowRequestModal(true); }}
+            onClick={() => { setError(null); setIsUnpaidLeave(false); setShowRequestModal(true); }}
             className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl text-xs font-black shadow-lg shadow-amber-500/20 transition active:scale-95"
           >
             <Plus size={16} /> Request Time Off
@@ -686,6 +838,7 @@ export const TimeOffPage: React.FC = () => {
             {displayedEmployees.map((emp) => {
               const empAllocations = allocations.filter((a) => a.employeeId === emp.id);
 
+              // Strictly calculate the 3 quota-allocated leave types (DO NOT include Unpaid Leave)
               let totalRemaining = 0;
               let totalAllocated = 0;
               let totalTaken = 0;
@@ -694,6 +847,17 @@ export const TimeOffPage: React.FC = () => {
                 totalAllocated += a.allocatedAmount || 0;
                 totalTaken += a.takenAmount || 0;
               });
+
+              // Separate Unpaid Leave ratio and metrics (NO LIMIT, ISOLATED from the other 3 types)
+              const empUnpaidRequests = requests.filter(
+                (r) =>
+                  r.employeeId === emp.id &&
+                  (!r.timeOffType?.requiresAllocation || r.timeOffType?.name?.toLowerCase().includes('unpaid'))
+              );
+              const empApprovedUnpaid = empUnpaidRequests.filter((r) => r.status === 'Approved');
+              const empPendingUnpaid = empUnpaidRequests.filter((r) => r.status === 'Pending');
+              const unpaidDaysTaken = empApprovedUnpaid.reduce((sum, r) => sum + (Number(r.duration) || 0), 0);
+              const unpaidDaysPending = empPendingUnpaid.reduce((sum, r) => sum + (Number(r.duration) || 0), 0);
 
               return (
                 <div
@@ -736,10 +900,10 @@ export const TimeOffPage: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Overall Remaining Leave Stat */}
+                    {/* Overall Remaining Leave Stat (Strictly for 3 Paid Quota Leave Types) */}
                     <div className="mb-3.5 px-3.5 py-2.5 rounded-2xl bg-purple-50/70 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-900/40 flex items-center justify-between text-xs">
                       <div>
-                        <span className="text-[11px] text-slate-500 dark:text-purple-300/70 font-medium block">Total Available Leave</span>
+                        <span className="text-[11px] text-slate-500 dark:text-purple-300/70 font-medium block">Total Available Leave (Paid Quota)</span>
                         <span className="text-[10px] text-slate-400 dark:text-purple-400/60 font-mono">
                           {totalRemaining} Days Remaining ({totalTaken} Used • {totalAllocated} Allocated)
                         </span>
@@ -754,7 +918,7 @@ export const TimeOffPage: React.FC = () => {
 
                     {/* All Leave Types Summary (Every leave type shown, 0/0 or Not allocated if none) */}
                     <div className="space-y-2">
-                      {types.map((type) => {
+                      {types.filter(t => t.requiresAllocation).map((type) => {
                         const matchingAllocs = empAllocations.filter((a) => a.timeOffTypeId === type.id);
                         const isAllocated = matchingAllocs.length > 0;
                         const remaining = matchingAllocs.reduce((sum, a) => sum + (a.remainingAmount || 0), 0);
@@ -826,6 +990,88 @@ export const TimeOffPage: React.FC = () => {
                           </div>
                         );
                       })}
+
+                      {/* Dedicated Unpaid Leave Cell (Status: Unpaid Leave, Separate Ratio: Taken / No Limit, Excluded from 3 types) */}
+                      <div
+                        className={`p-2.5 rounded-xl border transition-all ${
+                          unpaidDaysTaken > 0
+                            ? 'bg-amber-500/10 dark:bg-amber-950/20 border-amber-300/80 dark:border-amber-500/40 shadow-sm'
+                            : 'bg-slate-50/40 dark:bg-[#06050b]/40 border-slate-200/60 dark:border-purple-950/40 opacity-75'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between text-xs mb-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-bold text-slate-800 dark:text-white">
+                              Unpaid Leave
+                            </span>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-700 dark:text-amber-300 font-black uppercase tracking-wider border border-amber-400/30">
+                              Unpaid
+                            </span>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 font-semibold">
+                              Days
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {/* Separate Ratio: Taken / No Limit */}
+                            <div className="flex items-center gap-1 font-mono text-xs">
+                              <span className="font-extrabold text-amber-600 dark:text-amber-400">
+                                {unpaidDaysTaken} Taken
+                              </span>
+                              <span className="text-[10px] text-slate-400 dark:text-purple-300/60 font-sans font-medium">
+                                / No Limit
+                              </span>
+                            </div>
+
+                            {/* Edit Button for Unpaid Leave */}
+                            {canManage && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditUnpaidLeave(emp);
+                                }}
+                                className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-400 border border-amber-400/30 transition shadow-sm flex items-center gap-1 active:scale-95 shrink-0 cursor-pointer"
+                                title="Edit Unpaid Leave Details"
+                              >
+                                <Edit2 size={10} />
+                                <span>Edit</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Visual indicator (No progress bar limit, full unbounded accent bar when taken) */}
+                        <div className="w-full bg-slate-200/70 dark:bg-purple-950/50 h-1.5 rounded-full overflow-hidden">
+                          {unpaidDaysTaken > 0 ? (
+                            <div
+                              className="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 h-full rounded-full transition-all duration-300"
+                              style={{ width: '100%' }}
+                            />
+                          ) : (
+                            <div className="w-0 h-full" />
+                          )}
+                        </div>
+
+                        {/* Separate Ratio Details & Cell Status */}
+                        <div className="flex justify-between items-center text-[10px] text-slate-500 dark:text-purple-400/70 mt-1 font-medium font-mono">
+                          <span className={unpaidDaysTaken > 0 ? 'font-bold text-slate-700 dark:text-purple-200' : ''}>
+                            Taken: {unpaidDaysTaken} Days
+                          </span>
+                          {unpaidDaysPending > 0 ? (
+                            <span className="text-amber-600 dark:text-amber-400 font-semibold">
+                              Pending: {unpaidDaysPending} Days
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 dark:text-purple-400/40 italic">
+                              0 Pending
+                            </span>
+                          )}
+                          <span className="font-bold text-amber-700 dark:text-amber-400">
+                            Limit: None (Quota-Free)
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -903,51 +1149,73 @@ export const TimeOffPage: React.FC = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-purple-950 text-purple-100">
-            {requests.map((req) => (
+            {filteredRequests.map((req) => (
               <tr key={req.id} className="hover:bg-purple-950/20 transition">
                 <td className="px-5 py-4 font-bold text-white">
                   {req.employee?.name}
                 </td>
-                <td className="px-5 py-4 text-amber-300 font-bold">
-                  {req.timeOffType?.name}
+                <td className="px-5 py-4 font-bold flex items-center gap-1.5 flex-wrap">
+                  <span className="text-amber-300">{req.timeOffType?.name}</span>
+                  {!req.timeOffType?.requiresAllocation && (
+                    <span className="text-[9px] px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-400/30 font-extrabold uppercase tracking-wider">
+                      Unpaid (No Limit)
+                    </span>
+                  )}
                 </td>
                 <td className="px-5 py-4 font-mono text-purple-300/80">
                   {new Date(req.startDate).toISOString().slice(0, 10)} → {new Date(req.endDate).toISOString().slice(0, 10)}
                 </td>
                 <td className="px-5 py-4 font-bold font-mono text-white">
-                  {req.duration} {req.timeOffType?.unit}
+                  {req.duration} Days
                 </td>
                 <td className="px-5 py-4 text-purple-300/70 max-w-xs truncate">
                   {req.reason || '—'}
                 </td>
                 <td className="px-5 py-4">
-                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${req.status === 'Approved' ? 'bg-amber-400/15 text-amber-300 border border-amber-400/30' :
-                      req.status === 'Refused' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' :
-                        'bg-purple-500/20 text-purple-200 border border-purple-500/30'
-                    }`}>
-                    {req.status}
-                  </span>
+                  <div className="flex flex-col gap-0.5">
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold inline-block w-fit ${req.status === 'Approved' ? 'bg-amber-400/15 text-amber-300 border border-amber-400/30' :
+                        req.status === 'Refused' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' :
+                          'bg-purple-500/20 text-purple-200 border border-purple-500/30'
+                      }`}>
+                      {req.status}
+                    </span>
+                    {!req.timeOffType?.requiresAllocation && (
+                      <span className="text-[9px] text-amber-400/80 font-mono font-medium">
+                        Unpaid • Quota-Free
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-5 py-4 text-right">
                   {canManage ? (
-                    req.status === 'Pending' ? (
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleApprove(req.id)}
-                          className="px-3 py-1 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl text-[11px] font-black flex items-center gap-1 transition shadow-sm"
-                        >
-                          <Check size={13} /> Approve (Deduct)
-                        </button>
-                        <button
-                          onClick={() => handleRefuse(req.id)}
-                          className="px-3 py-1 bg-rose-600/80 hover:bg-rose-600 text-white rounded-xl text-[11px] font-bold flex items-center gap-1 transition"
-                        >
-                          <X size={13} /> Refuse
-                        </button>
-                      </div>
-                    ) : (
-                      <span className="text-[10px] text-purple-400/50 font-mono">Completed</span>
-                    )
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => openEditRequestModal(req)}
+                        className="px-2.5 py-1 bg-purple-900/40 hover:bg-purple-800/60 text-purple-200 border border-purple-700/50 rounded-xl text-[11px] font-bold flex items-center gap-1 transition shadow-sm cursor-pointer active:scale-95"
+                        title="Edit Leave Request Details"
+                      >
+                        <Edit2 size={12} className="text-amber-400" /> Edit
+                      </button>
+
+                      {req.status === 'Pending' ? (
+                        <>
+                          <button
+                            onClick={() => handleApprove(req.id)}
+                            className="px-3 py-1 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl text-[11px] font-black flex items-center gap-1 transition shadow-sm cursor-pointer"
+                          >
+                            <Check size={13} /> {!req.timeOffType?.requiresAllocation ? 'Approve (Unpaid)' : 'Approve (Deduct)'}
+                          </button>
+                          <button
+                            onClick={() => handleRefuse(req.id)}
+                            className="px-3 py-1 bg-rose-600/80 hover:bg-rose-600 text-white rounded-xl text-[11px] font-bold flex items-center gap-1 transition cursor-pointer"
+                          >
+                            <X size={13} /> Refuse
+                          </button>
+                        </>
+                      ) : (
+                        <span className="text-[10px] text-purple-400/50 font-mono">Completed</span>
+                      )}
+                    </div>
                   ) : (
                     <span className="text-[10px] text-purple-400/50 font-mono">—</span>
                   )}
@@ -1048,17 +1316,17 @@ export const TimeOffPage: React.FC = () => {
                         className="w-full bg-white dark:bg-[#090712] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium"
                       >
                         {types.map((t) => (
-                          <option key={t.id} value={t.id}>{t.name} ({t.unit})</option>
+                          <option key={t.id} value={t.id}>{t.name} {!t.requiresAllocation ? '(Unpaid • No Limit)' : '(Days)'}</option>
                         ))}
                       </select>
                     </div>
                     <div>
                       <div className="flex justify-between items-center mb-1">
                         <label className="text-slate-700 dark:text-purple-300/80 font-semibold">
-                          Allocated ({types.find(t => t.id === slot1.typeId)?.unit || 'Days'})
+                          Allocated ({types.find(t => t.id === slot1.typeId)?.requiresAllocation ? types.find(t => t.id === slot1.typeId)?.unit || 'Days' : 'Unpaid • Quota-Free'})
                         </label>
                         <span className="text-[10px] text-slate-500 dark:text-purple-400/60 font-mono">
-                          Taken: {slot1.taken} | Rem: {Math.max(0, slot1.amount - slot1.taken)}
+                          Taken: {slot1.taken} | Rem: {types.find(t => t.id === slot1.typeId)?.requiresAllocation ? Math.max(0, slot1.amount - slot1.taken) : 'No Limit'}
                         </span>
                       </div>
                       <input
@@ -1067,7 +1335,9 @@ export const TimeOffPage: React.FC = () => {
                         min="0"
                         value={slot1.amount}
                         onChange={(e) => handleSlotAmountChange(1, Number(e.target.value))}
-                        className="w-full bg-white dark:bg-[#090712] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-mono font-bold"
+                        disabled={types.find(t => t.id === slot1.typeId)?.requiresAllocation === false}
+                        placeholder={types.find(t => t.id === slot1.typeId)?.requiresAllocation === false ? 'No Limit' : 'Days'}
+                        className="w-full bg-white dark:bg-[#090712] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-mono font-bold disabled:opacity-60"
                       />
                     </div>
                   </div>
@@ -1120,17 +1390,17 @@ export const TimeOffPage: React.FC = () => {
                         className="w-full bg-white dark:bg-[#090712] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium"
                       >
                         {types.map((t) => (
-                          <option key={t.id} value={t.id}>{t.name} ({t.unit})</option>
+                          <option key={t.id} value={t.id}>{t.name} {!t.requiresAllocation ? '(Unpaid • No Limit)' : '(Days)'}</option>
                         ))}
                       </select>
                     </div>
                     <div>
                       <div className="flex justify-between items-center mb-1">
                         <label className="text-slate-700 dark:text-purple-300/80 font-semibold">
-                          Allocated ({types.find(t => t.id === slot2.typeId)?.unit || 'Days'})
+                          Allocated ({types.find(t => t.id === slot2.typeId)?.requiresAllocation ? types.find(t => t.id === slot2.typeId)?.unit || 'Days' : 'Unpaid • Quota-Free'})
                         </label>
                         <span className="text-[10px] text-slate-500 dark:text-purple-400/60 font-mono">
-                          Taken: {slot2.taken} | Rem: {Math.max(0, slot2.amount - slot2.taken)}
+                          Taken: {slot2.taken} | Rem: {types.find(t => t.id === slot2.typeId)?.requiresAllocation ? Math.max(0, slot2.amount - slot2.taken) : 'No Limit'}
                         </span>
                       </div>
                       <input
@@ -1139,7 +1409,9 @@ export const TimeOffPage: React.FC = () => {
                         min="0"
                         value={slot2.amount}
                         onChange={(e) => handleSlotAmountChange(2, Number(e.target.value))}
-                        className="w-full bg-white dark:bg-[#090712] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-mono font-bold"
+                        disabled={types.find(t => t.id === slot2.typeId)?.requiresAllocation === false}
+                        placeholder={types.find(t => t.id === slot2.typeId)?.requiresAllocation === false ? 'No Limit' : 'Days'}
+                        className="w-full bg-white dark:bg-[#090712] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-mono font-bold disabled:opacity-60"
                       />
                     </div>
                   </div>
@@ -1192,17 +1464,17 @@ export const TimeOffPage: React.FC = () => {
                         className="w-full bg-white dark:bg-[#090712] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium"
                       >
                         {types.map((t) => (
-                          <option key={t.id} value={t.id}>{t.name} ({t.unit})</option>
+                          <option key={t.id} value={t.id}>{t.name} {!t.requiresAllocation ? '(Unpaid • No Limit)' : '(Days)'}</option>
                         ))}
                       </select>
                     </div>
                     <div>
                       <div className="flex justify-between items-center mb-1">
                         <label className="text-slate-700 dark:text-purple-300/80 font-semibold">
-                          Allocated ({types.find(t => t.id === slot3.typeId)?.unit || 'Days'})
+                          Allocated ({types.find(t => t.id === slot3.typeId)?.requiresAllocation ? types.find(t => t.id === slot3.typeId)?.unit || 'Days' : 'Unpaid • Quota-Free'})
                         </label>
                         <span className="text-[10px] text-slate-500 dark:text-purple-400/60 font-mono">
-                          Taken: {slot3.taken} | Rem: {Math.max(0, slot3.amount - slot3.taken)}
+                          Taken: {slot3.taken} | Rem: {types.find(t => t.id === slot3.typeId)?.requiresAllocation ? Math.max(0, slot3.amount - slot3.taken) : 'No Limit'}
                         </span>
                       </div>
                       <input
@@ -1211,7 +1483,9 @@ export const TimeOffPage: React.FC = () => {
                         min="0"
                         value={slot3.amount}
                         onChange={(e) => handleSlotAmountChange(3, Number(e.target.value))}
-                        className="w-full bg-white dark:bg-[#090712] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-mono font-bold"
+                        disabled={types.find(t => t.id === slot3.typeId)?.requiresAllocation === false}
+                        placeholder={types.find(t => t.id === slot3.typeId)?.requiresAllocation === false ? 'No Limit' : 'Days'}
+                        className="w-full bg-white dark:bg-[#090712] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-mono font-bold disabled:opacity-60"
                       />
                     </div>
                   </div>
@@ -1304,6 +1578,50 @@ export const TimeOffPage: React.FC = () => {
             )}
 
             <form onSubmit={handleCreateRequest} className="space-y-4 text-xs">
+              {/* Unpaid Leave Switch Toggle */}
+              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-[#06050b] border border-slate-200/80 dark:border-purple-900/50 shadow-sm transition-all">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-xl border transition-colors ${
+                    isUnpaidLeave 
+                      ? 'bg-amber-500/15 border-amber-400/40 text-amber-500 dark:text-amber-400' 
+                      : 'bg-purple-500/10 border-purple-500/20 text-purple-600 dark:text-purple-300'
+                  }`}>
+                    <Clock size={16} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-slate-900 dark:text-white">Unpaid Leave Request</span>
+                      {isUnpaidLeave && (
+                        <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-400/30 font-black uppercase tracking-wider">
+                          Unpaid
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-slate-500 dark:text-purple-300/60 font-medium">
+                      {isUnpaidLeave 
+                        ? 'Leave quota allocation NOT required • Will be approved by HR' 
+                        : 'Enable this toggle to request unpaid leave without quota'}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={isUnpaidLeave}
+                  onClick={toggleUnpaidLeave}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500/50 ${
+                    isUnpaidLeave ? 'bg-gradient-to-r from-amber-500 to-yellow-400' : 'bg-slate-300 dark:bg-purple-950/80'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                      isUnpaidLeave ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
               {canManage && (
                 <div>
                   <label className="block text-purple-300/80 mb-1 font-semibold">Employee</label>
@@ -1319,18 +1637,30 @@ export const TimeOffPage: React.FC = () => {
                 </div>
               )}
 
-              <div>
-                <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Time Off Type</label>
-                <select
-                  value={requestForm.timeOffTypeId}
-                  onChange={(e) => setRequestForm({ ...requestForm, timeOffTypeId: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium cursor-pointer"
-                >
-                  {types.map(t => (
-                    <option key={t.id} value={t.id} className="bg-white dark:bg-[#0b0914] text-slate-900 dark:text-white">{t.name} ({t.unit})</option>
-                  ))}
-                </select>
-              </div>
+              {isUnpaidLeave ? (
+                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="text-slate-500 dark:text-purple-300/70 font-semibold">Leave Type:</span>
+                    <span className="font-extrabold text-amber-600 dark:text-amber-400">Unpaid Leave</span>
+                  </div>
+                  <span className="text-[10px] text-amber-700 dark:text-amber-300 font-bold px-2 py-0.5 rounded-lg bg-amber-500/20">
+                    Quota-Free
+                  </span>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Time Off Type</label>
+                  <select
+                    value={requestForm.timeOffTypeId}
+                    onChange={(e) => setRequestForm({ ...requestForm, timeOffTypeId: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium cursor-pointer"
+                  >
+                    {types.filter(t => t.requiresAllocation).map(t => (
+                      <option key={t.id} value={t.id} className="bg-white dark:bg-[#0b0914] text-slate-900 dark:text-white">{t.name} (Days)</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -1360,10 +1690,16 @@ export const TimeOffPage: React.FC = () => {
                   <label className="text-slate-700 dark:text-purple-300/80 font-semibold">
                     Duration (Days)
                   </label>
-                  {selectedReqType && selectedReqType.remainingBalance !== undefined && (
-                    <span className="text-[10px] text-slate-500 dark:text-purple-400/60 font-mono">
-                      Max available: {selectedReqType.remainingBalance} Days
+                  {isUnpaidLeave ? (
+                    <span className="text-[10px] text-amber-600 dark:text-amber-400 font-mono font-medium">
+                      Quota not required (Unpaid)
                     </span>
+                  ) : (
+                    selectedReqType && selectedReqType.remainingBalance !== undefined && (
+                      <span className="text-[10px] text-slate-500 dark:text-purple-400/60 font-mono">
+                        Max available: {selectedReqType.remainingBalance} Days
+                      </span>
+                    )
                   )}
                 </div>
                 <input
@@ -1377,8 +1713,21 @@ export const TimeOffPage: React.FC = () => {
                 />
               </div>
 
-              {/* Requirement 3 & 7: "Please specify reason" ONLY appears when "Other" is selected */}
-              {selectedReqType?.name?.toLowerCase() === 'other' && (
+              {/* Reason: optional for Unpaid, required for Other */}
+              {isUnpaidLeave ? (
+                <div>
+                  <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">
+                    Reason / Description for Unpaid Leave <span className="text-slate-400 dark:text-purple-400/50 font-normal">(optional)</span>
+                  </label>
+                  <textarea
+                    value={requestForm.reason}
+                    onChange={(e) => setRequestForm({ ...requestForm, reason: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium"
+                    placeholder="Provide details or reason for taking unpaid leave..."
+                    rows={2}
+                  />
+                </div>
+              ) : selectedReqType?.name?.toLowerCase() === 'other' ? (
                 <div>
                   <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">
                     Please specify reason <span className="text-rose-500">*</span>
@@ -1392,7 +1741,7 @@ export const TimeOffPage: React.FC = () => {
                     rows={3}
                   />
                 </div>
-              )}
+              ) : null}
 
               <div className="flex justify-end gap-2 pt-4 border-t border-purple-100 dark:border-purple-900/40">
                 <button
@@ -1407,6 +1756,146 @@ export const TimeOffPage: React.FC = () => {
                   className="px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl font-black shadow-md shadow-amber-500/20 cursor-pointer"
                 >
                   Submit Request
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Edit Request Modal (Admin/HR can edit unpaid leaves and other leaves) */}
+      {showEditRequestModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-md p-4">
+          <div className="bg-white dark:bg-[#090712] border border-purple-200 dark:border-purple-800/60 rounded-3xl w-full max-w-md p-6 shadow-2xl transition-colors duration-300">
+            <div className="flex items-center justify-between pb-3 mb-4 border-b border-purple-100 dark:border-purple-900/50">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-400/30">
+                  <Edit2 size={16} />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                    Edit {editRequestForm.isUnpaid ? 'Unpaid Leave' : 'Leave Request'}
+                  </h2>
+                  <p className="text-xs text-slate-500 dark:text-purple-300/60 font-medium">
+                    Modify duration, dates, reason, or status for this leave.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowEditRequestModal(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-purple-50 dark:hover:bg-purple-950/60 transition cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {editRequestError && (
+              <div className="mb-4 p-3 bg-rose-50 dark:bg-rose-500/15 border border-rose-200 dark:border-rose-500/30 rounded-2xl text-rose-700 dark:text-rose-300 text-xs flex items-start gap-2">
+                <AlertCircle size={16} className="shrink-0 mt-0.5 text-rose-500" />
+                <span>{editRequestError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveEditRequest} className="space-y-4 text-xs">
+              {/* Employee & Type Summary */}
+              <div className="p-3 rounded-2xl bg-purple-50/70 dark:bg-[#06050b] border border-purple-100 dark:border-purple-900/40 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] text-slate-500 dark:text-purple-400/60 font-medium block">Employee</span>
+                  <span className="font-bold text-slate-900 dark:text-white text-xs">{editRequestForm.employeeName}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] text-slate-500 dark:text-purple-400/60 font-medium block">Leave Type</span>
+                  <div className="flex items-center gap-1.5 justify-end">
+                    <span className="font-bold text-amber-600 dark:text-amber-400">{editRequestForm.timeOffTypeName}</span>
+                    {editRequestForm.isUnpaid && (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300 font-extrabold uppercase border border-amber-400/30">
+                        Unpaid (No Limit)
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Start & End Dates */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Start Date</label>
+                  <input
+                    type="date"
+                    required
+                    value={editRequestForm.startDate}
+                    onChange={(e) => handleEditRequestStartDateChange(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">End Date</label>
+                  <input
+                    type="date"
+                    required
+                    value={editRequestForm.endDate}
+                    onChange={(e) => handleEditRequestEndDateChange(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium"
+                  />
+                </div>
+              </div>
+
+              {/* Duration & Status */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Duration (Days)</label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0.5"
+                    required
+                    value={editRequestForm.duration}
+                    onChange={(e) => handleEditRequestDurationChange(Number(e.target.value))}
+                    className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-mono font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Status</label>
+                  <select
+                    value={editRequestForm.status}
+                    onChange={(e) => setEditRequestForm(prev => ({ ...prev, status: e.target.value }))}
+                    className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium cursor-pointer"
+                  >
+                    <option value="Pending">Pending</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Refused">Refused</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Reason / Details */}
+              <div>
+                <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">
+                  Reason / Description {editRequestForm.isUnpaid ? <span className="text-slate-400 font-normal">(optional)</span> : null}
+                </label>
+                <textarea
+                  value={editRequestForm.reason}
+                  onChange={(e) => setEditRequestForm(prev => ({ ...prev, reason: e.target.value }))}
+                  rows={2}
+                  className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium"
+                  placeholder="Details or reason for this leave..."
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-purple-100 dark:border-purple-900/40">
+                <button
+                  type="button"
+                  onClick={() => setShowEditRequestModal(false)}
+                  className="px-4 py-2 bg-slate-100 dark:bg-purple-950/60 border border-slate-200 dark:border-purple-900/50 text-slate-600 dark:text-purple-300 rounded-xl hover:bg-slate-200 dark:hover:bg-purple-900/40 font-bold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingEditRequest}
+                  className="px-5 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl font-black shadow-md shadow-amber-500/20 active:scale-95 cursor-pointer disabled:opacity-50"
+                >
+                  {isSavingEditRequest ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             </form>

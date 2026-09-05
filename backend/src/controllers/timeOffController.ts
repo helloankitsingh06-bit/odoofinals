@@ -543,3 +543,89 @@ export const deleteRequest = async (req: AuthRequest, res: Response): Promise<vo
   }
 };
 
+export const updateRequest = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { startDate, endDate, duration, reason, status, timeOffTypeId } = req.body;
+
+    const existing = await prisma.timeOffRequest.findUnique({
+      where: { id },
+      include: { timeOffType: true, employee: true }
+    });
+
+    if (!existing) {
+      res.status(404).json({ error: 'Time off request not found' });
+      return;
+    }
+
+    const dur = duration !== undefined ? Number(duration) : existing.duration;
+    if (isNaN(dur) || dur <= 0) {
+      res.status(400).json({ error: 'Duration must be a positive number' });
+      return;
+    }
+
+    const targetStatus = status || existing.status;
+
+    // Handle allocation adjustment if this leave type requires allocation
+    if (existing.timeOffType.requiresAllocation) {
+      const alloc = await prisma.allocation.findFirst({
+        where: {
+          employeeId: existing.employeeId,
+          timeOffTypeId: existing.timeOffTypeId
+        }
+      });
+
+      if (alloc) {
+        let delta = 0; // change in takenAmount
+        if (existing.status === TimeOffStatus.Approved && targetStatus === TimeOffStatus.Approved) {
+          delta = dur - existing.duration;
+        } else if (existing.status !== TimeOffStatus.Approved && targetStatus === TimeOffStatus.Approved) {
+          delta = dur;
+        } else if (existing.status === TimeOffStatus.Approved && targetStatus !== TimeOffStatus.Approved) {
+          delta = -existing.duration;
+        }
+
+        if (delta > 0 && alloc.remainingAmount < delta) {
+          res.status(400).json({
+            error: `Insufficient leave balance to increase duration. Required: ${delta} ${existing.timeOffType.unit}, Remaining: ${alloc.remainingAmount} ${existing.timeOffType.unit}`
+          });
+          return;
+        }
+
+        if (delta !== 0) {
+          await prisma.allocation.update({
+            where: { id: alloc.id },
+            data: {
+              takenAmount: Math.max(0, alloc.takenAmount + delta),
+              remainingAmount: alloc.remainingAmount - delta
+            }
+          });
+        }
+      }
+    }
+
+    const updated = await prisma.timeOffRequest.update({
+      where: { id },
+      data: {
+        ...(startDate ? { startDate: new Date(startDate) } : {}),
+        ...(endDate ? { endDate: new Date(endDate) } : {}),
+        duration: dur,
+        ...(reason !== undefined ? { reason } : {}),
+        ...(status ? { status: targetStatus } : {}),
+        ...(timeOffTypeId ? { timeOffTypeId } : {})
+      },
+      include: {
+        employee: true,
+        timeOffType: true
+      }
+    });
+
+    res.json({
+      message: 'Time off request updated successfully',
+      request: updated
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+

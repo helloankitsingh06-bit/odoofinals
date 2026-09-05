@@ -128,6 +128,10 @@ async function main() {
     data: { name: 'Other', unit: 'Days', requiresAllocation: true, requiresApproval: true, payrollIntegrated: true }
   });
 
+  const unpaidLeave = await prisma.timeOffType.create({
+    data: { name: 'Unpaid Leave', unit: 'Days', requiresAllocation: false, requiresApproval: true, payrollIntegrated: true }
+  });
+
   // 5. Employees
   const empCEO = await prisma.employee.create({
     data: {
