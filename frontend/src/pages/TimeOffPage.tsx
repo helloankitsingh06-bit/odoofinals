@@ -76,23 +76,20 @@ export const TimeOffPage: React.FC = () => {
         apiRequest('/time-off/types'),
         apiRequest('/time-off/allocations'),
         apiRequest('/time-off/requests'),
-        apiRequest('/employees')
+        apiRequest('/employees').catch(() => [])
       ]);
-      setTypes(tData);
-      setAllocations(aData);
-      setRequests(rData);
-      setEmployees(eData);
+      setTypes(tData || []);
+      setAllocations(aData || []);
+      setRequests(rData || []);
+      setEmployees(eData || []);
 
-      if (tData.length > 0) {
-        if (!requestForm.timeOffTypeId) {
-          setRequestForm(prev => ({ ...prev, timeOffTypeId: tData[0].id }));
-        }
-        if (!allocationForm.timeOffTypeId) {
-          setAllocationForm(prev => ({ ...prev, timeOffTypeId: tData[0].id }));
-        }
+      if (tData && tData.length > 0 && !requestForm.timeOffTypeId) {
+        setRequestForm(prev => ({ ...prev, timeOffTypeId: tData[0].id }));
       }
-
-      if (eData.length > 0) {
+      if (tData && tData.length > 0 && !allocationForm.timeOffTypeId) {
+        setAllocationForm(prev => ({ ...prev, timeOffTypeId: tData[0].id }));
+      }
+      if (eData && eData.length > 0) {
         if (!requestForm.employeeId) {
           setRequestForm(prev => ({ ...prev, employeeId: user?.employeeId || eData[0].id }));
         }
@@ -155,10 +152,12 @@ export const TimeOffPage: React.FC = () => {
     e.preventDefault();
     setError(null);
     try {
+      const typeId = requestForm.timeOffTypeId || (types[0]?.id ?? '');
       await apiRequest('/time-off/requests', {
         method: 'POST',
         body: JSON.stringify({
           ...requestForm,
+          timeOffTypeId: typeId,
           employeeId: requestForm.employeeId || user?.employeeId
         })
       });
@@ -176,9 +175,13 @@ export const TimeOffPage: React.FC = () => {
     e.preventDefault();
     setError(null);
     try {
+      const typeId = allocationForm.timeOffTypeId || (types[0]?.id ?? '');
       await apiRequest('/time-off/allocations', {
         method: 'POST',
-        body: JSON.stringify(allocationForm)
+        body: JSON.stringify({
+          ...allocationForm,
+          timeOffTypeId: typeId
+        })
       });
       setShowAllocationModal(false);
       fetchData();
@@ -299,15 +302,8 @@ export const TimeOffPage: React.FC = () => {
           )}
 
           <button
-            onClick={() => {
-              setError(null);
-              const targetEmpId = requestForm.employeeId || user?.employeeId || (employees[0]?.id || '');
-              if (targetEmpId) {
-                fetchBalancesForEmployee(targetEmpId);
-              }
-              setShowRequestModal(true);
-            }}
-            className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl text-xs font-black shadow-lg shadow-amber-500/20 transition active:scale-95 cursor-pointer"
+            onClick={() => { setError(null); setShowRequestModal(true); }}
+            className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl text-xs font-black shadow-lg shadow-amber-500/20 transition active:scale-95"
           >
             <Plus size={16} /> Request Time Off
           </button>
@@ -405,307 +401,120 @@ export const TimeOffPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-purple-50/70 dark:bg-[#06050b] text-purple-900 dark:text-purple-300/70 font-bold uppercase tracking-wider text-[10px] border-b border-purple-100 dark:border-purple-900/50">
-              <tr>
-                <th className="px-5 py-4">Employee</th>
-                <th className="px-5 py-4">Leave Type</th>
-                <th className="px-5 py-4">Dates</th>
-                <th className="px-5 py-4">Duration</th>
-                <th className="px-5 py-4">Reason</th>
-                <th className="px-5 py-4">Status</th>
-                <th className="px-5 py-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-purple-100 dark:divide-purple-950 text-slate-800 dark:text-purple-100">
-              {filteredRequests.length > 0 ? (
-                filteredRequests.map((req) => (
-                  <tr key={req.id} className="hover:bg-purple-50/50 dark:hover:bg-purple-950/20 transition">
-                    <td className="px-5 py-4 font-bold text-slate-900 dark:text-white">
-                      <div className="flex items-center gap-2">
-                        <div className="h-6 w-6 rounded-lg bg-gradient-to-tr from-purple-600 to-amber-500 text-white flex items-center justify-center font-bold text-[10px] shadow-sm shrink-0">
-                          {req.employee?.name ? req.employee.name[0] : 'E'}
-                        </div>
-                        <div>
-                          <div>{req.employee?.name || 'Unknown'}</div>
-                          {req.employee?.department && (
-                            <div className="text-[10px] text-slate-500 dark:text-purple-400/60 font-normal">
-                              {req.employee.department}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4 text-amber-700 dark:text-amber-300 font-bold">
-                      {req.timeOffType?.name}
-                    </td>
-                    <td className="px-5 py-4 font-mono text-slate-600 dark:text-purple-300/80">
-                      {new Date(req.startDate).toISOString().slice(0, 10)} → {new Date(req.endDate).toISOString().slice(0, 10)}
-                    </td>
-                    <td className="px-5 py-4 font-bold font-mono text-slate-900 dark:text-white">
-                      {req.duration} {req.timeOffType?.unit}
-                    </td>
-                    <td className="px-5 py-4 text-slate-500 dark:text-purple-300/70 max-w-xs truncate">
-                      {req.reason || '—'}
-                    </td>
-                    <td className="px-5 py-4">
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                        req.status === 'Approved' ? 'bg-amber-400/15 text-amber-700 dark:text-amber-300 border border-amber-400/30' :
-                        req.status === 'Refused' ? 'bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30' :
-                        'bg-purple-500/20 text-purple-700 dark:text-purple-200 border border-purple-500/30'
-                      }`}>
-                        {req.status}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4 text-right">
-                      {canManage ? (
-                        req.status === 'Pending' ? (
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => handleApprove(req.id)}
-                              className="px-3 py-1 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl text-[11px] font-black flex items-center gap-1 transition shadow-sm cursor-pointer"
-                            >
-                              <Check size={13} /> Approve (Deduct)
-                            </button>
-                            <button
-                              onClick={() => handleRefuse(req.id)}
-                              className="px-3 py-1 bg-rose-600/80 hover:bg-rose-600 text-white rounded-xl text-[11px] font-bold flex items-center gap-1 transition cursor-pointer"
-                            >
-                              <X size={13} /> Refuse
-                            </button>
-                          </div>
-                        ) : (
-                          <span className="text-[10px] text-slate-400 dark:text-purple-400/50 font-mono">Completed</span>
-                        )
-                      ) : (
-                        <span className="text-[10px] text-slate-400 dark:text-purple-400/50 font-mono">—</span>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={7} className="text-center py-10 text-slate-400 dark:text-purple-400/60">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <Search size={24} className="text-slate-300 dark:text-purple-700/50" />
-                      <p className="font-semibold text-xs text-slate-600 dark:text-purple-300">No requests found</p>
-                      {(requestSearch || requestStatusFilter !== 'All') && (
+        <table className="w-full text-left text-xs">
+          <thead className="bg-purple-50/70 dark:bg-[#06050b] text-purple-900 dark:text-purple-300/70 font-bold uppercase tracking-wider text-[10px] border-b border-purple-100 dark:border-purple-900/50">
+            <tr>
+              <th className="px-5 py-4">Employee</th>
+              <th className="px-5 py-4">Leave Type</th>
+              <th className="px-5 py-4">Dates</th>
+              <th className="px-5 py-4">Duration</th>
+              <th className="px-5 py-4">Reason</th>
+              <th className="px-5 py-4">Status</th>
+              <th className="px-5 py-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-purple-950 text-purple-100">
+            {requests.map((req) => (
+              <tr key={req.id} className="hover:bg-purple-950/20 transition">
+                <td className="px-5 py-4 font-bold text-white">
+                  {req.employee?.name}
+                </td>
+                <td className="px-5 py-4 text-amber-300 font-bold">
+                  {req.timeOffType?.name}
+                </td>
+                <td className="px-5 py-4 font-mono text-purple-300/80">
+                  {new Date(req.startDate).toISOString().slice(0, 10)} → {new Date(req.endDate).toISOString().slice(0, 10)}
+                </td>
+                <td className="px-5 py-4 font-bold font-mono text-white">
+                  {req.duration} {req.timeOffType?.unit}
+                </td>
+                <td className="px-5 py-4 text-purple-300/70 max-w-xs truncate">
+                  {req.reason || '—'}
+                </td>
+                <td className="px-5 py-4">
+                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${req.status === 'Approved' ? 'bg-amber-400/15 text-amber-300 border border-amber-400/30' :
+                      req.status === 'Refused' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' :
+                        'bg-purple-500/20 text-purple-200 border border-purple-500/30'
+                    }`}>
+                    {req.status}
+                  </span>
+                </td>
+                <td className="px-5 py-4 text-right">
+                  {canManage ? (
+                    req.status === 'Pending' ? (
+                      <div className="flex items-center justify-end gap-2">
                         <button
-                          type="button"
-                          onClick={() => {
-                            setRequestSearch('');
-                            setRequestStatusFilter('All');
-                          }}
-                          className="mt-1 px-3 py-1 text-xs rounded-xl bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 font-bold hover:bg-purple-200 dark:hover:bg-purple-800/40 cursor-pointer"
+                          onClick={() => handleApprove(req.id)}
+                          className="px-3 py-1 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl text-[11px] font-black flex items-center gap-1 transition shadow-sm"
                         >
-                          Clear Filters
+                          <Check size={13} /> Approve (Deduct)
                         </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                        <button
+                          onClick={() => handleRefuse(req.id)}
+                          className="px-3 py-1 bg-rose-600/80 hover:bg-rose-600 text-white rounded-xl text-[11px] font-bold flex items-center gap-1 transition"
+                        >
+                          <X size={13} /> Refuse
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-purple-400/50 font-mono">Completed</span>
+                    )
+                  ) : (
+                    <span className="text-[10px] text-purple-400/50 font-mono">—</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       {/* Grant Leave Allocation Modal */}
       {showAllocationModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-md p-4 overflow-y-auto">
-          <div
-            className="fixed inset-0"
-            onClick={() => setShowAllocationModal(false)}
-          />
-          <div className="relative bg-white dark:bg-[#090712] border border-purple-200 dark:border-purple-800/60 rounded-3xl w-full max-w-md p-6 shadow-2xl z-10 transition-colors duration-300">
-            <div className="flex items-center justify-between pb-3 mb-4 border-b border-purple-100 dark:border-purple-900/50">
-              <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <div className="p-1.5 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-400/30">
-                  <Award size={16} />
-                </div>
-                Grant Leave Allocation
-              </h2>
-              <button
-                type="button"
-                onClick={() => setShowAllocationModal(false)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-purple-50 dark:hover:bg-purple-950/60 transition cursor-pointer"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            <p className="text-xs text-slate-500 dark:text-purple-300/60 mb-4 font-medium">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+          <div className="bg-[#090712] border border-purple-800/60 rounded-3xl w-full max-w-md p-6 shadow-2xl">
+            <h2 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
+              <Award size={18} className="text-amber-400" />
+              Grant Leave Allocation
+            </h2>
+            <p className="text-xs text-purple-300/60 mb-4">
               Allocate a quota of paid/unpaid leaves to an employee for a specific date window.
             </p>
 
             {error && (
-              <div className="mb-4 p-3.5 bg-rose-50 dark:bg-rose-500/15 border border-rose-200 dark:border-rose-500/30 rounded-2xl text-rose-700 dark:text-rose-300 text-xs flex items-start gap-2">
-                <AlertCircle size={16} className="shrink-0 mt-0.5 text-rose-500" />
+              <div className="mb-4 p-3.5 bg-rose-500/15 border border-rose-500/30 rounded-2xl text-rose-300 text-xs flex items-start gap-2">
+                <AlertCircle size={16} className="shrink-0 mt-0.5" />
                 <span>{error}</span>
               </div>
             )}
 
             <form onSubmit={handleCreateAllocation} className="space-y-4 text-xs">
-              {/* Searchable Employee Combobox */}
-              <div className="relative" ref={allocEmpDropdownRef}>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-slate-700 dark:text-purple-300/80 font-semibold text-xs flex items-center gap-1.5">
-                    <User size={13} className="text-amber-500 dark:text-amber-400" />
-                    Employee
-                  </label>
-                  <span className="text-[10px] text-slate-500 dark:text-purple-400/60">
-                    {filteredAllocEmployees.length} of {employees.length} available
-                  </span>
-                </div>
-
-                <div
-                  className="relative cursor-pointer"
-                  onClick={() => setIsAllocEmpDropdownOpen(true)}
+              <div>
+                <label className="block text-purple-300/80 mb-1 font-semibold">Employee</label>
+                <select
+                  required
+                  value={allocationForm.employeeId}
+                  onChange={(e) => setAllocationForm({ ...allocationForm, employeeId: e.target.value })}
+                  className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
                 >
-                  <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-purple-400/70 pointer-events-none" />
-                  <input
-                    type="text"
-                    value={allocEmpSearch}
-                    onChange={(e) => {
-                      setAllocEmpSearch(e.target.value);
-                      setIsAllocEmpDropdownOpen(true);
-                    }}
-                    onFocus={() => setIsAllocEmpDropdownOpen(true)}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsAllocEmpDropdownOpen(true);
-                    }}
-                    placeholder={selectedAllocEmployee ? `${selectedAllocEmployee.name} (${selectedAllocEmployee.department || 'General'})` : "Type name or department to search..."}
-                    className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl pl-10 pr-9 py-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-purple-300/60 focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium cursor-pointer"
-                  />
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (allocEmpSearch) {
-                        setAllocEmpSearch('');
-                      } else {
-                        setIsAllocEmpDropdownOpen(!isAllocEmpDropdownOpen);
-                      }
-                    }}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
-                  >
-                    {allocEmpSearch ? <X size={13} /> : <ChevronDown size={14} className={`transition-transform duration-200 ${isAllocEmpDropdownOpen ? 'rotate-180 text-amber-500' : ''}`} />}
-                  </button>
-                </div>
-
-                {selectedAllocEmployee && !isAllocEmpDropdownOpen && (
-                  <div className="mt-1.5 px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-900/40 flex items-center justify-between text-[11px]">
-                    <span className="font-semibold text-purple-900 dark:text-purple-200 flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                      Selected: <strong>{selectedAllocEmployee.name}</strong>
-                    </span>
-                    <span className="text-slate-500 dark:text-purple-400/60 font-mono text-[10px]">
-                      {selectedAllocEmployee.department || 'General'}
-                    </span>
-                  </div>
-                )}
-
-                {isAllocEmpDropdownOpen && (
-                  <div
-                    onMouseDown={(e) => e.stopPropagation()}
-                    className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white dark:bg-[#0e0c18] border border-purple-200 dark:border-purple-800/80 rounded-2xl shadow-2xl max-h-52 overflow-y-auto p-1.5 space-y-1 text-xs animate-fadeIn"
-                  >
-                    {filteredAllocEmployees.length > 0 ? (
-                      filteredAllocEmployees.map((e) => {
-                        const isSelected = allocationForm.employeeId === e.id;
-                        return (
-                          <div
-                            key={e.id}
-                            onClick={() => {
-                              setAllocationForm({ ...allocationForm, employeeId: e.id });
-                              setIsAllocEmpDropdownOpen(false);
-                            }}
-                            className={`p-2 rounded-xl flex items-center justify-between cursor-pointer transition ${
-                              isSelected
-                                ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 font-bold border border-amber-500/30'
-                                : 'text-slate-800 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/50'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2">
-                              <div className="h-6 w-6 rounded-lg bg-gradient-to-tr from-purple-600 to-amber-500 text-white flex items-center justify-center font-bold text-[10px] shadow-sm">
-                                {e.name[0]}
-                              </div>
-                              <div>
-                                <div className="font-bold text-slate-900 dark:text-white text-xs">{e.name}</div>
-                                <div className="text-[10px] text-slate-500 dark:text-purple-400/70 font-normal">
-                                  {e.jobPosition ? `${e.jobPosition} • ` : ''}{e.department || 'General'}
-                                </div>
-                              </div>
-                            </div>
-                            {isSelected && <Check size={14} className="text-amber-500 dark:text-amber-400 shrink-0" />}
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <div className="p-3 text-center text-slate-400 dark:text-purple-400/60 text-xs">
-                        No employees found matching "{allocEmpSearch}"
-                      </div>
-                    )}
-                  </div>
-                )}
+                  {employees.map(emp => (
+                    <option key={emp.id} value={emp.id}>{emp.name} ({emp.department} - {emp.jobPosition})</option>
+                  ))}
+                </select>
               </div>
 
-              {/* Custom Leave Type Dropdown */}
-              <div className="relative" ref={allocTypeDropdownRef}>
-                <label className="block text-slate-700 dark:text-purple-300/80 mb-1.5 font-semibold text-xs flex items-center gap-1.5">
-                  <Layers size={13} className="text-amber-500 dark:text-amber-400" />
-                  Leave Type
-                </label>
-
-                <div
-                  onClick={() => setIsAllocTypeDropdownOpen(!isAllocTypeDropdownOpen)}
-                  className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white font-medium cursor-pointer flex items-center justify-between hover:border-amber-400 transition"
+              <div>
+                <label className="block text-purple-300/80 mb-1 font-semibold">Leave Type</label>
+                <select
+                  required
+                  value={allocationForm.timeOffTypeId}
+                  onChange={(e) => setAllocationForm({ ...allocationForm, timeOffTypeId: e.target.value })}
+                  className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-xs">{selectedAllocType?.name || 'Select Leave Type'}</span>
-                    {selectedAllocType && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300">
-                        {selectedAllocType.unit}
-                      </span>
-                    )}
-                  </div>
-                  <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${isAllocTypeDropdownOpen ? 'rotate-180 text-amber-500' : ''}`} />
-                </div>
-
-                {isAllocTypeDropdownOpen && (
-                  <div
-                    onMouseDown={(e) => e.stopPropagation()}
-                    className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white dark:bg-[#0e0c18] border border-purple-200 dark:border-purple-800/80 rounded-2xl shadow-2xl max-h-52 overflow-y-auto p-1.5 space-y-1 text-xs animate-fadeIn"
-                  >
-                    {types.map(t => {
-                      const isSelected = allocationForm.timeOffTypeId === t.id;
-                      return (
-                        <div
-                          key={t.id}
-                          onClick={() => {
-                            setAllocationForm({ ...allocationForm, timeOffTypeId: t.id });
-                            setIsAllocTypeDropdownOpen(false);
-                          }}
-                          className={`p-2.5 rounded-xl flex items-center justify-between cursor-pointer transition ${
-                            isSelected
-                              ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 font-bold border border-amber-500/30'
-                              : 'text-slate-800 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/50'
-                          }`}
-                        >
-                          <div>
-                            <div className="font-bold text-slate-900 dark:text-white text-xs">{t.name}</div>
-                            <div className="text-[10px] text-slate-500 dark:text-purple-400/70">
-                              Unit: {t.unit} • {t.requiresApproval ? 'Requires HR Approval' : 'Auto Approved'}
-                            </div>
-                          </div>
-                          {isSelected && <Check size={14} className="text-amber-500 dark:text-amber-400 shrink-0" />}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                  {types.map(t => (
+                    <option key={t.id} value={t.id}>{t.name} ({t.unit})</option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -754,7 +563,7 @@ export const TimeOffPage: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl font-black shadow-md shadow-amber-500/20 cursor-pointer"
+                  className="px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl font-black shadow-lg shadow-amber-500/20"
                 >
                   Grant Quota
                 </button>
@@ -766,28 +575,12 @@ export const TimeOffPage: React.FC = () => {
 
       {/* Request Modal */}
       {showRequestModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-md p-4 overflow-y-auto">
-          <div
-            className="fixed inset-0"
-            onClick={() => setShowRequestModal(false)}
-          />
-          <div className="relative bg-white dark:bg-[#090712] border border-purple-200 dark:border-purple-800/60 rounded-3xl w-full max-w-md p-6 shadow-2xl z-10 transition-colors duration-300">
-            <div className="flex items-center justify-between pb-3 mb-4 border-b border-purple-100 dark:border-purple-900/50">
-              <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <div className="p-1.5 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-400/30">
-                  <Sparkles size={16} />
-                </div>
-                Request Time Off
-              </h2>
-              <button
-                type="button"
-                onClick={() => setShowRequestModal(false)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-purple-50 dark:hover:bg-purple-950/60 transition cursor-pointer"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-md p-4">
+          <div className="bg-white dark:bg-[#090712] border border-purple-200 dark:border-purple-800/60 rounded-3xl w-full max-w-md p-6 shadow-2xl transition-colors duration-300">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-2">
+              <Sparkles size={18} className="text-amber-500 dark:text-amber-400" />
+              Request Time Off
+            </h2>
             <p className="text-xs text-slate-500 dark:text-purple-300/60 mb-4 font-medium">
               Submit your time off request for approval. Live leave balance will be automatically checked and deducted upon approval.
             </p>
@@ -800,210 +593,32 @@ export const TimeOffPage: React.FC = () => {
             )}
 
             <form onSubmit={handleCreateRequest} className="space-y-4 text-xs">
-              {/* Searchable Employee Combobox (for Managers/HR) */}
-              {canManage ? (
-                <div className="relative" ref={reqEmpDropdownRef}>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-slate-700 dark:text-purple-300/80 font-semibold text-xs flex items-center gap-1.5">
-                      <User size={13} className="text-amber-500 dark:text-amber-400" />
-                      Employee
-                    </label>
-                    <span className="text-[10px] text-slate-500 dark:text-purple-400/60">
-                      {filteredReqEmployees.length} of {employees.length} available
-                    </span>
-                  </div>
-
-                  <div
-                    className="relative cursor-pointer"
-                    onClick={() => setIsReqEmpDropdownOpen(true)}
+              {canManage && (
+                <div>
+                  <label className="block text-purple-300/80 mb-1 font-semibold">Employee</label>
+                  <select
+                    value={requestForm.employeeId}
+                    onChange={(e) => setRequestForm({ ...requestForm, employeeId: e.target.value })}
+                    className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
                   >
-                    <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-purple-400/70 pointer-events-none" />
-                    <input
-                      type="text"
-                      value={reqEmpSearch}
-                      onChange={(e) => {
-                        setReqEmpSearch(e.target.value);
-                        setIsReqEmpDropdownOpen(true);
-                      }}
-                      onFocus={() => setIsReqEmpDropdownOpen(true)}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsReqEmpDropdownOpen(true);
-                      }}
-                      placeholder={selectedReqEmployee ? `${selectedReqEmployee.name} (${selectedReqEmployee.department || 'General'})` : "Type name or department to search..."}
-                      className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl pl-10 pr-9 py-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-purple-300/60 focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium cursor-pointer"
-                    />
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (reqEmpSearch) {
-                          setReqEmpSearch('');
-                        } else {
-                          setIsReqEmpDropdownOpen(!isReqEmpDropdownOpen);
-                        }
-                      }}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
-                    >
-                      {reqEmpSearch ? <X size={13} /> : <ChevronDown size={14} className={`transition-transform duration-200 ${isReqEmpDropdownOpen ? 'rotate-180 text-amber-500' : ''}`} />}
-                    </button>
-                  </div>
-
-                  {selectedReqEmployee && !isReqEmpDropdownOpen && (
-                    <div className="mt-1.5 px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-900/40 flex items-center justify-between text-[11px]">
-                      <span className="font-semibold text-purple-900 dark:text-purple-200 flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                        Selected: <strong>{selectedReqEmployee.name}</strong>
-                      </span>
-                      <span className="text-slate-500 dark:text-purple-400/60 font-mono text-[10px]">
-                        {selectedReqEmployee.department || 'General'}
-                      </span>
-                    </div>
-                  )}
-
-                  {isReqEmpDropdownOpen && (
-                    <div
-                      onMouseDown={(e) => e.stopPropagation()}
-                      className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white dark:bg-[#0e0c18] border border-purple-200 dark:border-purple-800/80 rounded-2xl shadow-2xl max-h-52 overflow-y-auto p-1.5 space-y-1 text-xs animate-fadeIn"
-                    >
-                      {filteredReqEmployees.length > 0 ? (
-                        filteredReqEmployees.map((e) => {
-                          const isSelected = requestForm.employeeId === e.id;
-                          return (
-                            <div
-                              key={e.id}
-                              onClick={() => {
-                                setRequestForm({ ...requestForm, employeeId: e.id });
-                                setIsReqEmpDropdownOpen(false);
-                                fetchBalancesForEmployee(e.id);
-                              }}
-                              className={`p-2 rounded-xl flex items-center justify-between cursor-pointer transition ${
-                                isSelected
-                                  ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 font-bold border border-amber-500/30'
-                                  : 'text-slate-800 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/50'
-                              }`}
-                            >
-                              <div className="flex items-center gap-2">
-                                <div className="h-6 w-6 rounded-lg bg-gradient-to-tr from-purple-600 to-amber-500 text-white flex items-center justify-center font-bold text-[10px] shadow-sm">
-                                  {e.name[0]}
-                                </div>
-                                <div>
-                                  <div className="font-bold text-slate-900 dark:text-white text-xs">{e.name}</div>
-                                  <div className="text-[10px] text-slate-500 dark:text-purple-400/70 font-normal">
-                                    {e.jobPosition ? `${e.jobPosition} • ` : ''}{e.department || 'General'}
-                                  </div>
-                                </div>
-                              </div>
-                              {isSelected && <Check size={14} className="text-amber-500 dark:text-amber-400 shrink-0" />}
-                            </div>
-                          );
-                        })
-                      ) : (
-                        <div className="p-3 text-center text-slate-400 dark:text-purple-400/60 text-xs">
-                          No employees found matching "{reqEmpSearch}"
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="px-3 py-2 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-900/40 flex items-center justify-between text-xs">
-                  <span className="font-semibold text-purple-900 dark:text-purple-200 flex items-center gap-2">
-                    <User size={14} className="text-amber-500" />
-                    Requesting as: <strong>{selectedReqEmployee?.name || user?.email}</strong>
-                  </span>
-                  <span className="text-slate-500 dark:text-purple-400/60 font-mono text-[11px]">
-                    {selectedReqEmployee?.department || 'Employee'}
-                  </span>
+                    {employees.map(emp => (
+                      <option key={emp.id} value={emp.id}>{emp.name} ({emp.department})</option>
+                    ))}
+                  </select>
                 </div>
               )}
 
-              {/* Rich Leave Type Dropdown with Live Remaining Balances */}
-              <div className="relative" ref={reqTypeDropdownRef}>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-slate-700 dark:text-purple-300/80 font-semibold text-xs flex items-center gap-1.5">
-                    <Layers size={13} className="text-amber-500 dark:text-amber-400" />
-                    Leave Type & Quota
-                  </label>
-                  {selectedReqType && selectedReqType.remainingBalance !== undefined && (
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      selectedReqType.remainingBalance > 0
-                        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
-                        : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
-                    }`}>
-                      {selectedReqType.remainingBalance} {selectedReqType.unit} left
-                    </span>
-                  )}
-                </div>
-
-                <div
-                  onClick={() => setIsReqTypeDropdownOpen(!isReqTypeDropdownOpen)}
-                  className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white font-medium cursor-pointer flex items-center justify-between hover:border-amber-400 transition"
+              <div>
+                <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Time Off Type</label>
+                <select
+                  value={requestForm.timeOffTypeId}
+                  onChange={(e) => setRequestForm({ ...requestForm, timeOffTypeId: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium cursor-pointer"
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-xs">{selectedReqType?.name || 'Select Leave Type'}</span>
-                    {selectedReqType && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300">
-                        {selectedReqType.unit}
-                      </span>
-                    )}
-                  </div>
-                  <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${isReqTypeDropdownOpen ? 'rotate-180 text-amber-500' : ''}`} />
-                </div>
-
-                {isReqTypeDropdownOpen && (
-                  <div
-                    onMouseDown={(e) => e.stopPropagation()}
-                    className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white dark:bg-[#0e0c18] border border-purple-200 dark:border-purple-800/80 rounded-2xl shadow-2xl max-h-56 overflow-y-auto p-1.5 space-y-1.5 text-xs animate-fadeIn"
-                  >
-                    {availableTypesList.map(t => {
-                      const isSelected = requestForm.timeOffTypeId === t.id;
-                      const hasBal = t.remainingBalance !== undefined;
-                      const remaining = t.remainingBalance ?? 0;
-                      return (
-                        <div
-                          key={t.id}
-                          onClick={() => {
-                            setRequestForm({ ...requestForm, timeOffTypeId: t.id });
-                            setIsReqTypeDropdownOpen(false);
-                          }}
-                          className={`p-2.5 rounded-xl flex items-center justify-between cursor-pointer transition ${
-                            isSelected
-                              ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 font-bold border border-amber-500/30'
-                              : 'text-slate-800 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/50'
-                          }`}
-                        >
-                          <div>
-                            <div className="font-bold text-slate-900 dark:text-white text-xs flex items-center gap-2">
-                              {t.name}
-                              <span className="text-[10px] font-mono font-normal text-slate-500 dark:text-purple-400/60">({t.unit})</span>
-                            </div>
-                            <div className="text-[10px] text-slate-500 dark:text-purple-400/70 mt-0.5">
-                              {hasBal ? (
-                                <span>Allocated: {t.allocatedAmount || 0} • Taken: {t.takenAmount || 0}</span>
-                              ) : (
-                                <span>{t.requiresApproval ? 'Requires Manager Approval' : 'Auto Approved'}</span>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            {hasBal && (
-                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                remaining > 0
-                                  ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
-                                  : 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30'
-                              }`}>
-                                {remaining} {t.unit}
-                              </span>
-                            )}
-                            {isSelected && <Check size={14} className="text-amber-500 dark:text-amber-400 shrink-0" />}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                  {types.map(t => (
+                    <option key={t.id} value={t.id} className="bg-white dark:bg-[#0b0914] text-slate-900 dark:text-white">{t.name} ({t.unit})</option>
+                  ))}
+                </select>
               </div>
 
               <div className="grid grid-cols-2 gap-3">

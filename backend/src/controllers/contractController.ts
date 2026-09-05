@@ -1,12 +1,20 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { ContractStatus } from '../types';
+import { AuthRequest } from '../middleware/auth';
 
-export const listContracts = async (req: Request, res: Response): Promise<void> => {
+export const listContracts = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { employeeId, status } = req.query;
     const where: any = {};
-    if (employeeId) where.employeeId = String(employeeId);
+
+    // If Employee role, restrict to their own contracts
+    if (req.user && req.user.role === 'Employee' && req.user.employeeId) {
+      where.employeeId = req.user.employeeId;
+    } else if (employeeId) {
+      where.employeeId = String(employeeId);
+    }
+
     if (status && status !== 'All') where.status = String(status);
 
     const contracts = await prisma.contract.findMany({

@@ -25,23 +25,21 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     const passwordHash = await bcrypt.hash(password, 10);
 
     let linkedEmployeeId = employeeId || null;
-    if (!linkedEmployeeId) {
-      const newEmp = await prisma.employee.create({
-        data: {
-          name,
-          email,
-          department: role === 'Employee' ? 'Operations' : 'Management',
-          jobPosition: role === 'Employee' ? 'Staff Specialist' : role,
-          status: 'Active'
-        }
+
+    // STEP 2: Search Employee table for matching email to auto-link
+    if (!linkedEmployeeId && email) {
+      const existingEmp = await prisma.employee.findFirst({
+        where: { email: email.trim() }
       });
-      linkedEmployeeId = newEmp.id;
+      if (existingEmp) {
+        linkedEmployeeId = existingEmp.id;
+      }
     }
 
     const user = await prisma.user.create({
       data: {
         name,
-        email,
+        email: email.trim(),
         passwordHash,
         role,
         employeeId: linkedEmployeeId
@@ -89,7 +87,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: { email },
       include: { employee: true }
     });
@@ -103,6 +101,20 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     if (!isMatch) {
       res.status(401).json({ error: 'Invalid email or password' });
       return;
+    }
+
+    // Auto-link if employeeId was previously null but an Employee record exists now
+    if (!user.employeeId && user.email) {
+      const matchingEmp = await prisma.employee.findFirst({
+        where: { email: user.email.trim() }
+      });
+      if (matchingEmp) {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: { employeeId: matchingEmp.id },
+          include: { employee: true }
+        });
+      }
     }
 
     const token = jwt.sign(
@@ -141,7 +153,7 @@ export const getMe = async (req: AuthRequest, res: Response): Promise<void> => {
       return;
     }
 
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: { id: req.user.id },
       include: {
         employee: {
@@ -161,6 +173,32 @@ export const getMe = async (req: AuthRequest, res: Response): Promise<void> => {
     if (!user) {
       res.status(404).json({ error: 'User not found' });
       return;
+    }
+
+    // Auto-link if employeeId is missing but matching Employee exists
+    if (!user.employeeId && user.email) {
+      const matchingEmp = await prisma.employee.findFirst({
+        where: { email: user.email.trim() }
+      });
+      if (matchingEmp) {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: { employeeId: matchingEmp.id },
+          include: {
+            employee: {
+              include: {
+                workingSchedule: {
+                  include: { days: true }
+                },
+                contracts: {
+                  where: { status: 'Active' },
+                  include: { salaryStructure: true }
+                }
+              }
+            }
+          }
+        });
+      }
     }
 
     res.json({

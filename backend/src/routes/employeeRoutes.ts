@@ -1,7 +1,8 @@
-import { Router } from 'express';
+import { Router, Response, NextFunction } from 'express';
 import {
   listEmployees,
   getEmployeeById,
+  getMyEmployeeDetails,
   createEmployee,
   updateEmployee,
   deleteEmployee
@@ -13,6 +14,9 @@ const router = Router();
 
 router.use(authenticateToken);
 
+// Current logged-in employee profile (Self-Service)
+router.get('/me', getMyEmployeeDetails);
+
 router.get(
   '/',
   authorizeRoles(Role.HRManager, Role.HRPayrollUser, Role.HRPayrollManager, Role.Admin),
@@ -21,7 +25,7 @@ router.get(
 
 router.get(
   '/:id',
-  (req: AuthRequest, res, next) => {
+  (req: AuthRequest, res: Response, next: NextFunction) => {
     // If Employee, allow if it's their own id
     if (req.user?.role === Role.Employee) {
       if (req.user.employeeId !== req.params.id) {

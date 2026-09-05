@@ -10,6 +10,7 @@ import { AttendancePage } from './pages/AttendancePage';
 import { TimeOffPage } from './pages/TimeOffPage';
 import { SalaryStructuresPage } from './pages/SalaryStructuresPage';
 import { PayrunsPage } from './pages/PayrunsPage';
+import { MyProfilePage } from './pages/MyProfilePage';
 
 const MainApp: React.FC = () => {
   const { user, isLoading } = useAuth();
@@ -27,15 +28,16 @@ const MainApp: React.FC = () => {
     return <LoginPage />;
   }
 
-  // If Employee role, redirect default tab away from Dashboard to Attendance/TimeOff
+  // If Employee role, redirect default tab away from Dashboard to My Details
   if (user.role === 'Employee' && activeTab === 'dashboard') {
-    setActiveTab('attendance');
+    setActiveTab('my-profile');
   }
 
   return (
     <div className="min-h-screen bg-[#f6f5fa] dark:bg-[#05040a] text-slate-900 dark:text-slate-100 flex flex-col selection:bg-purple-500/30 selection:text-amber-600 dark:selection:text-amber-200 transition-colors duration-300">
       <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {activeTab === 'my-profile' && <MyProfilePage />}
         {activeTab === 'dashboard' && <DashboardPage />}
         {activeTab === 'employees' && <EmployeesPage />}
         {activeTab === 'contracts' && <ContractsPage />}
