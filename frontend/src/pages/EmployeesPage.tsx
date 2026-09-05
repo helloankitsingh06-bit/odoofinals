@@ -278,13 +278,24 @@ export const EmployeesPage: React.FC = () => {
 
                 <div className="mt-4 pt-3 border-t border-purple-100 dark:border-purple-900/40 flex items-center justify-between text-xs">
                   <div>
-                    <span className="text-purple-400/60 text-[10px] block font-medium">Contract Wage</span>
-                    <span className="text-amber-300 font-bold font-mono">
-                      {activeContract ? `$${activeContract.wage.toLocaleString()}/mo` : 'No Active Contract'}
+                    <span className="text-slate-500 dark:text-purple-400/60 text-[10px] block font-medium">Contract Wage</span>
+                    <span className="text-amber-600 dark:text-amber-300 font-bold font-mono">
+                      {activeContract ? `₹${activeContract.wage.toLocaleString('en-IN')}/mo` : 'No Active Contract'}
                     </span>
                   </div>
-                  <div className="flex items-center text-purple-700 dark:text-purple-300 group-hover:text-amber-600 dark:group-hover:text-amber-300 transition text-[11px] font-bold">
-                    Open Hub <ChevronRight size={14} />
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={(e) => openEditModal(emp, e)}
+                      className="px-2.5 py-1 rounded-xl bg-purple-50 dark:bg-purple-950/60 hover:bg-amber-400/20 text-purple-700 dark:text-purple-300 hover:text-amber-600 dark:hover:text-amber-300 border border-purple-200 dark:border-purple-800/50 hover:border-amber-400/50 font-bold text-[11px] transition flex items-center gap-1 cursor-pointer"
+                      title="Edit Employee"
+                    >
+                      <Edit2 size={12} />
+                      <span>Edit</span>
+                    </button>
+                    <div className="flex items-center text-purple-700 dark:text-purple-300 group-hover:text-amber-600 dark:group-hover:text-amber-300 transition text-[11px] font-bold">
+                      Open Hub <ChevronRight size={14} />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -324,15 +335,27 @@ export const EmployeesPage: React.FC = () => {
                       {emp.workingSchedule ? `${emp.workingSchedule.name} (${emp.workingSchedule.totalWeeklyHours}h)` : 'None'}
                     </td>
                     <td className="px-5 py-4 font-mono text-amber-300 font-bold">
-                      {activeContract ? `$${activeContract.wage.toLocaleString()}` : <span className="text-purple-400/50 font-sans">N/A</span>}
+                      {activeContract ? `₹${activeContract.wage.toLocaleString('en-IN')}` : <span className="text-purple-400/50 font-sans">N/A</span>}
                     </td>
                     <td className="px-5 py-4 text-right">
-                      <button
-                        onClick={() => openEmployeeHub(emp)}
-                        className="px-3 py-1.5 rounded-xl bg-purple-950/60 hover:bg-amber-400/20 text-amber-300 border border-purple-900/50 hover:border-amber-400/50 font-bold text-[11px] transition shadow-sm"
-                      >
-                        View Hub
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={(e) => openEditModal(emp, e)}
+                          className="px-2.5 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/60 hover:bg-amber-400/20 text-purple-700 dark:text-purple-300 hover:text-amber-600 dark:hover:text-amber-300 border border-purple-200 dark:border-purple-800/50 hover:border-amber-400/50 font-bold text-[11px] transition shadow-sm flex items-center gap-1 cursor-pointer"
+                          title="Edit Employee"
+                        >
+                          <Edit2 size={12} />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openEmployeeHub(emp)}
+                          className="px-3 py-1.5 rounded-xl bg-purple-950/60 hover:bg-amber-400/20 text-amber-300 border border-purple-900/50 hover:border-amber-400/50 font-bold text-[11px] transition shadow-sm cursor-pointer"
+                        >
+                          View Hub
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -362,12 +385,21 @@ export const EmployeesPage: React.FC = () => {
                   <p className="text-xs text-slate-600 dark:text-purple-300/70 font-medium">{selectedEmployee.jobPosition} • {selectedEmployee.department}</p>
                 </div>
               </div>
-              <button
-                onClick={() => setSelectedEmployee(null)}
-                className="p-2 text-purple-400 hover:text-white rounded-xl hover:bg-purple-900/40 transition"
-              >
-                <X size={20} />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => openEditModal(selectedEmployee)}
+                  className="px-3 py-1.5 rounded-xl bg-purple-100 dark:bg-purple-950/60 hover:bg-amber-400/20 text-purple-800 dark:text-purple-300 hover:text-amber-600 dark:hover:text-amber-300 border border-purple-200 dark:border-purple-800/50 font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                >
+                  <Edit2 size={13} /> Edit Profile
+                </button>
+                <button
+                  onClick={() => setSelectedEmployee(null)}
+                  className="p-2 text-purple-400 hover:text-white rounded-xl hover:bg-purple-900/40 transition cursor-pointer"
+                >
+                  <X size={20} />
+                </button>
+              </div>
             </div>
 
             {/* Smart Hub Navigation Buttons */}
@@ -450,7 +482,7 @@ export const EmployeesPage: React.FC = () => {
                   {selectedEmployee.contracts?.map((c: any) => (
                     <div key={c.id} className="p-4 bg-purple-50/50 dark:bg-[#0b0914] border border-purple-100 dark:border-purple-900/50 rounded-2xl flex items-center justify-between text-xs">
                       <div>
-                        <div className="font-black text-amber-300 font-mono text-sm">${c.wage.toLocaleString()}/month</div>
+                        <div className="font-black text-amber-300 font-mono text-sm">₹{c.wage.toLocaleString('en-IN')}/month</div>
                         <div className="text-purple-300/70 text-[11px] mt-0.5">
                           {new Date(c.startDate).toISOString().slice(0, 10)} to {c.endDate ? new Date(c.endDate).toISOString().slice(0, 10) : 'Ongoing'}
                         </div>
@@ -495,7 +527,7 @@ export const EmployeesPage: React.FC = () => {
                       <div>
                         <span className="font-bold text-white">{p.payrun?.name || 'Regular Payrun'}</span>
                         <div className="text-purple-300/70 text-[11px] mt-0.5">
-                          Gross: ${p.grossTotal.toLocaleString()} • Net Take-Home: <strong className="text-amber-300">${p.netTotal.toLocaleString()}</strong>
+                          Gross: ₹{p.grossTotal.toLocaleString('en-IN')} • Net Take-Home: <strong className="text-amber-300">₹{p.netTotal.toLocaleString('en-IN')}</strong>
                         </div>
                       </div>
                       <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-200 border border-purple-200 dark:border-purple-500/30">

@@ -186,12 +186,13 @@ export const TimeOffPage: React.FC = () => {
             </button>
           )}
 
-        <button
-          onClick={() => { setError(null); setShowRequestModal(true); }}
-          className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl text-xs font-black shadow-lg shadow-amber-500/20 transition active:scale-95"
-        >
-          <Plus size={16} /> Request Time Off
-        </button>
+          <button
+            onClick={() => { setError(null); setShowRequestModal(true); }}
+            className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl text-xs font-black shadow-lg shadow-amber-500/20 transition active:scale-95"
+          >
+            <Plus size={16} /> Request Time Off
+          </button>
+        </div>
       </div>
 
       {/* Allocation Cards */}
@@ -284,9 +285,9 @@ export const TimeOffPage: React.FC = () => {
                     {req.status}
                   </span>
                 </td>
-                {canApprove && (
-                  <td className="px-5 py-4 text-right">
-                    {req.status === 'Pending' ? (
+                <td className="px-5 py-4 text-right">
+                  {canManage ? (
+                    req.status === 'Pending' ? (
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => handleApprove(req.id)}
@@ -303,11 +304,13 @@ export const TimeOffPage: React.FC = () => {
                       </div>
                     ) : (
                       <span className="text-[10px] text-purple-400/50 font-mono">Completed</span>
-                    )}
-                  </td>
-                </tr>
-              ))
-            )}
+                    )
+                  ) : (
+                    <span className="text-[10px] text-purple-400/50 font-mono">—</span>
+                  )}
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

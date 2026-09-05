@@ -244,7 +244,7 @@ export const SalaryStructuresPage: React.FC = () => {
                         </code>
                       </div>
                       <div className="text-[11px] text-purple-300/80 font-mono">
-                        {sr.salaryRule?.computeType === 'Fixed' && `$${sr.salaryRule?.value || 0}`}
+                        {sr.salaryRule?.computeType === 'Fixed' && `₹${sr.salaryRule?.value || 0}`}
                         {sr.salaryRule?.computeType === 'Percentage' && `${sr.salaryRule?.value}% of ${sr.salaryRule?.formula || 'BASIC'}`}
                         {sr.salaryRule?.computeType === 'Formula' && sr.salaryRule?.formula}
                       </div>
@@ -305,7 +305,7 @@ export const SalaryStructuresPage: React.FC = () => {
                   {rule.computeType}
                 </td>
                 <td className="px-5 py-4 font-mono font-black text-right text-amber-300">
-                  {rule.computeType === 'Fixed' && (rule.value ? `$${rule.value}` : 'Contract Wage')}
+                  {rule.computeType === 'Fixed' && (rule.value ? `₹${rule.value}` : 'Contract Wage')}
                   {rule.computeType === 'Percentage' && `${rule.value}% of ${rule.formula || 'BASIC'}`}
                   {rule.computeType === 'Formula' && <span className="text-purple-700 dark:text-purple-300">{rule.formula}</span>}
                 </td>

@@ -206,7 +206,7 @@ export const ContractsPage: React.FC = () => {
                   {new Date(c.startDate).toISOString().slice(0, 10)} → {c.endDate ? new Date(c.endDate).toISOString().slice(0, 10) : 'Open'}
                 </td>
                 <td className="px-5 py-4 font-mono font-black text-amber-300 text-sm">
-                  ${c.wage.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  ₹{c.wage.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                 </td>
                 <td className="px-5 py-4 text-purple-700 dark:text-purple-200 font-semibold">
                   {c.salaryStructure?.name}
@@ -303,7 +303,7 @@ export const ContractsPage: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-purple-300/80 mb-1 font-semibold">Base Wage ($/month)</label>
+                  <label className="block text-purple-300/80 mb-1 font-semibold">Base Wage (₹/month)</label>
                   <input
                     type="number"
                     step="0.01"
