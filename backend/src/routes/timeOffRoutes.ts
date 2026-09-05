@@ -5,6 +5,7 @@ import {
   createTimeOffType,
   listAllocations,
   createAllocation,
+  updateAllocation,
   deleteAllocation,
   listRequests,
   createRequest,
@@ -34,6 +35,16 @@ router.post(
   '/allocations',
   authorizeRoles(Role.HRManager, Role.HRPayrollUser, Role.HRPayrollManager, Role.Admin),
   createAllocation
+);
+router.patch(
+  '/allocations/:id',
+  authorizeRoles(Role.HRManager, Role.HRPayrollUser, Role.HRPayrollManager, Role.Admin),
+  updateAllocation
+);
+router.put(
+  '/allocations/:id',
+  authorizeRoles(Role.HRManager, Role.HRPayrollUser, Role.HRPayrollManager, Role.Admin),
+  updateAllocation
 );
 router.delete(
   '/allocations/:id',

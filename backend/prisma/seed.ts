@@ -124,8 +124,8 @@ async function main() {
     data: { name: 'Sick Leave', unit: 'Days', requiresAllocation: true, requiresApproval: true, payrollIntegrated: true }
   });
 
-  const hourlyOff = await prisma.timeOffType.create({
-    data: { name: 'Personal Floating Time', unit: 'Hours', requiresAllocation: true, requiresApproval: true, payrollIntegrated: true }
+  const otherLeave = await prisma.timeOffType.create({
+    data: { name: 'Other', unit: 'Days', requiresAllocation: true, requiresApproval: true, payrollIntegrated: true }
   });
 
   // 5. Employees
@@ -350,19 +350,6 @@ async function main() {
         allocatedAmount: 10.0,
         takenAmount: 0.0,
         remainingAmount: 10.0,
-        validFrom: yearStart,
-        validTo: nextYear,
-        status: 'Approved'
-      }
-    });
-
-    await prisma.allocation.create({
-      data: {
-        employeeId: emp.id,
-        timeOffTypeId: hourlyOff.id,
-        allocatedAmount: 32.0,
-        takenAmount: 4.0,
-        remainingAmount: 28.0,
         validFrom: yearStart,
         validTo: nextYear,
         status: 'Approved'
