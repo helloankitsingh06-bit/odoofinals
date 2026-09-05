@@ -13,6 +13,7 @@ const itemRoutes = require('./routes/itemRoutes');
 const userRoutes = require('./routes/userRoutes');
 const employeeRoutes = require('./routes/employeeRoutes');
 const contractRoutes = require('./routes/contractRoutes');
+const workingScheduleRoutes = require('./routes/workingScheduleRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -45,6 +46,9 @@ app.use('/api/employees', employeeRoutes);
 
 // Contract Management routes
 app.use('/api/contracts', contractRoutes);
+
+// Working Schedule routes
+app.use('/api/schedules', workingScheduleRoutes);
 
 // Generic CRUD example. Copy this pattern for real domain entities.
 app.use('/api/items', itemRoutes);
