@@ -1,68 +1,43 @@
 import { useState, useEffect, createContext, useContext } from 'react';
-import { 
-  signInWithPopup, 
-  signOut, 
+import {
+  signInWithPopup,
+  signOut,
   onAuthStateChanged,
-  signInWithEmailAndPassword
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile,
 } from 'firebase/auth';
-import { collection, query, where, getDocs, doc, setDoc } from 'firebase/firestore';
-import { auth, db, googleProvider } from '../lib/firebase';
+
+import { auth, googleProvider } from '../lib/firebase';
 
 const AuthContext = createContext(null);
+
+// Optional: an email that should be treated as Admin in the UI. The backend is
+// still the source of truth for authorization — this only affects menu gating.
+const ADMIN_EMAIL = (import.meta.env.VITE_ADMIN_EMAIL || '').toLowerCase();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Listen to Firebase Auth state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setLoading(true);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
-        try {
-          let role = 'Employee'; // fallback role
-          let name = firebaseUser.displayName || 'User';
+        // Role is not queried from the browser. It comes from the admin-email
+        // match, or the role picked on the login screen (dev convenience),
+        // defaulting to "Employee".
+        const email = (firebaseUser.email || '').toLowerCase();
+        const role =
+          ADMIN_EMAIL && email === ADMIN_EMAIL
+            ? 'Admin'
+            : localStorage.getItem('lastSelectedRole') || 'Employee';
 
-          // 1. Check if an admin invited this user via the `employees` collection
-          const employeesRef = collection(db, 'employees');
-          const q = query(employeesRef, where('email', '==', firebaseUser.email.toLowerCase()));
-          const querySnapshot = await getDocs(q);
-
-          if (!querySnapshot.empty) {
-            const employeeData = querySnapshot.docs[0].data();
-            role = employeeData.role || 'Employee';
-            name = employeeData.name || employeeData.displayName || name;
-          } else {
-            // 2. Fallback for new Google/Email logins without an employee record
-            // Use the last selected test role or default to Employee
-            const selectedRole = localStorage.getItem('lastSelectedRole') || 'Employee';
-            role = selectedRole;
-          }
-
-          if (firebaseUser.uid === 'kubNQqUFVSMBVquVXKx5IP4jfM83') {
-            role = 'Admin';
-          }
-
-          setUser({
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            name,
-            role
-          });
-        } catch (error) {
-          console.error("Error fetching user profile from Firestore:", error);
-          // Fall back to basic user profile if Firestore read fails
-          const fallbackRole = firebaseUser.uid === 'kubNQqUFVSMBVquVXKx5IP4jfM83' 
-            ? 'Admin' 
-            : (localStorage.getItem('lastSelectedRole') || 'Employee');
-          
-          setUser({
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            name: firebaseUser.displayName || 'User',
-            role: fallbackRole
-          });
-        }
+        setUser({
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          name: firebaseUser.displayName || 'User',
+          role,
+        });
       } else {
         setUser(null);
       }
@@ -72,21 +47,17 @@ export function AuthProvider({ children }) {
     return () => unsubscribe();
   }, []);
 
-  /**
-   * Login with Email & Password
-   */
-  const login = async (email, password, selectedRole = 'Admin') => {
+  /** Email/password login. Falls back to a local mock user if Firebase fails. */
+  const login = async (email, password, selectedRole = 'Employee') => {
     localStorage.setItem('lastSelectedRole', selectedRole);
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      return userCredential.user;
+      const credential = await signInWithEmailAndPassword(auth, email, password);
+      return credential.user;
     } catch (error) {
-      console.warn("Firebase Auth sign-in failed, falling back to mock login for local testing:", error.message);
-      // Fallback: If Firebase configuration or credentials fail, we fall back to mock log-in
-      // so the user's local development is never blocked.
+      console.warn('Firebase login failed, using local mock user:', error.code);
       const mockUser = {
-        uid: `mock-uid-${Date.now()}`,
-        email: email || `${selectedRole.toLowerCase()}@assetflow.com`,
+        uid: `mock-${Date.now()}`,
+        email: email || 'user@example.com',
         role: selectedRole,
         name: `${selectedRole} User`,
       };
@@ -95,24 +66,29 @@ export function AuthProvider({ children }) {
     }
   };
 
-  /**
-   * Login with Google
-   */
-  const loginWithGoogle = async (selectedRole = 'Admin') => {
+  /** Email/password sign up. New accounts always get the "Employee" role. */
+  const signup = async (email, password, name = '') => {
+    localStorage.setItem('lastSelectedRole', 'Employee');
+    const credential = await createUserWithEmailAndPassword(auth, email, password);
+    if (name) {
+      await updateProfile(credential.user, { displayName: name });
+    }
+    return credential.user;
+  };
+
+  /** Google popup login. Falls back to a local mock user if unavailable. */
+  const loginWithGoogle = async (selectedRole = 'Employee') => {
     localStorage.setItem('lastSelectedRole', selectedRole);
     try {
-      const userCredential = await signInWithPopup(auth, googleProvider);
-      return userCredential.user;
+      const credential = await signInWithPopup(auth, googleProvider);
+      return credential.user;
     } catch (error) {
-      console.warn("Firebase Google sign-in failed, falling back to mock login for local testing:", error.message);
-      
-      // Fallback: If browser settings (like Safari's Prevent Cross-Site Tracking)
-      // block third-party sessionStorage access, log in as mock user to keep testing
+      console.warn('Google sign-in unavailable, using local mock user:', error.code);
       const mockUser = {
-        uid: `mock-google-uid-${Date.now()}`,
-        email: 'google.user@assetflow.com',
+        uid: `mock-google-${Date.now()}`,
+        email: 'google.user@example.com',
         role: selectedRole,
-        name: 'Google User (Mock Fallback)',
+        name: 'Google User',
       };
       setUser(mockUser);
       return mockUser;
@@ -122,24 +98,22 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     try {
       await signOut(auth);
-    } catch (error) {
-      console.error("Sign out error:", error);
+    } catch (e) {
+      console.warn(e);
     }
     setUser(null);
   };
 
-  const setRole = (newRole) => {
-    setUser(prev => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        role: newRole
-      };
-    });
+  /** Dev-only: change the current role without re-authenticating. */
+  const setRole = (role) => {
+    localStorage.setItem('lastSelectedRole', role);
+    setUser((prev) => (prev ? { ...prev, role } : prev));
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, loginWithGoogle, logout, setRole, loading }}>
+    <AuthContext.Provider
+      value={{ user, login, signup, loginWithGoogle, logout, setRole, loading }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -148,7 +122,7 @@ export function AuthProvider({ children }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuth must be used inside AuthProvider');
   }
   return context;
 }

@@ -19,16 +19,10 @@ export default function Sidebar({ user: propUser, activeRoute }) {
   // Only display Organization setup if role is exactly 'Admin'
   const isAdmin = user?.role === 'Admin';
 
+  // Replace these with the real navigation once the problem statement is known.
   const navItems = [
-    { name: 'Dashboard', path: '/dashboard' },
-    { name: 'Organization setup', path: '/org-setup', adminOnly: true },
-    { name: 'Assets', path: '/assets' },
-    { name: 'Allocation & Transfer', path: '/allocation-transfer' },
-    { name: 'Resource Booking', path: '/resource-booking' },
-    { name: 'Maintenance', path: '/maintenance' },
-    { name: 'Audit', path: '/audit' },
-    { name: 'Reports', path: '/reports' },
-    { name: 'Notifications', path: '/notifications' },
+    { name: 'Items', path: '/items' },
+    { name: 'Admin', path: '/admin', adminOnly: true },
   ];
 
   return (
@@ -37,7 +31,7 @@ export default function Sidebar({ user: propUser, activeRoute }) {
       <div className="h-16 flex items-center px-6 border-b border-glass-border bg-white/[0.01]">
         <span className="text-lg font-bold tracking-wider text-asset-light flex items-center gap-2">
           <span className="h-2 w-2 rounded-full bg-emerald-450 shadow-accent-glow"></span>
-          AssetFlow
+          Starter
         </span>
       </div>
 
@@ -82,19 +76,21 @@ export default function Sidebar({ user: propUser, activeRoute }) {
               Sign Out
             </button>
             {/* TEMP DEV ONLY - remove when real auth lands */}
-            <div className="mt-2 pt-2 border-t border-glass-border bg-white/[0.01] flex flex-col gap-1">
-              <label className="text-[9px] font-bold uppercase tracking-wider text-stone-500 mb-1">DEV: Role</label>
-              <select
-                value={user.role}
-                onChange={(e) => setRole(e.target.value)}
-                className="w-full bg-stone-950/60 border border-glass-border rounded-md px-2 py-1.5 text-[10px] text-stone-400 focus:outline-none focus:border-asset-green focus:ring-2 focus:ring-asset-green/10 transition-all duration-150"
-              >
-                <option value="Admin">Admin</option>
-                <option value="Employee">Employee</option>
-                <option value="AssetManager">AssetManager</option>
-                <option value="DeptHead">DeptHead</option>
-              </select>
-            </div>
+            {import.meta.env.DEV && (
+              <div className="mt-2 pt-2 border-t border-glass-border bg-white/[0.01] flex flex-col gap-1">
+                <label className="text-[9px] font-bold uppercase tracking-wider text-stone-500 mb-1">DEV: Role</label>
+                <select
+                  value={user.role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className="w-full bg-stone-950/60 border border-glass-border rounded-md px-2 py-1.5 text-[10px] text-stone-400 focus:outline-none focus:border-asset-green focus:ring-2 focus:ring-asset-green/10 transition-all duration-150"
+                >
+                  <option value="Admin">Admin</option>
+                  <option value="Employee">Employee</option>
+                  <option value="AssetManager">AssetManager</option>
+                  <option value="DeptHead">DeptHead</option>
+                </select>
+              </div>
+            )}
           </div>
         ) : (
           <Link

@@ -1,10 +1,15 @@
 # Firebase service account keys / secret files
 serviceAccountKey.json
+serviceAccount.json
 *firebase-adminsdk*.json
-asset-flow-hackathon-firebase-adminsdk-fbsvc-*.json
 *.pem
+!serviceAccountKey.example.json
 
 # Dependencies
 node_modules/
+
+# Local environment
 .env
+.env.local
 *.local
+!.env.example

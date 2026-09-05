@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { LogIn, User, Mail, Lock, Shield, ArrowRight } from 'lucide-react';
+import { User, Mail, Lock, Shield } from 'lucide-react';
 
 export default function Login() {
-  const { user, login, loginWithGoogle, loading: authLoading } = useAuth();
+  const { user, login, signup, loginWithGoogle, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   // Redirect if already authenticated
@@ -49,7 +49,7 @@ export default function Login() {
     setLoading(true);
     try {
       if (isSignUp) {
-        await login(email, password, 'Employee');
+        await signup(email, password, name.trim());
       } else {
         await login(email, password, selectedRole);
       }
@@ -112,10 +112,10 @@ export default function Login() {
             <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981] animate-pulse"></span>
           </div>
           <h2 className="text-2xl font-bold tracking-[0.25em] text-asset-light uppercase">
-            AssetFlow
+            Starter
           </h2>
           <p className="text-[10px] text-stone-500 font-mono tracking-[0.18em] uppercase">
-            Enterprise Asset Directory
+            Hackathon Starter Template
           </p>
         </div>
 
@@ -194,7 +194,7 @@ export default function Login() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="user@assetflow.com"
+                placeholder="user@example.com"
                 className="w-full h-10 bg-white/[0.03] border border-glass-border hover:border-white/20 rounded-md px-3.5 py-2 text-xs text-asset-light placeholder-stone-600 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 transition-all duration-150 pl-10 font-mono"
               />
             </div>
@@ -294,7 +294,7 @@ export default function Login() {
         {/* Footer info text */}
         <div className="text-center">
           <p className="text-[10px] text-stone-600 font-mono tracking-widest">
-            SECURE TERMINAL CONSOLE // SYSTEM STUB V1.0
+            STARTER TEMPLATE // AUTH DEMO
           </p>
         </div>
       </div>

@@ -1,13 +1,11 @@
 {
-  "name": "assetflow-backend-b",
+  "name": "starter-template-backend",
   "version": "1.0.0",
-  "description": "",
+  "description": "Domain-agnostic Express + Firebase backend starter",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "seed": "node seed/seedData.js",
-    "set-role": "node scripts/setUserRole.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "node --watch index.js"
   },
   "keywords": [],
   "author": "",
@@ -17,7 +15,6 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "firebase-admin": "^12.0.0",
-    "mongoose": "^8.6.0"
+    "firebase-admin": "^12.0.0"
   }
 }

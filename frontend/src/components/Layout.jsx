@@ -42,30 +42,11 @@ export default function Layout({ children }) {
     return <Navigate to="/login" replace />;
   }
 
-  // Determine activeRoute display name based on current URL path
+  // Turn "/items" into "Items" for the header / active-link highlight.
   const getActiveRoute = (pathname) => {
-    switch (pathname) {
-      case '/dashboard':
-        return 'Dashboard';
-      case '/org-setup':
-        return 'Organization setup';
-      case '/assets':
-        return 'Assets';
-      case '/allocation-transfer':
-        return 'Allocation & Transfer';
-      case '/resource-booking':
-        return 'Resource Booking';
-      case '/maintenance':
-        return 'Maintenance';
-      case '/audit':
-        return 'Audit';
-      case '/reports':
-        return 'Reports';
-      case '/notifications':
-        return 'Notifications';
-      default:
-        return '';
-    }
+    const segment = pathname.split('/').filter(Boolean)[0];
+    if (!segment) return '';
+    return segment.charAt(0).toUpperCase() + segment.slice(1);
   };
 
   const activeRoute = getActiveRoute(location.pathname);
@@ -81,7 +62,7 @@ export default function Layout({ children }) {
         <header className="h-16 my-6 mr-6 ml-3 px-8 flex items-center justify-between glass-panel">
           <div className="flex items-center gap-4">
             <h1 className="text-sm font-bold tracking-wider uppercase text-asset-light">
-              AssetFlow
+              Starter
             </h1>
             <span className="text-xs text-stone-500 font-mono">
               |
@@ -93,7 +74,7 @@ export default function Layout({ children }) {
           <div className="flex items-center gap-3">
             <span className="h-2 w-2 rounded-full bg-emerald-450 animate-pulse shadow-accent-glow"></span>
             <span className="text-[10px] text-stone-400 font-bold uppercase tracking-widest font-mono">
-              ERP Node Online
+              Online
             </span>
           </div>
         </header>

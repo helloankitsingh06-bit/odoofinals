@@ -4,60 +4,40 @@ import { AuthProvider } from './hooks/useAuth';
 import Layout from './components/Layout';
 import AdminRoute from './components/AdminRoute';
 import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import OrgSetup from './pages/OrgSetup';
-import ActivityLog from './pages/ActivityLog';
-import Assets from './pages/Assets';
-import AllocationTransfer from './pages/AllocationTransfer';
-import ResourceBooking from './pages/ResourceBooking';
-import Maintenance from './pages/Maintenance';
-import AssetDetail from './pages/AssetDetail';
-import Audit from './pages/Audit';
-import Reports from './pages/Reports';
-import Notifications from './pages/Notifications';
+import Items from './pages/Items';
 
-// Generic placeholder page for unused sidebar links
-const PlaceholderPage = ({ title }) => (
-  <div className="p-8">
-    <h2 className="text-xl font-bold mb-4 text-asset-light">{title}</h2>
-    <p className="text-sm text-stone-400">This module is under construction.</p>
-  </div>
-);
+// Placeholder for routes you haven't built yet. Replace per problem statement.
+function PlaceholderPage({ title }) {
+  return (
+    <div className="p-8">
+      <h2 className="text-xl font-bold mb-4 text-asset-light">{title}</h2>
+      <p className="text-sm text-stone-400">This module is under construction.</p>
+    </div>
+  );
+}
 
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public Route */}
+          {/* Public */}
           <Route path="/login" element={<Login />} />
 
-          {/* Protected Routes inside Layout */}
+          {/* Authenticated area (Layout redirects to /login if not signed in) */}
           <Route element={<Layout />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/activity-log" element={<ActivityLog />} />
-            
-            {/* Admin-Only Route Guard */}
-            <Route element={<AdminRoute />}>
-              <Route path="/org-setup" element={<OrgSetup />} />
-            </Route>
-            
-            {/* Additional Sidebar Routes */}
-            <Route path="/assets" element={<Assets />} />
-            <Route path="/assets/:id" element={<AssetDetail />} />
-            <Route path="/allocation-transfer" element={<AllocationTransfer />} />
-            <Route path="/resource-booking" element={<ResourceBooking />} />
-            <Route path="/maintenance" element={<Maintenance />} />
-            <Route path="/audit" element={<Audit />} />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/items" element={<Items />} />
 
-            {/* Default Route redirect */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            {/* Admin-only branch */}
+            <Route element={<AdminRoute />}>
+              <Route path="/admin" element={<PlaceholderPage title="Admin" />} />
+            </Route>
+
+            <Route path="/" element={<Navigate to="/items" replace />} />
           </Route>
 
-          {/* Catch-all wildcard redirect */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/items" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
