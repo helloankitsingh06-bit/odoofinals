@@ -12,6 +12,7 @@ const { verifyToken } = require('./src/middleware/auth');
 const itemRoutes = require('./routes/itemRoutes');
 const userRoutes = require('./routes/userRoutes');
 const employeeRoutes = require('./routes/employeeRoutes');
+const contractRoutes = require('./routes/contractRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -41,6 +42,9 @@ app.use('/api/users', userRoutes);
 
 // Employee Master routes
 app.use('/api/employees', employeeRoutes);
+
+// Contract Management routes
+app.use('/api/contracts', contractRoutes);
 
 // Generic CRUD example. Copy this pattern for real domain entities.
 app.use('/api/items', itemRoutes);
