@@ -46,30 +46,36 @@ export const TimeOffPage: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [tData, aData, rData, eData] = await Promise.all([
+      const [tData, aData, rData] = await Promise.all([
         apiRequest('/time-off/types'),
         apiRequest('/time-off/allocations'),
-        apiRequest('/time-off/requests'),
-        apiRequest('/employees')
+        apiRequest('/time-off/requests')
       ]);
-      setTypes(tData);
-      setAllocations(aData);
-      setRequests(rData);
-      setEmployees(eData);
+      setTypes(tData || []);
+      setAllocations(aData || []);
+      setRequests(rData || []);
 
-      if (tData.length > 0 && !requestForm.timeOffTypeId) {
+      if (tData && tData.length > 0 && !requestForm.timeOffTypeId) {
         setRequestForm(prev => ({ ...prev, timeOffTypeId: tData[0].id }));
       }
-      if (tData.length > 0 && !allocationForm.timeOffTypeId) {
+      if (tData && tData.length > 0 && !allocationForm.timeOffTypeId) {
         setAllocationForm(prev => ({ ...prev, timeOffTypeId: tData[0].id }));
       }
-      if (eData.length > 0) {
-        if (!requestForm.employeeId) {
-          setRequestForm(prev => ({ ...prev, employeeId: user?.employeeId || eData[0].id }));
+
+      // Only fetch employee list for Managers/Admins
+      if (user?.role !== 'Employee') {
+        try {
+          const eData = await apiRequest('/employees');
+          setEmployees(eData || []);
+          if (eData && eData.length > 0) {
+            setAllocationForm(prev => ({ ...prev, employeeId: prev.employeeId || eData[0].id }));
+            setRequestForm(prev => ({ ...prev, employeeId: prev.employeeId || user?.employeeId || eData[0].id }));
+          }
+        } catch (e) {
+          console.warn('Employees fetch skipped:', e);
         }
-        if (!allocationForm.employeeId) {
-          setAllocationForm(prev => ({ ...prev, employeeId: eData[0].id }));
-        }
+      } else {
+        setRequestForm(prev => ({ ...prev, employeeId: user?.employeeId || '' }));
       }
     } catch (err) {
       console.error('Failed to load time off data:', err);
@@ -86,10 +92,12 @@ export const TimeOffPage: React.FC = () => {
     e.preventDefault();
     setError(null);
     try {
+      const typeId = requestForm.timeOffTypeId || (types[0]?.id ?? '');
       await apiRequest('/time-off/requests', {
         method: 'POST',
         body: JSON.stringify({
           ...requestForm,
+          timeOffTypeId: typeId,
           employeeId: requestForm.employeeId || user?.employeeId
         })
       });
@@ -104,9 +112,13 @@ export const TimeOffPage: React.FC = () => {
     e.preventDefault();
     setError(null);
     try {
+      const typeId = allocationForm.timeOffTypeId || (types[0]?.id ?? '');
       await apiRequest('/time-off/allocations', {
         method: 'POST',
-        body: JSON.stringify(allocationForm)
+        body: JSON.stringify({
+          ...allocationForm,
+          timeOffTypeId: typeId
+        })
       });
       setShowAllocationModal(false);
       fetchData();
@@ -187,8 +199,16 @@ export const TimeOffPage: React.FC = () => {
           )}
 
           <button
-            onClick={() => { setError(null); setShowRequestModal(true); }}
-            className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl text-xs font-black shadow-lg shadow-amber-500/20 transition active:scale-95"
+            onClick={() => {
+              setError(null);
+              setRequestForm(prev => ({
+                ...prev,
+                timeOffTypeId: prev.timeOffTypeId || (types[0]?.id || ''),
+                employeeId: prev.employeeId || user?.employeeId || (employees[0]?.id || '')
+              }));
+              setShowRequestModal(true);
+            }}
+            className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl text-xs font-black shadow-lg shadow-amber-500/20 transition active:scale-95 cursor-pointer"
           >
             <Plus size={16} /> Request Time Off
           </button>
@@ -291,13 +311,13 @@ export const TimeOffPage: React.FC = () => {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => handleApprove(req.id)}
-                          className="px-3 py-1 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl text-[11px] font-black flex items-center gap-1 transition shadow-sm"
+                          className="px-3 py-1 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl text-[11px] font-black flex items-center gap-1 transition shadow-sm cursor-pointer"
                         >
                           <Check size={13} /> Approve (Deduct)
                         </button>
                         <button
                           onClick={() => handleRefuse(req.id)}
-                          className="px-3 py-1 bg-rose-600/80 hover:bg-rose-600 text-white rounded-xl text-[11px] font-bold flex items-center gap-1 transition"
+                          className="px-3 py-1 bg-rose-600/80 hover:bg-rose-600 text-white rounded-xl text-[11px] font-bold flex items-center gap-1 transition cursor-pointer"
                         >
                           <X size={13} /> Refuse
                         </button>
@@ -306,7 +326,17 @@ export const TimeOffPage: React.FC = () => {
                       <span className="text-[10px] text-purple-400/50 font-mono">Completed</span>
                     )
                   ) : (
-                    <span className="text-[10px] text-purple-400/50 font-mono">—</span>
+                    req.status === 'Pending' ? (
+                      <button
+                        onClick={() => handleDeleteRequest(req.id)}
+                        className="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-lg text-[11px] font-medium inline-flex items-center gap-1 transition cursor-pointer"
+                        title="Cancel Request"
+                      >
+                        <Trash2 size={12} /> Cancel
+                      </button>
+                    ) : (
+                      <span className="text-[10px] text-purple-400/50 font-mono">—</span>
+                    )
                   )}
                 </td>
               </tr>
@@ -317,18 +347,27 @@ export const TimeOffPage: React.FC = () => {
 
       {/* Grant Leave Allocation Modal */}
       {showAllocationModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-          <div className="bg-[#090712] border border-purple-800/60 rounded-3xl w-full max-w-md p-6 shadow-2xl">
-            <h2 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
-              <Award size={18} className="text-amber-400" />
-              Grant Leave Allocation
-            </h2>
-            <p className="text-xs text-purple-300/60 mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-md p-4 overflow-y-auto py-8">
+          <div className="bg-white dark:bg-[#090712] border border-purple-200 dark:border-purple-800/60 rounded-3xl w-full max-w-md max-h-[85vh] overflow-y-auto p-6 shadow-2xl my-auto relative transition-colors duration-300">
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Award size={18} className="text-amber-500 dark:text-amber-400" />
+                Grant Leave Allocation
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowAllocationModal(false)}
+                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 dark:text-purple-400/60 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-purple-900/40 transition"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-purple-300/60 mb-4 font-medium">
               Allocate a quota of paid/unpaid leaves to an employee for a specific date window.
             </p>
 
             {error && (
-              <div className="mb-4 p-3.5 bg-rose-500/15 border border-rose-500/30 rounded-2xl text-rose-300 text-xs flex items-start gap-2">
+              <div className="mb-4 p-3.5 bg-rose-500/15 border border-rose-500/30 rounded-2xl text-rose-600 dark:text-rose-300 text-xs flex items-start gap-2">
                 <AlertCircle size={16} className="shrink-0 mt-0.5" />
                 <span>{error}</span>
               </div>
@@ -336,35 +375,43 @@ export const TimeOffPage: React.FC = () => {
 
             <form onSubmit={handleCreateAllocation} className="space-y-4 text-xs">
               <div>
-                <label className="block text-purple-300/80 mb-1 font-semibold">Employee</label>
+                <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Employee</label>
                 <select
                   required
                   value={allocationForm.employeeId}
                   onChange={(e) => setAllocationForm({ ...allocationForm, employeeId: e.target.value })}
-                  className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                  className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium"
                 >
                   {employees.map(emp => (
-                    <option key={emp.id} value={emp.id}>{emp.name} ({emp.department} - {emp.jobPosition})</option>
+                    <option key={emp.id} value={emp.id} className="bg-white dark:bg-[#0b0914] text-slate-900 dark:text-white">
+                      {emp.name} ({emp.department} - {emp.jobPosition})
+                    </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-purple-300/80 mb-1 font-semibold">Leave Type</label>
+                <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Leave Type</label>
                 <select
                   required
-                  value={allocationForm.timeOffTypeId}
+                  value={allocationForm.timeOffTypeId || (types[0]?.id ?? '')}
                   onChange={(e) => setAllocationForm({ ...allocationForm, timeOffTypeId: e.target.value })}
-                  className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                  className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium cursor-pointer"
                 >
-                  {types.map(t => (
-                    <option key={t.id} value={t.id}>{t.name} ({t.unit})</option>
-                  ))}
+                  {types.length === 0 ? (
+                    <option value="" disabled>No leave types found</option>
+                  ) : (
+                    types.map(t => (
+                      <option key={t.id} value={t.id} className="bg-white dark:bg-[#0b0914] text-slate-900 dark:text-white">
+                        {t.name} ({t.unit})
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
 
               <div>
-                <label className="block text-purple-300/80 mb-1 font-semibold">Allocated Amount (Days / Hours)</label>
+                <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Allocated Amount (Days / Hours)</label>
                 <input
                   type="number"
                   step="0.5"
@@ -372,44 +419,44 @@ export const TimeOffPage: React.FC = () => {
                   required
                   value={allocationForm.allocatedAmount}
                   onChange={(e) => setAllocationForm({ ...allocationForm, allocatedAmount: Number(e.target.value) })}
-                  className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                  className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-purple-300/80 mb-1 font-semibold">Valid From</label>
+                  <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Valid From</label>
                   <input
                     type="date"
                     required
                     value={allocationForm.validFrom}
                     onChange={(e) => setAllocationForm({ ...allocationForm, validFrom: e.target.value })}
-                    className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                    className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium"
                   />
                 </div>
                 <div>
-                  <label className="block text-purple-300/80 mb-1 font-semibold">Valid To</label>
+                  <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Valid To</label>
                   <input
                     type="date"
                     required
                     value={allocationForm.validTo}
                     onChange={(e) => setAllocationForm({ ...allocationForm, validTo: e.target.value })}
-                    className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                    className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-4 border-t border-purple-900/40">
+              <div className="flex justify-end gap-2 pt-4 border-t border-purple-100 dark:border-purple-900/40">
                 <button
                   type="button"
                   onClick={() => setShowAllocationModal(false)}
-                  className="px-4 py-2 bg-purple-950/60 border border-purple-900/50 text-purple-300 rounded-xl hover:bg-purple-900/40 font-bold"
+                  className="px-4 py-2 bg-slate-100 dark:bg-purple-950/60 border border-slate-200 dark:border-purple-900/50 text-slate-600 dark:text-purple-300 rounded-xl hover:bg-slate-200 dark:hover:bg-purple-900/40 font-bold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl font-black shadow-lg shadow-amber-500/20"
+                  className="px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl font-black shadow-lg shadow-amber-500/20 cursor-pointer"
                 >
                   Grant Quota
                 </button>
@@ -421,12 +468,21 @@ export const TimeOffPage: React.FC = () => {
 
       {/* Request Modal */}
       {showRequestModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-md p-4">
-          <div className="bg-white dark:bg-[#090712] border border-purple-200 dark:border-purple-800/60 rounded-3xl w-full max-w-md p-6 shadow-2xl transition-colors duration-300">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-2">
-              <Sparkles size={18} className="text-amber-500 dark:text-amber-400" />
-              Request Time Off
-            </h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-md p-4 overflow-y-auto py-8">
+          <div className="bg-white dark:bg-[#090712] border border-purple-200 dark:border-purple-800/60 rounded-3xl w-full max-w-md max-h-[85vh] overflow-y-auto p-6 shadow-2xl transition-colors duration-300 my-auto relative">
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Sparkles size={18} className="text-amber-500 dark:text-amber-400" />
+                Request Time Off
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowRequestModal(false)}
+                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 dark:text-purple-400/60 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-purple-900/40 transition"
+              >
+                <X size={18} />
+              </button>
+            </div>
             <p className="text-xs text-slate-500 dark:text-purple-300/60 mb-4 font-medium">
               Submits request for HR approval. Live balance will be deducted upon approval.
             </p>
@@ -441,14 +497,16 @@ export const TimeOffPage: React.FC = () => {
             <form onSubmit={handleCreateRequest} className="space-y-4 text-xs">
               {canManage && (
                 <div>
-                  <label className="block text-purple-300/80 mb-1 font-semibold">Employee</label>
+                  <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Employee</label>
                   <select
                     value={requestForm.employeeId}
                     onChange={(e) => setRequestForm({ ...requestForm, employeeId: e.target.value })}
-                    className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                    className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium cursor-pointer"
                   >
                     {employees.map(emp => (
-                      <option key={emp.id} value={emp.id}>{emp.name} ({emp.department})</option>
+                      <option key={emp.id} value={emp.id} className="bg-white dark:bg-[#0b0914] text-slate-900 dark:text-white">
+                        {emp.name} ({emp.department})
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -457,13 +515,20 @@ export const TimeOffPage: React.FC = () => {
               <div>
                 <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Time Off Type</label>
                 <select
-                  value={requestForm.timeOffTypeId}
+                  required
+                  value={requestForm.timeOffTypeId || (types[0]?.id ?? '')}
                   onChange={(e) => setRequestForm({ ...requestForm, timeOffTypeId: e.target.value })}
                   className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium cursor-pointer"
                 >
-                  {types.map(t => (
-                    <option key={t.id} value={t.id} className="bg-white dark:bg-[#0b0914] text-slate-900 dark:text-white">{t.name} ({t.unit})</option>
-                  ))}
+                  {types.length === 0 ? (
+                    <option value="" disabled>No leave types found</option>
+                  ) : (
+                    types.map(t => (
+                      <option key={t.id} value={t.id} className="bg-white dark:bg-[#0b0914] text-slate-900 dark:text-white">
+                        {t.name} ({t.unit})
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
 
