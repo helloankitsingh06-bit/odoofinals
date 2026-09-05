@@ -64,4 +64,26 @@ export interface AuthenticatedUser {
   email: string;
   role: Role;
   employeeId?: string | null;
+  mustChangePassword?: boolean;
+}
+
+export const VALID_ROLES: Role[] = [
+  Role.Employee,
+  Role.HRManager,
+  Role.HRPayrollUser,
+  Role.HRPayrollManager,
+  Role.Admin
+];
+
+/**
+ * Generate a random temporary password (10-char alphanumeric, mixed case + digits).
+ * Used when an Admin creates an Employee and we provision their User account.
+ */
+export function generateTempPassword(length = 10): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+  let out = '';
+  for (let i = 0; i < length; i++) {
+    out += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return out;
 }

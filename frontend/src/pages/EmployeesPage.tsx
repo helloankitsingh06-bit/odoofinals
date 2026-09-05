@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../services/api';
+import { formatDateIST, formatTimeIST, formatDateTimeIST } from '../utils/datetime';
 import {
   Users,
   Search,
@@ -16,8 +17,25 @@ import {
   UserCheck,
   Sparkles,
   Edit2,
-  Trash2
+  Trash2,
+  ShieldCheck,
+  KeyRound,
+  Copy,
+  CheckCircle2
 } from 'lucide-react';
+
+// System roles are login/permission levels — deliberately SEPARATE from Job Position,
+// which is just a descriptive title (e.g. "Senior Engineer").
+const ROLE_OPTIONS: { value: string; label: string }[] = [
+  { value: 'Employee', label: 'Employee' },
+  { value: 'HRManager', label: 'HR Manager' },
+  { value: 'HRPayrollUser', label: 'HR Payroll User' },
+  { value: 'HRPayrollManager', label: 'HR Payroll Manager' },
+  { value: 'Admin', label: 'Admin' }
+];
+
+export const roleLabel = (role?: string | null): string =>
+  ROLE_OPTIONS.find((r) => r.value === role)?.label || role || '—';
 
 export const EmployeesPage: React.FC = () => {
   const [employees, setEmployees] = useState<any[]>([]);
@@ -34,6 +52,7 @@ export const EmployeesPage: React.FC = () => {
 
   // New Employee Modal
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
+  const [creating, setCreating] = useState<boolean>(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -41,8 +60,16 @@ export const EmployeesPage: React.FC = () => {
     jobPosition: '',
     status: 'Active',
     managerId: '',
-    workingScheduleId: ''
+    workingScheduleId: '',
+    role: 'Employee',
+    isTopLevel: false
   });
+
+  // Post-create confirmation modal (shows the generated temporary login)
+  const [createdCredentials, setCreatedCredentials] = useState<
+    { loginEmail: string; tempPassword: string | null; userCreated: boolean; role: string; note: string; employeeName: string } | null
+  >(null);
+  const [copied, setCopied] = useState<boolean>(false);
 
   // Edit Employee Modal
   const [showEditModal, setShowEditModal] = useState<boolean>(false);
@@ -54,7 +81,9 @@ export const EmployeesPage: React.FC = () => {
     jobPosition: '',
     status: 'Active',
     managerId: '',
-    workingScheduleId: ''
+    workingScheduleId: '',
+    role: 'Employee',
+    isTopLevel: false
   });
 
   const fetchEmployees = async () => {
@@ -90,36 +119,76 @@ export const EmployeesPage: React.FC = () => {
     }
   };
 
+  const resetCreateForm = () =>
+    setFormData({
+      name: '', email: '', department: 'Engineering', jobPosition: '', status: 'Active',
+      managerId: '', workingScheduleId: '', role: 'Employee', isTopLevel: false
+    });
+
   const handleCreateEmployee = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // ISSUE 1A: a reporting manager is required unless this is explicitly a top-level position
+    if (!formData.isTopLevel && !formData.managerId) {
+      alert('A reporting manager must be assigned before creating this employee.');
+      return;
+    }
+    // ISSUE 1B: email is required so a login account can be provisioned
+    if (!formData.email.trim()) {
+      alert("An email address is required to create the employee's login account.");
+      return;
+    }
+    // ISSUE 4: a system role must be chosen
+    if (!formData.role) {
+      alert('Please select a system role for this employee.');
+      return;
+    }
+
+    setCreating(true);
     try {
-      await apiRequest('/employees', {
+      const res = await apiRequest('/employees', {
         method: 'POST',
         body: JSON.stringify({
           ...formData,
-          managerId: formData.managerId || null,
+          email: formData.email.trim(),
+          managerId: formData.isTopLevel ? null : (formData.managerId || null),
           workingScheduleId: formData.workingScheduleId || null
         })
       });
       setShowCreateModal(false);
-      setFormData({ name: '', email: '', department: 'Engineering', jobPosition: '', status: 'Active', managerId: '', workingScheduleId: '' });
+      const c = res.credentials || {};
+      setCreatedCredentials({
+        loginEmail: c.loginEmail || formData.email.trim(),
+        tempPassword: c.tempPassword ?? null,
+        userCreated: !!c.userCreated,
+        role: c.role || formData.role,
+        note: c.note || '',
+        employeeName: formData.name.trim()
+      });
+      setCopied(false);
+      resetCreateForm();
       fetchEmployees();
     } catch (err: any) {
       alert(err.message || 'Failed to create employee');
+    } finally {
+      setCreating(false);
     }
   };
 
   const openEditModal = (emp: any, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setEditingEmployeeId(emp.id);
+    const mgrId = emp.managerId || emp.manager?.id || '';
     setEditFormData({
       name: emp.name || '',
       email: emp.email || '',
       department: emp.department || 'Engineering',
       jobPosition: emp.jobPosition || '',
       status: emp.status || 'Active',
-      managerId: emp.managerId || emp.manager?.id || '',
-      workingScheduleId: emp.workingScheduleId || emp.workingSchedule?.id || ''
+      managerId: mgrId,
+      workingScheduleId: emp.workingScheduleId || emp.workingSchedule?.id || '',
+      role: emp.user?.role || 'Employee',
+      isTopLevel: !mgrId
     });
     setShowEditModal(true);
   };
@@ -127,12 +196,16 @@ export const EmployeesPage: React.FC = () => {
   const handleUpdateEmployee = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingEmployeeId) return;
+    if (!editFormData.isTopLevel && !editFormData.managerId) {
+      alert('A reporting manager must be assigned before creating this employee.');
+      return;
+    }
     try {
       await apiRequest(`/employees/${editingEmployeeId}`, {
         method: 'PUT',
         body: JSON.stringify({
           ...editFormData,
-          managerId: editFormData.managerId || null,
+          managerId: editFormData.isTopLevel ? null : (editFormData.managerId || null),
           workingScheduleId: editFormData.workingScheduleId || null
         })
       });
@@ -271,7 +344,14 @@ export const EmployeesPage: React.FC = () => {
                 </div>
 
                 <h3 className="font-bold text-slate-900 dark:text-white text-base group-hover:text-amber-600 dark:group-hover:text-amber-300 transition">{emp.name}</h3>
-                <p className="text-xs text-slate-600 dark:text-purple-200/70 font-medium mt-0.5">{emp.jobPosition}</p>
+                <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-200 border border-purple-200 dark:border-purple-800/60" title="System role (login permissions)">
+                    <ShieldCheck size={10} /> {roleLabel(emp.user?.role)}
+                  </span>
+                  <span className="text-[11px] text-slate-600 dark:text-purple-200/70 font-medium" title="Job position (descriptive title)">
+                    <Briefcase size={10} className="inline mr-0.5 -mt-0.5" />{emp.jobPosition}
+                  </span>
+                </div>
                 <div className="text-[11px] text-slate-500 dark:text-purple-400/60 flex items-center gap-1 mt-1 font-medium">
                   <Building2 size={12} /> {emp.department}
                 </div>
@@ -317,6 +397,7 @@ export const EmployeesPage: React.FC = () => {
               <tr>
                 <th className="px-5 py-4">Employee</th>
                 <th className="px-5 py-4">Department</th>
+                <th className="px-5 py-4">System Role</th>
                 <th className="px-5 py-4">Job Position</th>
                 <th className="px-5 py-4">Working Schedule</th>
                 <th className="px-5 py-4">Active Contract</th>
@@ -338,6 +419,11 @@ export const EmployeesPage: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-5 py-4 text-slate-700 dark:text-purple-200">{emp.department}</td>
+                    <td className="px-5 py-4">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-200 border border-purple-200 dark:border-purple-800/60">
+                        <ShieldCheck size={10} /> {roleLabel(emp.user?.role)}
+                      </span>
+                    </td>
                     <td className="px-5 py-4 text-slate-700 dark:text-purple-200">{emp.jobPosition}</td>
                     <td className="px-5 py-4 text-slate-500 dark:text-purple-300/70">
                       {emp.workingSchedule ? `${emp.workingSchedule.name} (${emp.workingSchedule.totalWeeklyHours}h)` : 'None'}
@@ -487,9 +573,16 @@ export const EmployeesPage: React.FC = () => {
                   <div className="p-4 rounded-2xl bg-purple-50/50 dark:bg-[#0b0914] border border-purple-100 dark:border-purple-900/50 space-y-2">
                     <span className="text-amber-700 dark:text-amber-300 font-bold block text-[11px] uppercase tracking-wider">Organizational Details</span>
                     <div><strong className="text-slate-600 dark:text-purple-300/70">Department:</strong> <span className="text-slate-900 dark:text-white font-medium">{selectedEmployee.department}</span></div>
-                    <div><strong className="text-slate-600 dark:text-purple-300/70">Role Title:</strong> <span className="text-slate-900 dark:text-white font-medium">{selectedEmployee.jobPosition}</span></div>
+                    <div><strong className="text-slate-600 dark:text-purple-300/70">Job Position (title):</strong> <span className="text-slate-900 dark:text-white font-medium">{selectedEmployee.jobPosition}</span></div>
+                    <div>
+                      <strong className="text-slate-600 dark:text-purple-300/70">System Role (permissions):</strong>{' '}
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-200 border border-purple-200 dark:border-purple-800/60">
+                        <ShieldCheck size={10} /> {roleLabel(selectedEmployee.user?.role)}
+                      </span>
+                    </div>
                     <div><strong className="text-slate-600 dark:text-purple-300/70">Email Address:</strong> <span className="text-slate-900 dark:text-white font-medium">{selectedEmployee.email || 'N/A'}</span></div>
                     <div><strong className="text-slate-600 dark:text-purple-300/70">Reporting Manager:</strong> <span className="text-slate-900 dark:text-white font-medium">{selectedEmployee.manager?.name || 'Top Level / None'}</span></div>
+                    <div><strong className="text-slate-600 dark:text-purple-300/70">Created:</strong> <span className="text-slate-900 dark:text-white font-medium">{formatDateTimeIST(selectedEmployee.createdAt)} IST</span></div>
                   </div>
                   <div className="p-4 rounded-2xl bg-purple-50/50 dark:bg-[#0b0914] border border-purple-100 dark:border-purple-900/50 space-y-2">
                     <span className="text-amber-700 dark:text-amber-300 font-bold block text-[11px] uppercase tracking-wider">Working Schedule</span>
@@ -508,7 +601,7 @@ export const EmployeesPage: React.FC = () => {
                       <div>
                         <div className="font-black text-amber-300 font-mono text-sm">₹{c.wage.toLocaleString('en-IN')}/month</div>
                         <div className="text-purple-300/70 text-[11px] mt-0.5">
-                          {new Date(c.startDate).toISOString().slice(0, 10)} to {c.endDate ? new Date(c.endDate).toISOString().slice(0, 10) : 'Ongoing'}
+                          {formatDateIST(c.startDate)} to {c.endDate ? formatDateIST(c.endDate) : 'Ongoing'}
                         </div>
                         <div className="text-[10px] text-purple-700 dark:text-purple-300 font-semibold mt-1">Structure: {c.salaryStructure?.name}</div>
                       </div>
@@ -584,14 +677,14 @@ export const EmployeesPage: React.FC = () => {
                             {selectedEmployee.attendances.map((att: any) => (
                               <tr key={att.id} className="hover:bg-purple-50/50 dark:hover:bg-purple-950/20 transition">
                                 <td className="px-4 py-3 font-mono text-slate-700 dark:text-purple-300">
-                                  {new Date(att.checkIn).toLocaleDateString()}
+                                  {formatDateIST(att.checkIn)}
                                 </td>
                                 <td className="px-4 py-3 font-mono text-slate-600 dark:text-purple-200">
-                                  {new Date(att.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  {formatTimeIST(att.checkIn)}
                                 </td>
                                 <td className="px-4 py-3 font-mono text-slate-600 dark:text-purple-200">
                                   {att.checkOut ? (
-                                    new Date(att.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                                    formatTimeIST(att.checkOut)
                                   ) : (
                                     <span className="text-amber-600 dark:text-amber-400 font-bold text-[10px]">Active</span>
                                   )}
@@ -705,14 +798,33 @@ export const EmployeesPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Email Address</label>
+                <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Email Address <span className="text-rose-500">*</span></label>
                 <input
                   type="email"
+                  required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium"
                   placeholder="e.g. maya.lin@peoplepay360.com"
                 />
+                <p className="text-[10px] text-slate-500 dark:text-purple-400/60 mt-1">A login account is created automatically for this email with a temporary password.</p>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">
+                  System Role <span className="text-rose-500">*</span>
+                  <span className="ml-1 font-normal text-[10px] text-slate-500 dark:text-purple-400/60">(login permissions — not the job title)</span>
+                </label>
+                <select
+                  required
+                  value={formData.role}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium"
+                >
+                  {ROLE_OPTIONS.map((r) => (
+                    <option key={r.value} value={r.value} className="bg-white dark:bg-[#0b0914] text-slate-900 dark:text-white">{r.label}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -742,33 +854,45 @@ export const EmployeesPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-purple-300/80 mb-1 font-semibold">Reporting Manager</label>
-                  <select
-                    value={formData.managerId}
-                    onChange={(e) => setFormData({ ...formData, managerId: e.target.value })}
-                    className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
-                  >
-                    <option value="">None (Top Level)</option>
-                    {employees.map(e => (
-                      <option key={e.id} value={e.id}>{e.name} ({e.department})</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-purple-300/80 mb-1 font-semibold">Working Schedule</label>
-                  <select
-                    value={formData.workingScheduleId}
-                    onChange={(e) => setFormData({ ...formData, workingScheduleId: e.target.value })}
-                    className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
-                  >
-                    <option value="">Standard (Default)</option>
-                    {schedules.map(s => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
-                    ))}
-                  </select>
-                </div>
+              <div>
+                <label className="block text-purple-300/80 mb-1 font-semibold text-slate-700 dark:text-purple-300/80">
+                  Reporting Manager {!formData.isTopLevel && <span className="text-rose-500">*</span>}
+                </label>
+                <select
+                  value={formData.managerId}
+                  disabled={formData.isTopLevel}
+                  required={!formData.isTopLevel}
+                  onChange={(e) => setFormData({ ...formData, managerId: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 disabled:opacity-40"
+                >
+                  <option value="">{formData.isTopLevel ? 'No manager (top-level)' : 'Select a reporting manager…'}</option>
+                  {employees.map(e => (
+                    <option key={e.id} value={e.id}>{e.name} ({e.department})</option>
+                  ))}
+                </select>
+                <label className="mt-2 flex items-center gap-2 text-[11px] text-slate-600 dark:text-purple-300/70 font-medium cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.isTopLevel}
+                    onChange={(e) => setFormData({ ...formData, isTopLevel: e.target.checked, managerId: e.target.checked ? '' : formData.managerId })}
+                    className="rounded border-slate-300 dark:border-purple-800"
+                  />
+                  This is a top-level position (no manager)
+                </label>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Working Schedule</label>
+                <select
+                  value={formData.workingScheduleId}
+                  onChange={(e) => setFormData({ ...formData, workingScheduleId: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400"
+                >
+                  <option value="">Standard (Default)</option>
+                  {schedules.map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="flex justify-end gap-2 pt-4 border-t border-purple-100 dark:border-purple-900/40">
@@ -781,12 +905,69 @@ export const EmployeesPage: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl font-black shadow-md shadow-amber-500/20 cursor-pointer"
+                  disabled={creating}
+                  className="px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl font-black shadow-md shadow-amber-500/20 cursor-pointer disabled:opacity-60"
                 >
-                  Save Employee
+                  {creating ? 'Creating…' : 'Save Employee'}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Post-create confirmation — shows the generated temporary login (ISSUE 1B) */}
+      {createdCredentials && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-md p-4">
+          <div className="bg-white dark:bg-[#090712] border border-emerald-300 dark:border-emerald-800/60 rounded-3xl w-full max-w-md p-6 shadow-2xl">
+            <div className="flex items-center gap-2 mb-3">
+              <CheckCircle2 size={20} className="text-emerald-500" />
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">Employee created</h2>
+            </div>
+            <p className="text-xs text-slate-600 dark:text-purple-300/70 mb-4">
+              <strong>{createdCredentials.employeeName}</strong> was created with system role{' '}
+              <span className="font-bold text-purple-700 dark:text-purple-300">{roleLabel(createdCredentials.role)}</span>.
+            </p>
+
+            {createdCredentials.tempPassword ? (
+              <div className="rounded-2xl bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 p-4 text-xs space-y-2">
+                <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-300 font-bold uppercase tracking-wide text-[10px]">
+                  <KeyRound size={12} /> Temporary login — share securely
+                </div>
+                <div className="font-mono text-slate-900 dark:text-white break-all">
+                  <div><span className="text-slate-500 dark:text-purple-400/60">Email:&nbsp;</span>{createdCredentials.loginEmail}</div>
+                  <div><span className="text-slate-500 dark:text-purple-400/60">Password:&nbsp;</span>{createdCredentials.tempPassword}</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(`${createdCredentials.loginEmail} / ${createdCredentials.tempPassword}`);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/50 font-bold text-[11px] cursor-pointer"
+                >
+                  <Copy size={12} /> {copied ? 'Copied!' : 'Copy'}
+                </button>
+                <p className="text-[10px] text-slate-500 dark:text-purple-400/60">
+                  They will be forced to set a new password on first login.
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 p-4 text-xs text-amber-800 dark:text-amber-200">
+                {createdCredentials.note}
+              </div>
+            )}
+
+            <div className="flex justify-end pt-4">
+              <button
+                type="button"
+                onClick={() => setCreatedCredentials(null)}
+                className="px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 text-slate-950 rounded-xl font-black cursor-pointer"
+              >
+                Done
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -821,6 +1002,23 @@ export const EmployeesPage: React.FC = () => {
                 />
               </div>
 
+              <div>
+                <label className="block text-purple-300/80 mb-1 font-semibold">
+                  System Role <span className="text-rose-500">*</span>
+                  <span className="ml-1 font-normal text-[10px] text-purple-400/60">(login permissions — not the job title)</span>
+                </label>
+                <select
+                  required
+                  value={editFormData.role}
+                  onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
+                  className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                >
+                  {ROLE_OPTIONS.map((r) => (
+                    <option key={r.value} value={r.value}>{r.label}</option>
+                  ))}
+                </select>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-purple-300/80 mb-1 font-semibold">Department</label>
@@ -849,17 +1047,30 @@ export const EmployeesPage: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-purple-300/80 mb-1 font-semibold">Reporting Manager</label>
+                  <label className="block text-purple-300/80 mb-1 font-semibold">
+                    Reporting Manager {!editFormData.isTopLevel && <span className="text-rose-500">*</span>}
+                  </label>
                   <select
                     value={editFormData.managerId}
+                    disabled={editFormData.isTopLevel}
+                    required={!editFormData.isTopLevel}
                     onChange={(e) => setEditFormData({ ...editFormData, managerId: e.target.value })}
-                    className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                    className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400 disabled:opacity-40"
                   >
-                    <option value="">None (Top Level)</option>
+                    <option value="">{editFormData.isTopLevel ? 'No manager (top-level)' : 'Select a reporting manager…'}</option>
                     {employees.filter(e => e.id !== editingEmployeeId).map(e => (
                       <option key={e.id} value={e.id}>{e.name} ({e.department})</option>
                     ))}
                   </select>
+                  <label className="mt-2 flex items-center gap-2 text-[11px] text-purple-300/70 font-medium cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={editFormData.isTopLevel}
+                      onChange={(e) => setEditFormData({ ...editFormData, isTopLevel: e.target.checked, managerId: e.target.checked ? '' : editFormData.managerId })}
+                      className="rounded border-purple-800"
+                    />
+                    Top-level position (no manager)
+                  </label>
                 </div>
                 <div>
                   <label className="block text-purple-300/80 mb-1 font-semibold">Status</label>

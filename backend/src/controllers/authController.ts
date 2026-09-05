@@ -123,7 +123,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         name: user.name,
         email: user.email,
         role: user.role,
-        employeeId: user.employeeId
+        employeeId: user.employeeId,
+        mustChangePassword: user.mustChangePassword
       },
       JWT_SECRET,
       { expiresIn: '7d' }
@@ -138,7 +139,88 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         email: user.email,
         role: user.role,
         employeeId: user.employeeId,
+        mustChangePassword: user.mustChangePassword,
         employee: user.employee
+      }
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Force / self-service password change. Used to satisfy the mandatory
+ * "Change Password" screen on first login for admin-created accounts.
+ */
+export const changePassword = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const { currentPassword, newPassword } = req.body;
+
+    if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 6) {
+      res.status(400).json({ error: 'New password must be at least 6 characters' });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    // Verify current password (required unless this is a forced first-login change,
+    // in which case the temp password must still be supplied and match).
+    if (!currentPassword || typeof currentPassword !== 'string') {
+      res.status(400).json({ error: 'Current password is required' });
+      return;
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isMatch) {
+      res.status(401).json({ error: 'Current password is incorrect' });
+      return;
+    }
+
+    if (currentPassword === newPassword) {
+      res.status(400).json({ error: 'New password must be different from the current password' });
+      return;
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash, mustChangePassword: false },
+      include: { employee: true }
+    });
+
+    const token = jwt.sign(
+      {
+        id: updated.id,
+        name: updated.name,
+        email: updated.email,
+        role: updated.role,
+        employeeId: updated.employeeId,
+        mustChangePassword: false
+      },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      message: 'Password changed successfully',
+      token,
+      user: {
+        id: updated.id,
+        name: updated.name,
+        email: updated.email,
+        role: updated.role,
+        employeeId: updated.employeeId,
+        mustChangePassword: false,
+        employee: updated.employee
       }
     });
   } catch (err: any) {
@@ -208,6 +290,7 @@ export const getMe = async (req: AuthRequest, res: Response): Promise<void> => {
         email: user.email,
         role: user.role,
         employeeId: user.employeeId,
+        mustChangePassword: user.mustChangePassword,
         employee: user.employee
       }
     });
@@ -253,7 +336,7 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
     const passwordHash = await bcrypt.hash(newPassword, 10);
     await prisma.user.update({
       where: { email },
-      data: { passwordHash }
+      data: { passwordHash, mustChangePassword: false }
     });
 
     res.json({

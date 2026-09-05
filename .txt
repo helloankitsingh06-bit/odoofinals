@@ -1,0 +1,10 @@
+cd backend
+npm run dev           # Starts backend with live reload on http:/localhost:5050
+
+
+cd frontend
+npm run dev           # Starts Vite dev server on http://localhost:5174
+
+
+cd backend
+npx prisma studio     # Starts Prisma Studio on http://localhost:5555

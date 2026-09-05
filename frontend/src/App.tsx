@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { Navbar } from './components/Navbar';
 import { LoginPage } from './pages/LoginPage';
+import { ChangePasswordPage } from './pages/ChangePasswordPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { EmployeesPage } from './pages/EmployeesPage';
 import { ContractsPage } from './pages/ContractsPage';
@@ -26,6 +27,12 @@ const MainApp: React.FC = () => {
 
   if (!user) {
     return <LoginPage />;
+  }
+
+  // ISSUE 1B: admin-created accounts must replace their temporary password before
+  // they can reach any other screen.
+  if (user.mustChangePassword) {
+    return <ChangePasswordPage />;
   }
 
   // If Employee role, redirect default tab away from Dashboard to My Details

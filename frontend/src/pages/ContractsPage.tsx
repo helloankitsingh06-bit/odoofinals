@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../services/api';
+import { formatDateIST, toISTDateInputValue } from '../utils/datetime';
 import { Briefcase, Plus, AlertCircle, Sparkles, Edit2, Trash2 } from 'lucide-react';
 
 export const ContractsPage: React.FC = () => {
@@ -27,7 +28,7 @@ export const ContractsPage: React.FC = () => {
 
   const [formData, setFormData] = useState({
     employeeId: '',
-    startDate: new Date().toISOString().slice(0, 10),
+    startDate: toISTDateInputValue(),
     endDate: '',
     wage: 65000,
     salaryStructureId: '',
@@ -97,8 +98,8 @@ export const ContractsPage: React.FC = () => {
     setEditError(null);
     setEditFormData({
       employeeId: c.employeeId,
-      startDate: c.startDate ? new Date(c.startDate).toISOString().slice(0, 10) : '',
-      endDate: c.endDate ? new Date(c.endDate).toISOString().slice(0, 10) : '',
+      startDate: c.startDate ? toISTDateInputValue(c.startDate) : '',
+      endDate: c.endDate ? toISTDateInputValue(c.endDate) : '',
       wage: c.wage,
       salaryStructureId: c.salaryStructureId,
       department: c.department,
@@ -203,7 +204,7 @@ export const ContractsPage: React.FC = () => {
                   <div className="text-[10px] text-slate-500 dark:text-purple-400/60 font-medium">{c.department}</div>
                 </td>
                 <td className="px-5 py-4 font-mono text-slate-600 dark:text-purple-300/80">
-                  {new Date(c.startDate).toISOString().slice(0, 10)} → {c.endDate ? new Date(c.endDate).toISOString().slice(0, 10) : 'Open'}
+                  {formatDateIST(c.startDate)} → {c.endDate ? formatDateIST(c.endDate) : 'Open'}
                 </td>
                 <td className="px-5 py-4 font-mono font-black text-amber-300 text-sm">
                   ₹{c.wage.toLocaleString('en-IN', { minimumFractionDigits: 2 })}

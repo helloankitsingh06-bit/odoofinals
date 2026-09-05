@@ -9,6 +9,7 @@ export interface User {
   email: string;
   role: UserRole;
   employeeId?: string | null;
+  mustChangePassword?: boolean;
   employee?: {
     id: string;
     name: string;
@@ -25,16 +26,18 @@ interface AuthContextType {
   register: (name: string, email: string, password: string, role?: UserRole) => Promise<void>;
   logout: () => void;
   switchRoleQuick: (role: UserRole) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Generic role-based labels — deliberately NOT tied to any specific (possibly deleted) person.
 const DEMO_USERS: Record<UserRole, { email: string; name: string }> = {
-  Employee: { email: 'employee@peoplepay360.com', name: 'Devon Hayes (Employee)' },
-  HRManager: { email: 'hrmanager@peoplepay360.com', name: 'Marcus Sterling (HR Manager)' },
-  HRPayrollUser: { email: 'payrolluser@peoplepay360.com', name: 'Jordan Reed (Payroll User)' },
-  HRPayrollManager: { email: 'payrollmgr@peoplepay360.com', name: 'Sophia Chen (Payroll Manager)' },
-  Admin: { email: 'admin@peoplepay360.com', name: 'System Administrator (Admin)' }
+  Employee: { email: 'employee@peoplepay360.com', name: 'Employee' },
+  HRManager: { email: 'hrmanager@peoplepay360.com', name: 'HR Manager' },
+  HRPayrollUser: { email: 'payrolluser@peoplepay360.com', name: 'HR Payroll User' },
+  HRPayrollManager: { email: 'payrollmgr@peoplepay360.com', name: 'HR Payroll Manager' },
+  Admin: { email: 'admin@peoplepay360.com', name: 'System Administrator' }
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -105,8 +108,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    setIsLoading(true);
+    try {
+      const data = await apiRequest('/auth/change-password', {
+        method: 'POST',
+        body: JSON.stringify({ currentPassword, newPassword })
+      });
+      if (data.token) {
+        localStorage.setItem('peoplepay360_token', data.token);
+        setToken(data.token);
+      }
+      setUser(data.user);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout, switchRoleQuick }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout, switchRoleQuick, changePassword }}>
       {children}
     </AuthContext.Provider>
   );

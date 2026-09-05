@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { formatDateIST, toISTDateInputValue } from '../utils/datetime';
 import {
   DollarSign,
   CheckCircle2,
@@ -29,8 +30,8 @@ export const PayrunsPage: React.FC = () => {
   const [wizardData, setWizardData] = useState({
     name: '',
     salaryStructureId: '',
-    periodStart: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10),
-    periodEnd: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().slice(0, 10),
+    periodStart: toISTDateInputValue(new Date(new Date().getFullYear(), new Date().getMonth(), 1)),
+    periodEnd: toISTDateInputValue(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)),
     selectedEmployeeIds: [] as string[]
   });
   const [previewResult, setPreviewResult] = useState<any | null>(null);
@@ -274,7 +275,7 @@ export const PayrunsPage: React.FC = () => {
 
                   <h3 className="font-bold text-slate-900 dark:text-white text-sm">{pr.name}</h3>
                   <div className="text-[11px] text-slate-500 dark:text-purple-300/70 mt-1 font-mono">
-                    {new Date(pr.periodStart).toISOString().slice(0, 10)} to {new Date(pr.periodEnd).toISOString().slice(0, 10)}
+                    {formatDateIST(pr.periodStart)} to {formatDateIST(pr.periodEnd)}
                   </div>
                   <div className="text-[10px] text-amber-600 dark:text-amber-300 font-semibold mt-1">
                     Structure: {pr.salaryStructure?.name}
@@ -303,7 +304,7 @@ export const PayrunsPage: React.FC = () => {
                     </span>
                   </div>
                   <p className="text-xs text-slate-600 dark:text-purple-300/70 mt-1 font-medium">
-                    Structure: <strong className="text-amber-600 dark:text-amber-300">{selectedPayrun.salaryStructure?.name}</strong> • Period: <span className="font-mono">{new Date(selectedPayrun.periodStart).toISOString().slice(0, 10)} to {new Date(selectedPayrun.periodEnd).toISOString().slice(0, 10)}</span>
+                    Structure: <strong className="text-amber-600 dark:text-amber-300">{selectedPayrun.salaryStructure?.name}</strong> • Period: <span className="font-mono">{formatDateIST(selectedPayrun.periodStart)} to {formatDateIST(selectedPayrun.periodEnd)}</span>
                   </p>
                 </div>
 
