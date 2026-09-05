@@ -14,11 +14,14 @@ import {
   ChevronRight,
   X,
   UserCheck,
-  Sparkles
+  Sparkles,
+  Edit2,
+  Trash2
 } from 'lucide-react';
 
 export const EmployeesPage: React.FC = () => {
   const [employees, setEmployees] = useState<any[]>([]);
+  const [schedules, setSchedules] = useState<any[]>([]);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [search, setSearch] = useState<string>('');
   const [departmentFilter, setDepartmentFilter] = useState<string>('All');
@@ -36,14 +39,33 @@ export const EmployeesPage: React.FC = () => {
     email: '',
     department: 'Engineering',
     jobPosition: '',
-    status: 'Active'
+    status: 'Active',
+    managerId: '',
+    workingScheduleId: ''
+  });
+
+  // Edit Employee Modal
+  const [showEditModal, setShowEditModal] = useState<boolean>(false);
+  const [editingEmployeeId, setEditingEmployeeId] = useState<string | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    email: '',
+    department: 'Engineering',
+    jobPosition: '',
+    status: 'Active',
+    managerId: '',
+    workingScheduleId: ''
   });
 
   const fetchEmployees = async () => {
     setLoading(true);
     try {
-      const data = await apiRequest('/employees');
-      setEmployees(data);
+      const [empData, schData] = await Promise.all([
+        apiRequest('/employees'),
+        apiRequest('/schedules').catch(() => [])
+      ]);
+      setEmployees(empData);
+      setSchedules(schData);
     } catch (err) {
       console.error('Failed to load employees:', err);
     } finally {
@@ -73,13 +95,69 @@ export const EmployeesPage: React.FC = () => {
     try {
       await apiRequest('/employees', {
         method: 'POST',
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          managerId: formData.managerId || null,
+          workingScheduleId: formData.workingScheduleId || null
+        })
       });
       setShowCreateModal(false);
-      setFormData({ name: '', email: '', department: 'Engineering', jobPosition: '', status: 'Active' });
+      setFormData({ name: '', email: '', department: 'Engineering', jobPosition: '', status: 'Active', managerId: '', workingScheduleId: '' });
       fetchEmployees();
     } catch (err: any) {
       alert(err.message || 'Failed to create employee');
+    }
+  };
+
+  const openEditModal = (emp: any, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setEditingEmployeeId(emp.id);
+    setEditFormData({
+      name: emp.name || '',
+      email: emp.email || '',
+      department: emp.department || 'Engineering',
+      jobPosition: emp.jobPosition || '',
+      status: emp.status || 'Active',
+      managerId: emp.managerId || emp.manager?.id || '',
+      workingScheduleId: emp.workingScheduleId || emp.workingSchedule?.id || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdateEmployee = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingEmployeeId) return;
+    try {
+      await apiRequest(`/employees/${editingEmployeeId}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          ...editFormData,
+          managerId: editFormData.managerId || null,
+          workingScheduleId: editFormData.workingScheduleId || null
+        })
+      });
+      setShowEditModal(false);
+      fetchEmployees();
+      if (selectedEmployee && selectedEmployee.id === editingEmployeeId) {
+        const fullData = await apiRequest(`/employees/${editingEmployeeId}`);
+        setSelectedEmployee(fullData);
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to update employee');
+    }
+  };
+
+  const handleDeleteEmployee = async (id: string, name: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!window.confirm(`Are you sure you want to delete employee "${name}"? This will also un-link any linked user account.`)) return;
+    try {
+      await apiRequest(`/employees/${id}`, { method: 'DELETE' });
+      if (selectedEmployee && selectedEmployee.id === id) {
+        setSelectedEmployee(null);
+      }
+      fetchEmployees();
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete employee');
     }
   };
 
@@ -186,7 +264,7 @@ export const EmployeesPage: React.FC = () => {
                     {emp.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
                   </div>
                   <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                    emp.status === 'Active' ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30' : 'bg-slate-100 dark:bg-purple-950/40 text-slate-600 dark:text-purple-400 border border-slate-200 dark:border-purple-900/40'
+                    emp.status === 'Active' ? 'bg-amber-400/15 text-amber-300 border border-amber-400/30' : 'bg-purple-950/40 text-purple-400 border border-purple-900/40'
                   }`}>
                     {emp.status}
                   </span>
@@ -200,8 +278,8 @@ export const EmployeesPage: React.FC = () => {
 
                 <div className="mt-4 pt-3 border-t border-purple-100 dark:border-purple-900/40 flex items-center justify-between text-xs">
                   <div>
-                    <span className="text-slate-400 dark:text-purple-400/60 text-[10px] block font-medium">Contract Wage</span>
-                    <span className="text-amber-600 dark:text-amber-300 font-bold font-mono">
+                    <span className="text-purple-400/60 text-[10px] block font-medium">Contract Wage</span>
+                    <span className="text-amber-300 font-bold font-mono">
                       {activeContract ? `$${activeContract.wage.toLocaleString()}/mo` : 'No Active Contract'}
                     </span>
                   </div>
@@ -245,13 +323,13 @@ export const EmployeesPage: React.FC = () => {
                     <td className="px-5 py-4 text-slate-500 dark:text-purple-300/70">
                       {emp.workingSchedule ? `${emp.workingSchedule.name} (${emp.workingSchedule.totalWeeklyHours}h)` : 'None'}
                     </td>
-                    <td className="px-5 py-4 font-mono text-amber-600 dark:text-amber-300 font-bold">
-                      {activeContract ? `$${activeContract.wage.toLocaleString()}` : <span className="text-slate-400 dark:text-purple-400/50 font-sans">N/A</span>}
+                    <td className="px-5 py-4 font-mono text-amber-300 font-bold">
+                      {activeContract ? `$${activeContract.wage.toLocaleString()}` : <span className="text-purple-400/50 font-sans">N/A</span>}
                     </td>
                     <td className="px-5 py-4 text-right">
                       <button
                         onClick={() => openEmployeeHub(emp)}
-                        className="px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/60 hover:bg-amber-100 dark:hover:bg-amber-400/20 text-purple-800 dark:text-amber-300 border border-purple-200 dark:border-purple-900/50 hover:border-amber-400/50 font-bold text-[11px] transition shadow-sm cursor-pointer"
+                        className="px-3 py-1.5 rounded-xl bg-purple-950/60 hover:bg-amber-400/20 text-amber-300 border border-purple-900/50 hover:border-amber-400/50 font-bold text-[11px] transition shadow-sm"
                       >
                         View Hub
                       </button>
@@ -264,7 +342,7 @@ export const EmployeesPage: React.FC = () => {
         </div>
       )}
 
-      {/* Slide-over / Modal for Central Employee Hub */}
+      {/* Central Employee Hub Modal */}
       {selectedEmployee && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-md p-4 overflow-y-auto">
           <div className="bg-white dark:bg-[#090712] border border-purple-200 dark:border-purple-800/60 rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col transition-colors duration-300">
@@ -286,7 +364,7 @@ export const EmployeesPage: React.FC = () => {
               </div>
               <button
                 onClick={() => setSelectedEmployee(null)}
-                className="p-2 text-slate-400 dark:text-purple-400 hover:text-slate-900 dark:hover:text-white rounded-xl hover:bg-purple-100 dark:hover:bg-purple-900/40 transition cursor-pointer"
+                className="p-2 text-purple-400 hover:text-white rounded-xl hover:bg-purple-900/40 transition"
               >
                 <X size={20} />
               </button>
@@ -372,8 +450,8 @@ export const EmployeesPage: React.FC = () => {
                   {selectedEmployee.contracts?.map((c: any) => (
                     <div key={c.id} className="p-4 bg-purple-50/50 dark:bg-[#0b0914] border border-purple-100 dark:border-purple-900/50 rounded-2xl flex items-center justify-between text-xs">
                       <div>
-                        <div className="font-black text-amber-700 dark:text-amber-300 font-mono text-sm">${c.wage.toLocaleString()}/month</div>
-                        <div className="text-slate-500 dark:text-purple-300/70 text-[11px] mt-0.5 font-medium">
+                        <div className="font-black text-amber-300 font-mono text-sm">${c.wage.toLocaleString()}/month</div>
+                        <div className="text-purple-300/70 text-[11px] mt-0.5">
                           {new Date(c.startDate).toISOString().slice(0, 10)} to {c.endDate ? new Date(c.endDate).toISOString().slice(0, 10) : 'Ongoing'}
                         </div>
                         <div className="text-[10px] text-purple-700 dark:text-purple-300 font-semibold mt-1">Structure: {c.salaryStructure?.name}</div>
@@ -415,9 +493,9 @@ export const EmployeesPage: React.FC = () => {
                   {selectedEmployee.payslips?.map((p: any) => (
                     <div key={p.id} className="p-4 bg-purple-50/50 dark:bg-[#0b0914] border border-purple-100 dark:border-purple-900/50 rounded-2xl flex items-center justify-between text-xs">
                       <div>
-                        <span className="font-bold text-slate-900 dark:text-white">{p.payrun?.name || 'Regular Payrun'}</span>
-                        <div className="text-slate-500 dark:text-purple-300/70 text-[11px] mt-0.5 font-medium">
-                          Gross: ${p.grossTotal.toLocaleString()} • Net Take-Home: <strong className="text-amber-600 dark:text-amber-300">${p.netTotal.toLocaleString()}</strong>
+                        <span className="font-bold text-white">{p.payrun?.name || 'Regular Payrun'}</span>
+                        <div className="text-purple-300/70 text-[11px] mt-0.5">
+                          Gross: ${p.grossTotal.toLocaleString()} • Net Take-Home: <strong className="text-amber-300">${p.netTotal.toLocaleString()}</strong>
                         </div>
                       </div>
                       <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-200 border border-purple-200 dark:border-purple-500/30">
@@ -470,7 +548,7 @@ export const EmployeesPage: React.FC = () => {
                   <select
                     value={formData.department}
                     onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                    className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium cursor-pointer"
+                    className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-amber-400"
                   >
                     <option value="Engineering" className="bg-white dark:bg-[#0b0914] text-slate-900 dark:text-white">Engineering</option>
                     <option value="Human Resources" className="bg-white dark:bg-[#0b0914] text-slate-900 dark:text-white">Human Resources</option>
@@ -491,6 +569,35 @@ export const EmployeesPage: React.FC = () => {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-purple-300/80 mb-1 font-semibold">Reporting Manager</label>
+                  <select
+                    value={formData.managerId}
+                    onChange={(e) => setFormData({ ...formData, managerId: e.target.value })}
+                    className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                  >
+                    <option value="">None (Top Level)</option>
+                    {employees.map(e => (
+                      <option key={e.id} value={e.id}>{e.name} ({e.department})</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-purple-300/80 mb-1 font-semibold">Working Schedule</label>
+                  <select
+                    value={formData.workingScheduleId}
+                    onChange={(e) => setFormData({ ...formData, workingScheduleId: e.target.value })}
+                    className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                  >
+                    <option value="">Standard (Default)</option>
+                    {schedules.map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
               <div className="flex justify-end gap-2 pt-4 border-t border-purple-100 dark:border-purple-900/40">
                 <button
                   type="button"
@@ -504,6 +611,123 @@ export const EmployeesPage: React.FC = () => {
                   className="px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl font-black shadow-md shadow-amber-500/20 cursor-pointer"
                 >
                   Save Employee
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Employee Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+          <div className="bg-[#090712] border border-purple-800/60 rounded-3xl w-full max-w-md p-6 shadow-2xl">
+            <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              <Edit2 size={18} className="text-amber-400" />
+              Edit Employee Details
+            </h2>
+            <form onSubmit={handleUpdateEmployee} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-purple-300/80 mb-1 font-semibold">Full Name</label>
+                <input
+                  type="text"
+                  required
+                  value={editFormData.name}
+                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                  className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-purple-300/80 mb-1 font-semibold">Email Address</label>
+                <input
+                  type="email"
+                  value={editFormData.email}
+                  onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                  className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-purple-300/80 mb-1 font-semibold">Department</label>
+                  <select
+                    value={editFormData.department}
+                    onChange={(e) => setEditFormData({ ...editFormData, department: e.target.value })}
+                    className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                  >
+                    <option value="Engineering">Engineering</option>
+                    <option value="Human Resources">Human Resources</option>
+                    <option value="Finance & Payroll">Finance & Payroll</option>
+                    <option value="Executive">Executive</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-purple-300/80 mb-1 font-semibold">Job Position</label>
+                  <input
+                    type="text"
+                    required
+                    value={editFormData.jobPosition}
+                    onChange={(e) => setEditFormData({ ...editFormData, jobPosition: e.target.value })}
+                    className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-purple-300/80 mb-1 font-semibold">Reporting Manager</label>
+                  <select
+                    value={editFormData.managerId}
+                    onChange={(e) => setEditFormData({ ...editFormData, managerId: e.target.value })}
+                    className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                  >
+                    <option value="">None (Top Level)</option>
+                    {employees.filter(e => e.id !== editingEmployeeId).map(e => (
+                      <option key={e.id} value={e.id}>{e.name} ({e.department})</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-purple-300/80 mb-1 font-semibold">Status</label>
+                  <select
+                    value={editFormData.status}
+                    onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
+                    className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-purple-300/80 mb-1 font-semibold">Working Schedule</label>
+                <select
+                  value={editFormData.workingScheduleId}
+                  onChange={(e) => setEditFormData({ ...editFormData, workingScheduleId: e.target.value })}
+                  className="w-full bg-[#06050b] border border-purple-900/50 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-amber-400"
+                >
+                  <option value="">Standard (Default)</option>
+                  {schedules.map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 border-t border-purple-900/40">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 bg-purple-950/60 border border-purple-900/50 text-purple-300 rounded-xl hover:bg-purple-900/40 font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 rounded-xl font-black shadow-lg shadow-amber-500/20"
+                >
+                  Update Employee
                 </button>
               </div>
             </form>

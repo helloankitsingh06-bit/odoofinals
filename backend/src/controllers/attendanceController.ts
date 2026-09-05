@@ -151,7 +151,30 @@ export const createManualAttendance = async (req: Request, res: Response): Promi
     }
 
     const inDate = new Date(checkIn);
-    const outDate = checkOut ? new Date(checkOut) : null;
+    if (isNaN(inDate.getTime())) {
+      res.status(400).json({ error: 'Invalid check-in date/time format' });
+      return;
+    }
+
+    let outDate: Date | null = null;
+    if (checkOut && typeof checkOut === 'string' && checkOut.trim()) {
+      outDate = new Date(checkOut);
+      if (isNaN(outDate.getTime())) {
+        res.status(400).json({ error: 'Invalid check-out date/time format' });
+        return;
+      }
+      if (outDate < inDate) {
+        res.status(400).json({ error: 'Check-out time cannot be earlier than check-in time' });
+        return;
+      }
+    }
+
+    const emp = await prisma.employee.findUnique({ where: { id: employeeId } });
+    if (!emp) {
+      res.status(404).json({ error: 'Employee not found' });
+      return;
+    }
+
     const workedHours = calculateWorkedHours(inDate, outDate);
 
     let calculatedStatus = status;
@@ -188,8 +211,32 @@ export const updateAttendance = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    const inDate = checkIn ? new Date(checkIn) : existing.checkIn;
-    const outDate = checkOut !== undefined ? (checkOut ? new Date(checkOut) : null) : existing.checkOut;
+    let inDate = existing.checkIn;
+    if (checkIn) {
+      inDate = new Date(checkIn);
+      if (isNaN(inDate.getTime())) {
+        res.status(400).json({ error: 'Invalid check-in date/time format' });
+        return;
+      }
+    }
+
+    let outDate = existing.checkOut;
+    if (checkOut !== undefined) {
+      if (checkOut && typeof checkOut === 'string' && checkOut.trim()) {
+        outDate = new Date(checkOut);
+        if (isNaN(outDate.getTime())) {
+          res.status(400).json({ error: 'Invalid check-out date/time format' });
+          return;
+        }
+        if (outDate < inDate) {
+          res.status(400).json({ error: 'Check-out time cannot be earlier than check-in time' });
+          return;
+        }
+      } else {
+        outDate = null;
+      }
+    }
+
     const workedHours = calculateWorkedHours(inDate, outDate);
 
     const updated = await prisma.attendance.update({

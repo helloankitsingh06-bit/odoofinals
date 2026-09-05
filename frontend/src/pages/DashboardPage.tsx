@@ -110,7 +110,7 @@ export const DashboardPage: React.FC = () => {
               <DollarSign size={18} />
             </div>
           </div>
-          <div className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+          <div className="text-2xl font-extrabold text-white tracking-tight">
             ${kpis.totalNetSalaryPaid?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '0.00'}
           </div>
           <div className="text-[11px] text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1 font-semibold">
@@ -142,7 +142,7 @@ export const DashboardPage: React.FC = () => {
               <TrendingUp size={18} />
             </div>
           </div>
-          <div className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+          <div className="text-2xl font-extrabold text-white tracking-tight">
             ${kpis.averageSalaryPaid?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '0.00'}
           </div>
           <div className="text-[11px] text-yellow-700 dark:text-yellow-400 mt-2 font-semibold">
@@ -201,9 +201,9 @@ export const DashboardPage: React.FC = () => {
             {charts.departmentSalaryChart && charts.departmentSalaryChart.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={charts.departmentSalaryChart}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1d1730' : '#e2e8f0'} />
-                  <XAxis dataKey="department" stroke={isDark ? '#a78bfa' : '#64748b'} fontSize={11} />
-                  <YAxis stroke={isDark ? '#a78bfa' : '#64748b'} fontSize={11} tickFormatter={(v) => `$${v / 1000}k`} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1d1730" />
+                  <XAxis dataKey="department" stroke="#a78bfa" fontSize={11} />
+                  <YAxis stroke="#a78bfa" fontSize={11} tickFormatter={(v) => `$${v / 1000}k`} />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: isDark ? '#0b0914' : '#ffffff',
@@ -214,8 +214,8 @@ export const DashboardPage: React.FC = () => {
                     }}
                     itemStyle={{ fontSize: '12px' }}
                   />
-                  <Bar dataKey="grossTotal" name="Gross Pay ($)" fill="#a855f7" radius={[6, 6, 0, 0]} />
-                  <Bar dataKey="netTotal" name="Net Pay ($)" fill="#f59e0b" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="grossTotal" name="Gross Pay ($)" fill="#c084fc" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="netTotal" name="Net Pay ($)" fill="#fbbf24" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
