@@ -11,7 +11,8 @@ import {
   Layers,
   LogOut,
   ShieldCheck,
-  Sparkles
+  Sparkles,
+  UserCheck
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -31,6 +32,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
   const { user, logout } = useAuth();
 
   const navItems = [
+    { id: 'my-profile', label: 'My Details', icon: UserCheck, roles: ['Employee'] },
     { id: 'dashboard', label: 'Dashboard', icon: PieChart, roles: ['HRManager', 'HRPayrollUser', 'HRPayrollManager', 'Admin'] },
     { id: 'employees', label: 'Employees Hub', icon: Users, roles: ['HRManager', 'HRPayrollUser', 'HRPayrollManager', 'Admin'] },
     { id: 'contracts', label: 'Contracts', icon: Briefcase, roles: ['HRManager', 'HRPayrollUser', 'HRPayrollManager', 'Admin'] },

@@ -2,6 +2,7 @@ import { Router, Response, NextFunction } from 'express';
 import {
   listEmployees,
   getEmployeeById,
+  getMyEmployeeDetails,
   createEmployee,
   updateEmployee,
   deleteEmployee
@@ -12,6 +13,9 @@ import { Role } from '../types';
 const router = Router();
 
 router.use(authenticateToken);
+
+// Current logged-in employee profile (Self-Service)
+router.get('/me', getMyEmployeeDetails);
 
 router.get(
   '/',

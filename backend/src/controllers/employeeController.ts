@@ -148,6 +148,18 @@ export const createEmployee = async (req: Request, res: Response): Promise<void>
       }
     });
 
+    if (employee.email) {
+      const existingUser = await prisma.user.findFirst({
+        where: { email: employee.email }
+      });
+      if (existingUser) {
+        await prisma.user.update({
+          where: { id: existingUser.id },
+          data: { employeeId: employee.id }
+        });
+      }
+    }
+
     res.status(201).json(employee);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -225,7 +237,88 @@ export const updateEmployee = async (req: Request, res: Response): Promise<void>
       }
     });
 
+    // Auto-link user account if email was set or updated
+    if (updated.email) {
+      const existingUser = await prisma.user.findFirst({
+        where: { email: updated.email }
+      });
+      if (existingUser && existingUser.employeeId !== updated.id) {
+        await prisma.user.update({
+          where: { id: existingUser.id },
+          data: { employeeId: updated.id }
+        });
+      }
+    }
+
     res.json(updated);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const getMyEmployeeDetails = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    let empId = req.user.employeeId;
+    if (!empId && req.user.email) {
+      const emp = await prisma.employee.findFirst({
+        where: { email: req.user.email.trim() }
+      });
+      if (emp) {
+        await prisma.user.update({
+          where: { id: req.user.id },
+          data: { employeeId: emp.id }
+        });
+        empId = emp.id;
+      }
+    }
+
+    if (!empId) {
+      res.status(404).json({ error: 'No employee record linked to this user' });
+      return;
+    }
+
+    const employee = await prisma.employee.findUnique({
+      where: { id: empId },
+      include: {
+        manager: {
+          select: { id: true, name: true, jobPosition: true }
+        },
+        workingSchedule: {
+          include: { days: true }
+        },
+        contracts: {
+          orderBy: { startDate: 'desc' },
+          include: { salaryStructure: true }
+        },
+        allocations: {
+          include: { timeOffType: true }
+        },
+        timeOffRequests: {
+          orderBy: { createdAt: 'desc' },
+          include: { timeOffType: true }
+        },
+        attendances: {
+          orderBy: { checkIn: 'desc' },
+          take: 30
+        },
+        payslips: {
+          orderBy: { periodStart: 'desc' },
+          include: { lines: true, payrun: true }
+        }
+      }
+    });
+
+    if (!employee) {
+      res.status(404).json({ error: 'Employee not found' });
+      return;
+    }
+
+    res.json(employee);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

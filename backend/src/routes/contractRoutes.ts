@@ -14,7 +14,7 @@ router.use(authenticateToken);
 
 router.get(
   '/',
-  authorizeRoles(Role.HRManager, Role.HRPayrollUser, Role.HRPayrollManager, Role.Admin),
+  authorizeRoles(Role.Employee, Role.HRManager, Role.HRPayrollUser, Role.HRPayrollManager, Role.Admin),
   listContracts
 );
 
