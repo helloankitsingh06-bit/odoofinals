@@ -283,7 +283,7 @@ export const EmployeesPage: React.FC = () => {
                       {activeContract ? `₹${activeContract.wage.toLocaleString('en-IN')}/mo` : 'No Active Contract'}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     <button
                       type="button"
                       onClick={(e) => openEditModal(emp, e)}
@@ -292,6 +292,14 @@ export const EmployeesPage: React.FC = () => {
                     >
                       <Edit2 size={12} />
                       <span>Edit</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => handleDeleteEmployee(emp.id, emp.name, e)}
+                      className="p-1 rounded-xl text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/30 transition flex items-center justify-center cursor-pointer"
+                      title="Delete Employee"
+                    >
+                      <Trash2 size={13} />
                     </button>
                     <div className="flex items-center text-purple-700 dark:text-purple-300 group-hover:text-amber-600 dark:group-hover:text-amber-300 transition text-[11px] font-bold">
                       Open Hub <ChevronRight size={14} />
@@ -338,7 +346,7 @@ export const EmployeesPage: React.FC = () => {
                       {activeContract ? `₹${activeContract.wage.toLocaleString('en-IN')}` : <span className="text-purple-400/50 font-sans">N/A</span>}
                     </td>
                     <td className="px-5 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-1.5">
                         <button
                           type="button"
                           onClick={(e) => openEditModal(emp, e)}
@@ -347,6 +355,14 @@ export const EmployeesPage: React.FC = () => {
                         >
                           <Edit2 size={12} />
                           <span>Edit</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteEmployee(emp.id, emp.name, e)}
+                          className="p-1.5 rounded-xl text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/30 transition shadow-sm cursor-pointer"
+                          title="Delete Employee"
+                        >
+                          <Trash2 size={13} />
                         </button>
                         <button
                           type="button"
@@ -365,18 +381,18 @@ export const EmployeesPage: React.FC = () => {
         </div>
       )}
 
-      {/* Central Employee Hub Modal */}
+      {/* Employee Detail Modal / Smart Hub */}
       {selectedEmployee && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-md p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-[#090712] border border-purple-200 dark:border-purple-800/60 rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col transition-colors duration-300">
-            {/* Hub Header */}
-            <div className="p-6 bg-purple-50/70 dark:bg-[#0e0c1a] border-b border-purple-100 dark:border-purple-900/50 flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fadeIn">
+          <div className="bg-white dark:bg-[#090712] border border-purple-200 dark:border-purple-800/60 rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl transition-colors duration-300">
+            {/* Modal Header */}
+            <div className="p-6 bg-slate-50/70 dark:bg-[#06050b] border-b border-purple-100 dark:border-purple-900/50 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-2xl bg-gradient-to-tr from-amber-400 via-yellow-300 to-purple-500 flex items-center justify-center text-slate-950 font-black text-lg shadow-lg">
+                <div className="h-12 w-12 rounded-2xl bg-gradient-to-tr from-purple-600 via-fuchsia-500 to-amber-400 flex items-center justify-center text-white dark:text-slate-950 font-black text-lg shadow-lg">
                   {selectedEmployee.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                     {selectedEmployee.name}
                     <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
                       {selectedEmployee.status}
@@ -392,6 +408,14 @@ export const EmployeesPage: React.FC = () => {
                   className="px-3 py-1.5 rounded-xl bg-purple-100 dark:bg-purple-950/60 hover:bg-amber-400/20 text-purple-800 dark:text-purple-300 hover:text-amber-600 dark:hover:text-amber-300 border border-purple-200 dark:border-purple-800/50 font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-sm"
                 >
                   <Edit2 size={13} /> Edit Profile
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteEmployee(selectedEmployee.id, selectedEmployee.name)}
+                  className="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-rose-500/30 font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                  title="Delete Employee"
+                >
+                  <Trash2 size={13} /> Delete
                 </button>
                 <button
                   onClick={() => setSelectedEmployee(null)}
