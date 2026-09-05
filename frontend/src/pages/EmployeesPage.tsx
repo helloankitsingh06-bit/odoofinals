@@ -498,6 +498,123 @@ export const EmployeesPage: React.FC = () => {
                 </div>
               )}
 
+              {activeHubTab === 'attendance' && (
+                <div className="space-y-4">
+                  {/* Attendance KPI Summary Cards */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="p-3.5 bg-purple-50/50 dark:bg-[#0b0914] border border-purple-100 dark:border-purple-900/50 rounded-2xl">
+                      <div className="text-[10px] text-slate-500 dark:text-purple-300/70 uppercase font-bold tracking-wider">Total Logs</div>
+                      <div className="text-lg font-black text-slate-900 dark:text-white mt-0.5">
+                        {selectedEmployee.attendances?.length || 0}
+                      </div>
+                    </div>
+                    <div className="p-3.5 bg-purple-50/50 dark:bg-[#0b0914] border border-purple-100 dark:border-purple-900/50 rounded-2xl">
+                      <div className="text-[10px] text-slate-500 dark:text-purple-300/70 uppercase font-bold tracking-wider">Total Worked</div>
+                      <div className="text-lg font-black text-amber-600 dark:text-amber-300 mt-0.5">
+                        {selectedEmployee.attendances
+                          ? selectedEmployee.attendances.reduce((sum: number, a: any) => sum + (a.workedHours || 0), 0).toFixed(1)
+                          : 0} hrs
+                      </div>
+                    </div>
+                    <div className="p-3.5 bg-purple-50/50 dark:bg-[#0b0914] border border-purple-100 dark:border-purple-900/50 rounded-2xl">
+                      <div className="text-[10px] text-slate-500 dark:text-purple-300/70 uppercase font-bold tracking-wider">Present Days</div>
+                      <div className="text-lg font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
+                        {selectedEmployee.attendances
+                          ? selectedEmployee.attendances.filter((a: any) => a.status === 'Present').length
+                          : 0}
+                      </div>
+                    </div>
+                    <div className="p-3.5 bg-purple-50/50 dark:bg-[#0b0914] border border-purple-100 dark:border-purple-900/50 rounded-2xl">
+                      <div className="text-[10px] text-slate-500 dark:text-purple-300/70 uppercase font-bold tracking-wider">Other / Warnings</div>
+                      <div className="text-lg font-black text-purple-600 dark:text-purple-300 mt-0.5">
+                        {selectedEmployee.attendances
+                          ? selectedEmployee.attendances.filter((a: any) => a.status !== 'Present').length
+                          : 0}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Attendance Log Table */}
+                  <div className="bg-purple-50/30 dark:bg-[#0b0914]/80 border border-purple-100 dark:border-purple-900/50 rounded-2xl overflow-hidden">
+                    <div className="p-3 bg-purple-50/70 dark:bg-[#06050b] border-b border-purple-100 dark:border-purple-900/50 flex items-center justify-between">
+                      <span className="text-xs font-bold text-amber-700 dark:text-amber-300">Attendance Log History</span>
+                      <span className="text-[10px] text-slate-500 dark:text-purple-400/60 font-medium">
+                        {selectedEmployee.attendances?.length || 0} Records
+                      </span>
+                    </div>
+
+                    <div className="max-h-72 overflow-y-auto">
+                      {selectedEmployee.attendances && selectedEmployee.attendances.length > 0 ? (
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-purple-50/50 dark:bg-[#06050b]/60 text-purple-900 dark:text-purple-300/70 font-bold uppercase tracking-wider text-[10px] border-b border-purple-100 dark:border-purple-900/50 sticky top-0 backdrop-blur-sm">
+                            <tr>
+                              <th className="px-4 py-3">Date</th>
+                              <th className="px-4 py-3">Check In</th>
+                              <th className="px-4 py-3">Check Out</th>
+                              <th className="px-4 py-3">Hours</th>
+                              <th className="px-4 py-3">Status</th>
+                              <th className="px-4 py-3 text-right">Source</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-purple-100 dark:divide-purple-950 text-slate-800 dark:text-purple-100 font-medium text-xs">
+                            {selectedEmployee.attendances.map((att: any) => (
+                              <tr key={att.id} className="hover:bg-purple-50/50 dark:hover:bg-purple-950/20 transition">
+                                <td className="px-4 py-3 font-mono text-slate-700 dark:text-purple-300">
+                                  {new Date(att.checkIn).toLocaleDateString()}
+                                </td>
+                                <td className="px-4 py-3 font-mono text-slate-600 dark:text-purple-200">
+                                  {new Date(att.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </td>
+                                <td className="px-4 py-3 font-mono text-slate-600 dark:text-purple-200">
+                                  {att.checkOut ? (
+                                    new Date(att.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                                  ) : (
+                                    <span className="text-amber-600 dark:text-amber-400 font-bold text-[10px]">Active</span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 font-mono font-bold text-amber-600 dark:text-amber-300">
+                                  {att.workedHours ? `${att.workedHours} hrs` : '-'}
+                                </td>
+                                <td className="px-4 py-3">
+                                  <span
+                                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                      att.status === 'Present'
+                                        ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
+                                        : att.status === 'Overtime'
+                                        ? 'bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-200 border border-purple-200 dark:border-purple-500/30'
+                                        : att.status === 'Late'
+                                        ? 'bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-500/30'
+                                        : att.status === 'MissingCheckout'
+                                        ? 'bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-500/40'
+                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                                    }`}
+                                  >
+                                    {att.status}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                  {att.isManualEdit ? (
+                                    <span className="text-[10px] text-amber-700 dark:text-amber-300 bg-amber-500/15 border border-amber-400/30 px-1.5 py-0.5 rounded font-semibold">
+                                      Manual
+                                    </span>
+                                  ) : (
+                                    <span className="text-[10px] text-slate-400 dark:text-purple-400/50">Biometric/Web</span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <div className="p-8 text-center text-slate-400 dark:text-purple-400/60 text-xs">
+                          No attendance logs recorded for this employee yet.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {activeHubTab === 'leave' && (
                 <div className="space-y-4">
                   <div>
