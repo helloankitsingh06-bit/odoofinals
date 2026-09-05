@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { apiRequest } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { formatDateIST, toISTDateInputValue } from '../utils/datetime';
 import {
   UserCheck,
   Briefcase,
@@ -38,6 +39,9 @@ export const MyProfilePage: React.FC = () => {
   const [profile, setProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  // Expected, valid state: the signed-in account has no linked employee record.
+  // This is NOT an error condition (an Admin may keep a login active after unlinking).
+  const [unlinked, setUnlinked] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'contracts' | 'leave' | 'attendance' | 'payslips' | 'requests'>('contracts');
 
   // Punch clock states
@@ -54,8 +58,8 @@ export const MyProfilePage: React.FC = () => {
   const [leaveSuccess, setLeaveSuccess] = useState<string | null>(null);
   const [leaveForm, setLeaveForm] = useState({
     timeOffTypeId: '',
-    startDate: new Date().toISOString().slice(0, 10),
-    endDate: new Date().toISOString().slice(0, 10),
+    startDate: toISTDateInputValue(),
+    endDate: toISTDateInputValue(),
     duration: 1,
     reason: ''
   });
@@ -73,6 +77,7 @@ export const MyProfilePage: React.FC = () => {
   const fetchProfile = async () => {
     setLoading(true);
     setError(null);
+    setUnlinked(false);
     try {
       const data = await apiRequest('/employees/me');
       setProfile(data);
@@ -83,8 +88,15 @@ export const MyProfilePage: React.FC = () => {
         setActiveSession(active || null);
       }
     } catch (err: any) {
-      console.error('Failed to load employee profile:', err);
-      setError(err.message || 'Failed to load profile details');
+      const msg: string = err?.message || '';
+      // "No employee record linked" is an expected, valid account state — not an
+      // error. Show a friendly notice; do NOT log to the console.
+      if (/no employee record linked/i.test(msg)) {
+        setUnlinked(true);
+      } else {
+        console.error('Failed to load employee profile:', err);
+        setError(msg || 'Failed to load profile details');
+      }
     } finally {
       setLoading(false);
     }
@@ -92,7 +104,7 @@ export const MyProfilePage: React.FC = () => {
 
   const fetchLeaveTypes = async () => {
     try {
-      const types = await apiRequest('/time-off/types-with-balances');
+      const types = await apiRequest('/time-off/types/balances');
       setLeaveTypes(types);
       if (types && types.length > 0 && !leaveForm.timeOffTypeId) {
         setLeaveForm(prev => ({ ...prev, timeOffTypeId: types[0].id }));
@@ -152,8 +164,8 @@ export const MyProfilePage: React.FC = () => {
         setLeaveSuccess(null);
         setLeaveForm({
           timeOffTypeId: leaveTypes[0]?.id || '',
-          startDate: new Date().toISOString().slice(0, 10),
-          endDate: new Date().toISOString().slice(0, 10),
+          startDate: toISTDateInputValue(),
+          endDate: toISTDateInputValue(),
           duration: 1,
           reason: ''
         });
@@ -240,15 +252,31 @@ export const MyProfilePage: React.FC = () => {
     );
   }
 
+  // Expected state: this login is not linked to an employee record.
+  if (unlinked) {
+    return (
+      <div className="max-w-2xl mx-auto my-12 p-8 text-center bg-white/80 dark:bg-[#0c0a14]/80 backdrop-blur-2xl border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl">
+        <div className="w-14 h-14 mx-auto rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-500 dark:text-indigo-400 mb-4">
+          <UserCheck size={28} />
+        </div>
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white">No linked employee profile</h2>
+        <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 max-w-md mx-auto leading-relaxed">
+          Your account isn't currently linked to an employee record. Contact your HR Administrator to have your
+          profile connected — once linked, your contracts, attendance, and payslips will appear here automatically.
+        </p>
+      </div>
+    );
+  }
+
   if (error || !profile) {
     return (
       <div className="max-w-2xl mx-auto my-12 p-8 text-center bg-white/80 dark:bg-[#0c0a14]/80 backdrop-blur-2xl border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl">
         <div className="w-14 h-14 mx-auto rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 mb-4">
           <AlertCircle size={28} />
         </div>
-        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Profile Pending Linkage</h2>
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Couldn't load your profile</h2>
         <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 max-w-md mx-auto leading-relaxed">
-          {error || 'No employee record is linked to your user account. Once HR provisions your employee profile with your email, your contracts, attendance, and payslips will synchronize here.'}
+          {error || 'Something went wrong loading your workspace. Please refresh the page or try again shortly.'}
         </p>
       </div>
     );
@@ -651,7 +679,7 @@ export const MyProfilePage: React.FC = () => {
                       <div>
                         <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Effective Period</span>
                         <span className="font-mono text-slate-800 dark:text-slate-200 font-semibold">
-                          {new Date(c.startDate).toLocaleDateString()} → {c.endDate ? new Date(c.endDate).toLocaleDateString() : 'Indefinite'}
+                          {formatDateIST(c.startDate)} → {c.endDate ? formatDateIST(c.endDate) : 'Indefinite'}
                         </span>
                       </div>
                       <div>
@@ -791,7 +819,7 @@ export const MyProfilePage: React.FC = () => {
                       return (
                         <tr key={att.id} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition">
                           <td className="px-6 py-4 font-mono font-medium text-slate-900 dark:text-white">
-                            {new Date(att.checkIn).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                            {new Date(att.checkIn).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
                           </td>
                           <td className="px-6 py-4 font-mono">
                             <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold">
@@ -871,7 +899,7 @@ export const MyProfilePage: React.FC = () => {
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 font-mono">
-                      Pay Period: {new Date(p.periodStart).toLocaleDateString()} → {new Date(p.periodEnd).toLocaleDateString()}
+                      Pay Period: {formatDateIST(p.periodStart)} → {formatDateIST(p.periodEnd)}
                     </p>
                     <div className="text-xs text-slate-600 dark:text-slate-400 pt-1 flex items-center gap-3">
                       <span>Worked Days: <strong className="text-slate-800 dark:text-slate-200 font-mono">{p.workedDays} days</strong></span>
@@ -956,7 +984,7 @@ export const MyProfilePage: React.FC = () => {
                           {req.timeOffType?.name || 'General Leave'}
                         </td>
                         <td className="px-6 py-4 font-mono">
-                          {new Date(req.startDate).toLocaleDateString()} → {new Date(req.endDate).toLocaleDateString()}
+                          {formatDateIST(req.startDate)} → {formatDateIST(req.endDate)}
                         </td>
                         <td className="px-6 py-4 font-mono font-bold text-indigo-600 dark:text-indigo-400">
                           {req.duration} {req.timeOffType?.unit || 'days'}
@@ -1143,7 +1171,7 @@ export const MyProfilePage: React.FC = () => {
                     {selectedPayslip.payrun?.name || 'Payslip Statement'}
                   </h3>
                   <p className="text-xs text-slate-500 font-mono">
-                    Period: {new Date(selectedPayslip.periodStart).toLocaleDateString()} → {new Date(selectedPayslip.periodEnd).toLocaleDateString()}
+                    Period: {formatDateIST(selectedPayslip.periodStart)} → {formatDateIST(selectedPayslip.periodEnd)}
                   </p>
                 </div>
               </div>

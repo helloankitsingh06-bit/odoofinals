@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { Navbar } from './components/Navbar';
@@ -13,9 +13,35 @@ import { SalaryStructuresPage } from './pages/SalaryStructuresPage';
 import { PayrunsPage } from './pages/PayrunsPage';
 import { MyProfilePage } from './pages/MyProfilePage';
 
+// Only actual Employee-role users land on their personal portal by default.
+// Every management role (Admin / HRManager / HRPayrollUser / HRPayrollManager)
+// lands on the Dashboard, regardless of whether they have a linked employeeId.
+const defaultTabForRole = (role?: string): string =>
+  role === 'Employee' ? 'my-profile' : 'dashboard';
+
+// Tabs an Employee-role user is ever allowed to see. Anything else (dashboard,
+// employees, payruns, …) is clamped back to their portal so a management page
+// never even mounts for them — not even for a single transient render.
+const EMPLOYEE_TABS = new Set(['my-profile', 'attendance', 'time-off']);
+
+const resolveTab = (role: string | undefined, tab: string): string => {
+  if (role === 'Employee' && !EMPLOYEE_TABS.has(tab)) return 'my-profile';
+  return tab;
+};
+
 const MainApp: React.FC = () => {
   const { user, isLoading } = useAuth();
-  const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [activeTab, setActiveTab] = useState<string>(defaultTabForRole(user?.role));
+
+  // Reset the landing tab whenever the signed-in user changes (login / role switch),
+  // so a stale tab from a previous session never carries over.
+  useEffect(() => {
+    if (user) setActiveTab(defaultTabForRole(user.role));
+  }, [user?.id]);
+
+  // Resolve at render time too, so the correct page renders on the very first
+  // paint after the user loads (before the effect above has a chance to run).
+  const currentTab = resolveTab(user?.role, activeTab);
 
   if (isLoading) {
     return (
@@ -35,23 +61,18 @@ const MainApp: React.FC = () => {
     return <ChangePasswordPage />;
   }
 
-  // If Employee role, redirect default tab away from Dashboard to My Details
-  if (user.role === 'Employee' && activeTab === 'dashboard') {
-    setActiveTab('my-profile');
-  }
-
   return (
     <div className="min-h-screen bg-[#f6f5fa] dark:bg-[#05040a] text-slate-900 dark:text-slate-100 flex flex-col selection:bg-purple-500/30 selection:text-amber-600 dark:selection:text-amber-200 transition-colors duration-300">
-      <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Navbar activeTab={currentTab} setActiveTab={setActiveTab} />
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === 'my-profile' && <MyProfilePage />}
-        {activeTab === 'dashboard' && <DashboardPage />}
-        {activeTab === 'employees' && <EmployeesPage />}
-        {activeTab === 'contracts' && <ContractsPage />}
-        {activeTab === 'attendance' && <AttendancePage />}
-        {activeTab === 'time-off' && <TimeOffPage />}
-        {activeTab === 'salary-structures' && <SalaryStructuresPage />}
-        {activeTab === 'payruns' && <PayrunsPage />}
+        {currentTab === 'my-profile' && <MyProfilePage />}
+        {currentTab === 'dashboard' && <DashboardPage />}
+        {currentTab === 'employees' && <EmployeesPage />}
+        {currentTab === 'contracts' && <ContractsPage />}
+        {currentTab === 'attendance' && <AttendancePage />}
+        {currentTab === 'time-off' && <TimeOffPage />}
+        {currentTab === 'salary-structures' && <SalaryStructuresPage />}
+        {currentTab === 'payruns' && <PayrunsPage />}
       </main>
     </div>
   );

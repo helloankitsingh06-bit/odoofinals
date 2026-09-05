@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { formatDateIST, toISTDateInputValue } from '../utils/datetime';
 import {
   DollarSign,
   CheckCircle2,
@@ -32,8 +33,8 @@ export const PayrunsPage: React.FC = () => {
   const [wizardData, setWizardData] = useState({
     name: '',
     salaryStructureId: '',
-    periodStart: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10),
-    periodEnd: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().slice(0, 10),
+    periodStart: toISTDateInputValue(new Date(new Date().getFullYear(), new Date().getMonth(), 1)),
+    periodEnd: toISTDateInputValue(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)),
     selectedEmployeeIds: [] as string[]
   });
   const [previewResult, setPreviewResult] = useState<any | null>(null);
@@ -310,9 +311,9 @@ export const PayrunsPage: React.FC = () => {
 
                     <h3 className="font-bold text-slate-900 dark:text-white text-sm tracking-tight">{pr.name}</h3>
                     <div className="text-[11px] text-slate-500 dark:text-purple-300/70 mt-1 font-mono flex items-center gap-1">
-                      <span>{new Date(pr.periodStart).toLocaleDateString()}</span>
+                      <span>{formatDateIST(pr.periodStart)}</span>
                       <span>→</span>
-                      <span>{new Date(pr.periodEnd).toLocaleDateString()}</span>
+                      <span>{formatDateIST(pr.periodEnd)}</span>
                     </div>
                     <div className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold mt-1.5 truncate">
                       {pr.salaryStructure?.name}
@@ -343,7 +344,7 @@ export const PayrunsPage: React.FC = () => {
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 dark:text-purple-300/70 mt-1 font-medium">
-                    Structure: <strong className="text-slate-800 dark:text-amber-300">{selectedPayrun.salaryStructure?.name}</strong> • Period: <span className="font-mono">{new Date(selectedPayrun.periodStart).toLocaleDateString()} → {new Date(selectedPayrun.periodEnd).toLocaleDateString()}</span>
+                    Structure: <strong className="text-slate-800 dark:text-amber-300">{selectedPayrun.salaryStructure?.name}</strong> • Period: <span className="font-mono">{formatDateIST(selectedPayrun.periodStart)} → {formatDateIST(selectedPayrun.periodEnd)}</span>
                   </p>
                 </div>
 
@@ -669,7 +670,7 @@ export const PayrunsPage: React.FC = () => {
                       No employees currently eligible for this cycle
                     </div>
                     <p className="text-[11px] text-slate-600 dark:text-purple-200/70">
-                      Employees must have a contract starting on or before <strong>{new Date(wizardData.periodStart).toLocaleDateString()}</strong> and active attendance logged in the office during this period.
+                      Employees must have a contract starting on or before <strong>{formatDateIST(wizardData.periodStart)}</strong> and active attendance logged in the office during this period.
                     </p>
                   </div>
                 ) : (

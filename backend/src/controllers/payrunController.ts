@@ -713,7 +713,7 @@ export const sendPayrunPayslips = async (req: Request, res: Response): Promise<v
 /**
  * Download Payslip PDF
  */
-export const downloadPayslipPdf = async (req: Request, res: Response): Promise<void> => {
+export const downloadPayslipPdf = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
 
@@ -730,6 +730,12 @@ export const downloadPayslipPdf = async (req: Request, res: Response): Promise<v
 
     if (!payslip) {
       res.status(404).json({ error: 'Payslip not found' });
+      return;
+    }
+
+    // An Employee-role user may only download their own payslip; payroll roles are unrestricted.
+    if (req.user && req.user.role === Role.Employee && req.user.employeeId !== payslip.employeeId) {
+      res.status(403).json({ error: 'Access forbidden: You can only download your own payslip' });
       return;
     }
 

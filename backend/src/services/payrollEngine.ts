@@ -356,27 +356,25 @@ export function computeEmployeePayslip(input: ComputationInput): ComputationResu
     });
   }
 
-  // 4. Summarize Gross and Net Totals
-  let grossTotal = 0;
-  let netTotal = 0;
+  // 4. Summarize Gross and Net Totals — driven purely by category classification,
+  //    NOT by matching a literal rule code/name. This keeps the payslip header
+  //    figures mathematically correct no matter what the user calls their rules
+  //    (e.g. a gross-aggregate rule named "TotalEarnings" instead of "GROSS").
+  //
+  //    Gross  = Σ (Basic + Allowance) earning components
+  //    Net    = Gross − Σ (Deduction) components
+  //
+  //    "Gross" and "Net" category rules are the aggregate lines themselves, so
+  //    they are intentionally excluded from these sums to avoid double-counting.
+  const grossTotal = ruleLines
+    .filter(l => l.category === RuleCategory.Basic || l.category === RuleCategory.Allowance)
+    .reduce((sum, l) => sum + l.amount, 0);
 
-  // If GROSS or NET was explicitly computed by a rule, honor it; otherwise aggregate by category
-  if ('GROSS' in computedValues) {
-    grossTotal = computedValues['GROSS'];
-  } else {
-    grossTotal = ruleLines
-      .filter(l => l.category === RuleCategory.Basic || l.category === RuleCategory.Allowance || l.category === RuleCategory.Gross)
-      .reduce((sum, l) => sum + l.amount, 0);
-  }
+  const totalDeductions = ruleLines
+    .filter(l => l.category === RuleCategory.Deduction)
+    .reduce((sum, l) => sum + l.amount, 0);
 
-  if ('NET' in computedValues) {
-    netTotal = computedValues['NET'];
-  } else {
-    const totalDeductions = ruleLines
-      .filter(l => l.category === RuleCategory.Deduction)
-      .reduce((sum, l) => sum + l.amount, 0);
-    netTotal = grossTotal - totalDeductions;
-  }
+  const netTotal = grossTotal - totalDeductions;
 
   // Validate Net Total
   if (netTotal < 0) {

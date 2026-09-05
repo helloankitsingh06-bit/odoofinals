@@ -460,7 +460,9 @@ export const approveRequest = async (req: Request, res: Response): Promise<void>
     });
 
     res.json({
-      message: 'Time off request approved and balance deducted successfully',
+      message: result.timeOffType.requiresAllocation
+        ? 'Time off request approved and balance deducted successfully'
+        : 'Time off request approved (quota-free — no balance deducted)',
       request: result
     });
   } catch (err: any) {
@@ -515,6 +517,19 @@ export const deleteRequest = async (req: AuthRequest, res: Response): Promise<vo
     if (!request) {
       res.status(404).json({ error: 'Time off request not found' });
       return;
+    }
+
+    // An Employee-role user may only self-cancel their OWN, still-Pending request.
+    // HR/Payroll roles may delete any request.
+    if (req.user && req.user.role === 'Employee') {
+      if (req.user.employeeId !== request.employeeId) {
+        res.status(403).json({ error: 'Access forbidden: You can only cancel your own leave requests' });
+        return;
+      }
+      if (request.status !== TimeOffStatus.Pending) {
+        res.status(400).json({ error: 'Only pending requests can be self-cancelled. Contact HR to modify an approved request.' });
+        return;
+      }
     }
 
     // If approved, restore the deducted quota back to the allocation

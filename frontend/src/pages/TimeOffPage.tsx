@@ -216,8 +216,8 @@ export const TimeOffPage: React.FC = () => {
       employeeName: req.employee?.name || 'Employee',
       timeOffTypeName: req.timeOffType?.name || 'Leave',
       isUnpaid,
-      startDate: new Date(req.startDate).toISOString().slice(0, 10),
-      endDate: new Date(req.endDate).toISOString().slice(0, 10),
+      startDate: toISTDateInputValue(req.startDate),
+      endDate: toISTDateInputValue(req.endDate),
       duration: req.duration,
       reason: req.reason || '',
       status: req.status
@@ -300,8 +300,8 @@ export const TimeOffPage: React.FC = () => {
       setRequestForm({
         employeeId: emp.id,
         timeOffTypeId: unpaidType ? unpaidType.id : (types[0]?.id || ''),
-        startDate: new Date().toISOString().slice(0, 10),
-        endDate: new Date().toISOString().slice(0, 10),
+        startDate: toISTDateInputValue(),
+        endDate: toISTDateInputValue(),
         duration: 1,
         reason: ''
       });
@@ -499,8 +499,8 @@ export const TimeOffPage: React.FC = () => {
       amount: alloc1 ? alloc1.allocatedAmount : 20,
       initialAmount: alloc1 ? alloc1.allocatedAmount : 0,
       taken: alloc1 ? alloc1.takenAmount : 0,
-      validFrom: alloc1?.validFrom ? new Date(alloc1.validFrom).toISOString().slice(0, 10) : defaultFrom,
-      validTo: alloc1?.validTo ? new Date(alloc1.validTo).toISOString().slice(0, 10) : defaultTo,
+      validFrom: alloc1?.validFrom ? toISTDateInputValue(alloc1.validFrom) : defaultFrom,
+      validTo: alloc1?.validTo ? toISTDateInputValue(alloc1.validTo) : defaultTo,
       allocationId: alloc1 ? alloc1.id : undefined,
       error: null
     });
@@ -510,8 +510,8 @@ export const TimeOffPage: React.FC = () => {
       amount: alloc2 ? alloc2.allocatedAmount : 10,
       initialAmount: alloc2 ? alloc2.allocatedAmount : 0,
       taken: alloc2 ? alloc2.takenAmount : 0,
-      validFrom: alloc2?.validFrom ? new Date(alloc2.validFrom).toISOString().slice(0, 10) : defaultFrom,
-      validTo: alloc2?.validTo ? new Date(alloc2.validTo).toISOString().slice(0, 10) : defaultTo,
+      validFrom: alloc2?.validFrom ? toISTDateInputValue(alloc2.validFrom) : defaultFrom,
+      validTo: alloc2?.validTo ? toISTDateInputValue(alloc2.validTo) : defaultTo,
       allocationId: alloc2 ? alloc2.id : undefined,
       error: null
     });
@@ -521,8 +521,8 @@ export const TimeOffPage: React.FC = () => {
       amount: alloc3 ? alloc3.allocatedAmount : 0,
       initialAmount: alloc3 ? alloc3.allocatedAmount : 0,
       taken: alloc3 ? alloc3.takenAmount : 0,
-      validFrom: alloc3?.validFrom ? new Date(alloc3.validFrom).toISOString().slice(0, 10) : defaultFrom,
-      validTo: alloc3?.validTo ? new Date(alloc3.validTo).toISOString().slice(0, 10) : defaultTo,
+      validFrom: alloc3?.validFrom ? toISTDateInputValue(alloc3.validFrom) : defaultFrom,
+      validTo: alloc3?.validTo ? toISTDateInputValue(alloc3.validTo) : defaultTo,
       allocationId: alloc3 ? alloc3.id : undefined,
       error: null
     });
@@ -541,8 +541,8 @@ export const TimeOffPage: React.FC = () => {
       amount: existing ? existing.allocatedAmount : prev.amount,
       initialAmount: existing ? existing.allocatedAmount : 0,
       taken: existing ? existing.takenAmount : 0,
-      validFrom: existing?.validFrom ? new Date(existing.validFrom).toISOString().slice(0, 10) : prev.validFrom || defaultFrom,
-      validTo: existing?.validTo ? new Date(existing.validTo).toISOString().slice(0, 10) : prev.validTo || defaultTo,
+      validFrom: existing?.validFrom ? toISTDateInputValue(existing.validFrom) : prev.validFrom || defaultFrom,
+      validTo: existing?.validTo ? toISTDateInputValue(existing.validTo) : prev.validTo || defaultTo,
       allocationId: existing ? existing.id : undefined,
       error: null
     });
