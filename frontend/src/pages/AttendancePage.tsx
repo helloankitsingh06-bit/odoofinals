@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { apiRequest } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { formatDateIST, formatTimeIST, toISTDateTimeInputValue } from '../utils/datetime';
 import { Clock, Plus, Play, Square, Sparkles, Search, ChevronDown, Check, X, AlertCircle, User, Calendar } from 'lucide-react';
 
 export const AttendancePage: React.FC = () => {
@@ -24,7 +25,7 @@ export const AttendancePage: React.FC = () => {
 
   const [manualForm, setManualForm] = useState({
     employeeId: '',
-    checkIn: new Date().toISOString().slice(0, 16),
+    checkIn: toISTDateTimeInputValue(),
     checkOut: '',
     status: 'Present'
   });
@@ -141,7 +142,7 @@ export const AttendancePage: React.FC = () => {
     const empName = (att.employee?.name || '').toLowerCase();
     const empDept = (att.employee?.department || '').toLowerCase();
     const status = (att.status || '').toLowerCase();
-    const checkInDate = new Date(att.checkIn).toLocaleDateString().toLowerCase();
+    const checkInDate = formatDateIST(att.checkIn).toLowerCase();
 
     const matchesSearch =
       !q ||
@@ -244,7 +245,7 @@ export const AttendancePage: React.FC = () => {
             <div className="text-base font-bold text-slate-900 dark:text-white mt-0.5">{user?.name}</div>
             <div className="text-[11px] text-slate-600 dark:text-purple-300/70 mt-1">
               Status: {activeSession ? (
-                <span className="text-amber-700 dark:text-amber-300 font-bold">Checked-In since {new Date(activeSession.checkIn).toLocaleTimeString()}</span>
+                <span className="text-amber-700 dark:text-amber-300 font-bold">Checked-In since {formatTimeIST(activeSession.checkIn)}</span>
               ) : (
                 <span className="text-slate-400 dark:text-purple-400/50 font-semibold">Checked-Out</span>
               )}
@@ -367,14 +368,14 @@ export const AttendancePage: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-5 py-4 font-mono text-slate-600 dark:text-purple-300/80">
-                      {new Date(att.checkIn).toLocaleDateString()}
+                      {formatDateIST(att.checkIn)}
                     </td>
                     <td className="px-5 py-4 font-mono text-slate-700 dark:text-purple-200">
-                      {new Date(att.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {formatTimeIST(att.checkIn)}
                     </td>
                     <td className="px-5 py-4 font-mono text-slate-700 dark:text-purple-200">
                       {att.checkOut ? (
-                        new Date(att.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        formatTimeIST(att.checkOut)
                       ) : (
                         <span className="text-amber-700 dark:text-amber-300 font-sans text-[11px] font-bold">Active Session</span>
                       )}

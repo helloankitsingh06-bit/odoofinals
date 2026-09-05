@@ -179,11 +179,13 @@ export const LoginPage: React.FC = () => {
     }
   };
 
+  // Role-based demo logins. Labels are generic and NOT tied to any specific
+  // employee record, so deleting seed people never leaves a stale name here.
   const demoRoles: RoleCard[] = [
     {
       role: 'Employee',
       title: 'Employee Portal',
-      name: 'Devon Hayes',
+      name: 'Employee',
       email: 'employee@peoplepay360.com',
       desc: 'Self-service dashboard, punch clock, time-off requests & personal payslips',
       badge: 'Self-Service',
@@ -193,7 +195,7 @@ export const LoginPage: React.FC = () => {
     {
       role: 'HRManager',
       title: 'HR Manager',
-      name: 'Marcus Sterling',
+      name: 'HR Manager',
       email: 'hrmanager@peoplepay360.com',
       desc: 'Employee directory CRUD, contract management, time-off approvals & schedules',
       badge: 'HR Admin',
@@ -203,7 +205,7 @@ export const LoginPage: React.FC = () => {
     {
       role: 'HRPayrollUser',
       title: 'Payroll Specialist',
-      name: 'Jordan Reed',
+      name: 'HR Payroll User',
       email: 'payrolluser@peoplepay360.com',
       desc: 'Execute payruns, compute salary rule lines, inspect attendance audit warnings',
       badge: 'Payroll Ops',
@@ -213,7 +215,7 @@ export const LoginPage: React.FC = () => {
     {
       role: 'HRPayrollManager',
       title: 'Payroll Director',
-      name: 'Sophia Chen',
+      name: 'HR Payroll Manager',
       email: 'payrollmgr@peoplepay360.com',
       desc: 'Full payroll lifecycle, structure rules configuration, mark as Paid & PDF dispatch',
       badge: 'Full Payroll',
@@ -223,7 +225,7 @@ export const LoginPage: React.FC = () => {
     {
       role: 'Admin',
       title: 'System Administrator',
-      name: 'Root Admin',
+      name: 'System Administrator',
       email: 'admin@peoplepay360.com',
       desc: 'Unrestricted master access, RBAC management, audit trails & security governance',
       badge: 'SuperAdmin',

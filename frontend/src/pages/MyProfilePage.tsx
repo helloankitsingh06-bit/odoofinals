@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { formatDateIST, formatTimeIST } from '../utils/datetime';
 import {
   UserCheck,
   Briefcase,
@@ -201,7 +202,7 @@ export const MyProfilePage: React.FC = () => {
                     <div className="flex justify-between text-slate-600 dark:text-purple-300/70">
                       <span>Period:</span>
                       <span className="font-mono text-slate-900 dark:text-purple-200">
-                        {new Date(c.startDate).toISOString().slice(0, 10)} → {c.endDate ? new Date(c.endDate).toISOString().slice(0, 10) : 'Open-Ended'}
+                        {formatDateIST(c.startDate)} → {c.endDate ? formatDateIST(c.endDate) : 'Open-Ended'}
                       </span>
                     </div>
                     <div className="flex justify-between text-slate-600 dark:text-purple-300/70">
@@ -279,9 +280,9 @@ export const MyProfilePage: React.FC = () => {
             <tbody className="divide-y divide-purple-100 dark:divide-purple-950 text-slate-800 dark:text-purple-100">
               {profile.attendances?.map((att: any) => (
                 <tr key={att.id} className="hover:bg-purple-50/50 dark:hover:bg-purple-950/20">
-                  <td className="px-5 py-3 font-mono">{new Date(att.checkIn).toLocaleDateString()}</td>
-                  <td className="px-5 py-3 font-mono text-purple-300">{new Date(att.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
-                  <td className="px-5 py-3 font-mono text-purple-300">{att.checkOut ? new Date(att.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}</td>
+                  <td className="px-5 py-3 font-mono">{formatDateIST(att.checkIn)}</td>
+                  <td className="px-5 py-3 font-mono text-purple-300">{formatTimeIST(att.checkIn)}</td>
+                  <td className="px-5 py-3 font-mono text-purple-300">{att.checkOut ? formatTimeIST(att.checkOut) : '—'}</td>
                   <td className="px-5 py-3 font-bold font-mono text-amber-300">{att.workedHours}h</td>
                   <td className="px-5 py-3">
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/15 text-amber-300 border border-amber-400/30">
@@ -319,7 +320,7 @@ export const MyProfilePage: React.FC = () => {
                   <td className="px-5 py-3 font-medium">
                     <div>{p.payrun?.name || 'Monthly Payrun'}</div>
                     <div className="text-[10px] text-purple-400/70 font-mono">
-                      {new Date(p.periodStart).toLocaleDateString()} → {new Date(p.periodEnd).toLocaleDateString()}
+                      {formatDateIST(p.periodStart)} → {formatDateIST(p.periodEnd)}
                     </div>
                   </td>
                   <td className="px-5 py-3 font-mono">{p.workedDays} days</td>

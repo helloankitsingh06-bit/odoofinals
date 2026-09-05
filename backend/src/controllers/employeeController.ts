@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
+import bcrypt from 'bcryptjs';
 import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../middleware/auth';
+import { VALID_ROLES, generateTempPassword } from '../types';
 
 export const listEmployees = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -98,7 +100,9 @@ export const createEmployee = async (req: Request, res: Response): Promise<void>
       jobPosition,
       managerId,
       workingScheduleId,
-      status = 'Active'
+      status = 'Active',
+      role,
+      isTopLevel = false
     } = req.body;
 
     if (!name || typeof name !== 'string' || !name.trim() ||
@@ -108,15 +112,37 @@ export const createEmployee = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    if (email && typeof email === 'string' && email.trim()) {
+    // --- Field-level validation first (format), then business rules below ---
+
+    // --- ISSUE 1B: an email is required so we can provision the login account ---
+    const cleanEmail = typeof email === 'string' ? email.trim() : '';
+    if (cleanEmail) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email.trim())) {
+      if (!emailRegex.test(cleanEmail)) {
         res.status(400).json({ error: 'Invalid email address format' });
         return;
       }
     }
+    if (!cleanEmail) {
+      res.status(400).json({ error: "An email address is required to create the employee's login account." });
+      return;
+    }
 
-    if (managerId) {
+    // --- ISSUE 1A: reporting manager is required (server-side), unless explicitly top-level ---
+    if (!isTopLevel && !managerId) {
+      res.status(400).json({ error: 'A reporting manager must be assigned before creating this employee.' });
+      return;
+    }
+
+    // --- ISSUE 4: an explicit, valid system role is required ---
+    if (!role || !VALID_ROLES.includes(role)) {
+      res.status(400).json({
+        error: `A valid system role is required. Choose one of: ${VALID_ROLES.join(', ')}`
+      });
+      return;
+    }
+
+    if (managerId && !isTopLevel) {
       const manager = await prisma.employee.findUnique({ where: { id: managerId } });
       if (!manager) {
         res.status(404).json({ error: 'Reporting manager not found' });
@@ -135,10 +161,10 @@ export const createEmployee = async (req: Request, res: Response): Promise<void>
     const employee = await prisma.employee.create({
       data: {
         name: name.trim(),
-        email: email && typeof email === 'string' && email.trim() ? email.trim() : null,
+        email: cleanEmail,
         department: department.trim(),
         jobPosition: jobPosition.trim(),
-        managerId: managerId || null,
+        managerId: isTopLevel ? null : (managerId || null),
         workingScheduleId: workingScheduleId || null,
         status
       },
@@ -148,19 +174,59 @@ export const createEmployee = async (req: Request, res: Response): Promise<void>
       }
     });
 
-    if (employee.email) {
-      const existingUser = await prisma.user.findFirst({
-        where: { email: employee.email }
+    // --- ISSUE 1B + ISSUE 4: provision (or link) the User login account ---
+    let tempPassword: string | null = null;
+    let userCreated = false;
+    let credentialNote = '';
+
+    const existingUser = await prisma.user.findFirst({ where: { email: cleanEmail } });
+    if (existingUser) {
+      // A login already exists for this email — link it and align its system role.
+      await prisma.user.update({
+        where: { id: existingUser.id },
+        data: { employeeId: employee.id, role }
       });
-      if (existingUser) {
-        await prisma.user.update({
-          where: { id: existingUser.id },
-          data: { employeeId: employee.id }
-        });
-      }
+      credentialNote =
+        'A login account for this email already existed. It has been linked to this employee and its role updated. ' +
+        'Its existing password was kept — use "Forgot password" if it needs to be reset.';
+    } else {
+      tempPassword = generateTempPassword(10);
+      const passwordHash = await bcrypt.hash(tempPassword, 10);
+      await prisma.user.create({
+        data: {
+          name: name.trim(),
+          email: cleanEmail,
+          passwordHash,
+          role,
+          employeeId: employee.id,
+          status: 'Active',
+          mustChangePassword: true
+        }
+      });
+      userCreated = true;
+      credentialNote =
+        'Share these credentials with the employee securely. They will be forced to set a new password on first login.';
     }
 
-    res.status(201).json(employee);
+    const full = await prisma.employee.findUnique({
+      where: { id: employee.id },
+      include: {
+        manager: { select: { id: true, name: true, jobPosition: true } },
+        workingSchedule: true,
+        user: { select: { id: true, email: true, role: true, status: true, mustChangePassword: true } }
+      }
+    });
+
+    res.status(201).json({
+      ...full,
+      credentials: {
+        loginEmail: cleanEmail,
+        tempPassword,
+        userCreated,
+        role,
+        note: credentialNote
+      }
+    });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -176,10 +242,12 @@ export const updateEmployee = async (req: Request, res: Response): Promise<void>
       jobPosition,
       managerId,
       workingScheduleId,
-      status
+      status,
+      role,
+      isTopLevel = false
     } = req.body;
 
-    const existing = await prisma.employee.findUnique({ where: { id } });
+    const existing = await prisma.employee.findUnique({ where: { id }, include: { user: true } });
     if (!existing) {
       res.status(404).json({ error: 'Employee not found' });
       return;
@@ -188,6 +256,23 @@ export const updateEmployee = async (req: Request, res: Response): Promise<void>
     // Prevent self-management loop
     if (managerId && managerId === id) {
       res.status(400).json({ error: 'An employee cannot be their own manager' });
+      return;
+    }
+
+    // --- ISSUE 1A: a reporting manager stays required unless explicitly top-level ---
+    if (managerId !== undefined) {
+      const resolvedManager = isTopLevel ? null : (managerId || null);
+      if (!resolvedManager && !isTopLevel) {
+        res.status(400).json({ error: 'A reporting manager must be assigned before creating this employee.' });
+        return;
+      }
+    }
+
+    // --- ISSUE 4: if a role is supplied it must be valid ---
+    if (role !== undefined && role !== null && role !== '' && !VALID_ROLES.includes(role)) {
+      res.status(400).json({
+        error: `A valid system role is required. Choose one of: ${VALID_ROLES.join(', ')}`
+      });
       return;
     }
 
@@ -227,7 +312,7 @@ export const updateEmployee = async (req: Request, res: Response): Promise<void>
         email: email !== undefined ? (email ? email.trim() : null) : undefined,
         department: department !== undefined ? department.trim() : undefined,
         jobPosition: jobPosition !== undefined ? jobPosition.trim() : undefined,
-        managerId: managerId !== undefined ? managerId : undefined,
+        managerId: managerId !== undefined ? (isTopLevel ? null : (managerId || null)) : undefined,
         workingScheduleId: workingScheduleId !== undefined ? workingScheduleId : undefined,
         status
       },
@@ -237,20 +322,35 @@ export const updateEmployee = async (req: Request, res: Response): Promise<void>
       }
     });
 
-    // Auto-link user account if email was set or updated
+    // Auto-link user account if email was set or updated, and keep the
+    // system role (ISSUE 4) in sync with what the form selected.
     if (updated.email) {
       const existingUser = await prisma.user.findFirst({
         where: { email: updated.email }
       });
-      if (existingUser && existingUser.employeeId !== updated.id) {
-        await prisma.user.update({
-          where: { id: existingUser.id },
-          data: { employeeId: updated.id }
-        });
+      if (existingUser) {
+        const userData: any = {};
+        if (existingUser.employeeId !== updated.id) userData.employeeId = updated.id;
+        if (role && VALID_ROLES.includes(role) && existingUser.role !== role) userData.role = role;
+        if (Object.keys(userData).length > 0) {
+          await prisma.user.update({ where: { id: existingUser.id }, data: userData });
+        }
       }
+    } else if (role && VALID_ROLES.includes(role) && existing.user && existing.user.role !== role) {
+      // Email cleared but a linked user still exists — still honour the role change.
+      await prisma.user.update({ where: { id: existing.user.id }, data: { role } });
     }
 
-    res.json(updated);
+    const result = await prisma.employee.findUnique({
+      where: { id },
+      include: {
+        manager: { select: { id: true, name: true, jobPosition: true } },
+        workingSchedule: true,
+        user: { select: { id: true, email: true, role: true, status: true, mustChangePassword: true } }
+      }
+    });
+
+    res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

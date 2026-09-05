@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { apiRequest } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { formatDateIST, toISTDateInputValue } from '../utils/datetime';
 import {
   Calendar,
   Check,
@@ -54,8 +55,8 @@ export const TimeOffPage: React.FC = () => {
   const [requestForm, setRequestForm] = useState({
     employeeId: '',
     timeOffTypeId: '',
-    startDate: new Date().toISOString().slice(0, 10),
-    endDate: new Date().toISOString().slice(0, 10),
+    startDate: toISTDateInputValue(),
+    endDate: toISTDateInputValue(),
     duration: 1,
     reason: ''
   });
@@ -423,7 +424,7 @@ export const TimeOffPage: React.FC = () => {
                   {req.timeOffType?.name}
                 </td>
                 <td className="px-5 py-4 font-mono text-purple-300/80">
-                  {new Date(req.startDate).toISOString().slice(0, 10)} → {new Date(req.endDate).toISOString().slice(0, 10)}
+                  {formatDateIST(req.startDate)} → {formatDateIST(req.endDate)}
                 </td>
                 <td className="px-5 py-4 font-bold font-mono text-white">
                   {req.duration} {req.timeOffType?.unit}

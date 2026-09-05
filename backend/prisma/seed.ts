@@ -273,9 +273,12 @@ async function main() {
   // 7. Users with 5 distinct roles (Password: Password123!)
   const passwordHash = await bcrypt.hash('Password123!', 10);
 
+  // NOTE: these are login accounts. Their `name` is a generic role label, never a
+  // specific person's name — so removing seed employees never leaves a stale
+  // "Marcus Sterling"-style reference on the login/role display.
   await prisma.user.create({
     data: {
-      name: 'Devon Hayes (Employee)',
+      name: 'Employee',
       email: 'employee@peoplepay360.com',
       passwordHash,
       role: Role.Employee,
@@ -286,7 +289,7 @@ async function main() {
 
   await prisma.user.create({
     data: {
-      name: 'Marcus Sterling (HR Manager)',
+      name: 'HR Manager',
       email: 'hrmanager@peoplepay360.com',
       passwordHash,
       role: Role.HRManager,
@@ -297,7 +300,7 @@ async function main() {
 
   await prisma.user.create({
     data: {
-      name: 'Jordan Reed (Payroll User)',
+      name: 'HR Payroll User',
       email: 'payrolluser@peoplepay360.com',
       passwordHash,
       role: Role.HRPayrollUser,
@@ -308,7 +311,7 @@ async function main() {
 
   await prisma.user.create({
     data: {
-      name: 'Sophia Chen (Payroll Manager)',
+      name: 'HR Payroll Manager',
       email: 'payrollmgr@peoplepay360.com',
       passwordHash,
       role: Role.HRPayrollManager,
