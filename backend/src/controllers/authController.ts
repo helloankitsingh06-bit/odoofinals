@@ -24,13 +24,27 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     const passwordHash = await bcrypt.hash(password, 10);
 
+    let linkedEmployeeId = employeeId || null;
+    if (!linkedEmployeeId) {
+      const newEmp = await prisma.employee.create({
+        data: {
+          name,
+          email,
+          department: role === 'Employee' ? 'Operations' : 'Management',
+          jobPosition: role === 'Employee' ? 'Staff Specialist' : role,
+          status: 'Active'
+        }
+      });
+      linkedEmployeeId = newEmp.id;
+    }
+
     const user = await prisma.user.create({
       data: {
         name,
         email,
         passwordHash,
         role,
-        employeeId: employeeId || null
+        employeeId: linkedEmployeeId
       },
       include: {
         employee: true
