@@ -322,11 +322,15 @@ export const TimeOffPage: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
+      // Employee-role users can only ever act on their own record and are not
+      // permitted to call GET /employees (403). Skip it for them — the request
+      // form falls back to user.employeeId below.
+      const canListEmployees = user?.role && user.role !== 'Employee';
       const [tData, aData, rData, eData] = await Promise.all([
         apiRequest('/time-off/types'),
         apiRequest('/time-off/allocations'),
         apiRequest('/time-off/requests'),
-        apiRequest('/employees').catch(() => [])
+        canListEmployees ? apiRequest('/employees').catch(() => []) : Promise.resolve([])
       ]);
       const cleanTypes = (tData || []).filter((t: any) => 
         !/\d{4,}/.test(t.name) && 
