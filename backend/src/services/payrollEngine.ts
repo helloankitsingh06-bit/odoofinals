@@ -39,6 +39,21 @@ export interface AttendanceRecord {
   status: string;
 }
 
+export const BUILTIN_VARIABLES = [
+  'WAGE',
+  'WORKED_DAYS',
+  'OVERTIME_HOURS',
+  'OVERTIME_DAYS',
+  'TOTAL_HOURS',
+  'UNPAID_LEAVE_DAYS',
+  'UNPAID_LEAVE_HOURS',
+  'PAID_LEAVE_DAYS',
+  'PAID_LEAVE_HOURS',
+  'LEAVE_DAYS',
+  'LEAVE_HOURS',
+  'TOTAL_LEAVE_DAYS'
+];
+
 export interface ComputationInput {
   employee: {
     id: string;
@@ -50,6 +65,8 @@ export interface ComputationInput {
   periodStart: Date;
   periodEnd: Date;
   attendances?: AttendanceRecord[];
+  unpaidLeaveDays?: number;
+  paidLeaveDays?: number;
   rules: RuleDefinition[]; // Ordered by position
 }
 
@@ -165,6 +182,10 @@ export class SafeFormulaEvaluator {
       return this.scope[upperToken];
     }
 
+    if (BUILTIN_VARIABLES.includes(upperToken)) {
+      return 0;
+    }
+
     throw new Error(`Referenced rule variable '${token}' has not been computed yet or does not exist`);
   }
 }
@@ -177,19 +198,13 @@ export function validateSalaryStructureRules(rules: RuleDefinition[]): {
   errors: string[];
 } {
   const errors: string[] = [];
-  const knownCodes = new Set<string>([
-    'WAGE',
-    'WORKED_DAYS',
-    'OVERTIME_HOURS',
-    'OVERTIME_DAYS',
-    'TOTAL_HOURS'
-  ]);
+  const knownCodes = new Set<string>(BUILTIN_VARIABLES);
 
   for (let i = 0; i < rules.length; i++) {
     const rule = rules[i];
     const code = rule.code.toUpperCase();
 
-    if (knownCodes.has(code) && !['WAGE', 'WORKED_DAYS', 'OVERTIME_HOURS', 'OVERTIME_DAYS', 'TOTAL_HOURS'].includes(code)) {
+    if (knownCodes.has(code) && !BUILTIN_VARIABLES.includes(code)) {
       errors.push(`Duplicate rule code '${rule.code}' found in structure`);
     }
 
@@ -309,12 +324,22 @@ export function computeEmployeePayslip(input: ComputationInput): ComputationResu
     workedDays = 22; // Standard default worked days
   }
 
+  const unpaidDays = Number(input.unpaidLeaveDays || 0);
+  const paidDays = Number(input.paidLeaveDays || 0);
+
   // Initialize Built-in Variables in scope
   computedValues['WAGE'] = contract.wage;
   computedValues['WORKED_DAYS'] = workedDays;
   computedValues['OVERTIME_HOURS'] = Math.round(overtimeHours * 10) / 10;
   computedValues['OVERTIME_DAYS'] = overtimeDays;
   computedValues['TOTAL_HOURS'] = Math.round(totalWorkedHours * 10) / 10;
+  computedValues['UNPAID_LEAVE_DAYS'] = unpaidDays;
+  computedValues['UNPAID_LEAVE_HOURS'] = Math.round(unpaidDays * 8 * 10) / 10;
+  computedValues['PAID_LEAVE_DAYS'] = paidDays;
+  computedValues['PAID_LEAVE_HOURS'] = Math.round(paidDays * 8 * 10) / 10;
+  computedValues['LEAVE_DAYS'] = unpaidDays + paidDays;
+  computedValues['LEAVE_HOURS'] = Math.round((unpaidDays + paidDays) * 8 * 10) / 10;
+  computedValues['TOTAL_LEAVE_DAYS'] = unpaidDays + paidDays;
 
   // 3. Sequential Rule Execution
   for (const rule of rules) {

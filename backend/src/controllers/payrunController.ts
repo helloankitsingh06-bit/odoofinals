@@ -353,6 +353,30 @@ export const computePayrun = async (req: Request, res: Response): Promise<void> 
         }
       });
 
+      // Fetch approved time off requests in period
+      const approvedLeaves = await prisma.timeOffRequest.findMany({
+        where: {
+          employeeId: employee.id,
+          status: 'Approved',
+          startDate: { lte: payrun.periodEnd },
+          endDate: { gte: payrun.periodStart }
+        },
+        include: {
+          timeOffType: true
+        }
+      });
+
+      let unpaidLeaveDays = 0;
+      let paidLeaveDays = 0;
+      for (const leave of approvedLeaves) {
+        const typeName = leave.timeOffType?.name?.toLowerCase() || '';
+        if (typeName.includes('unpaid')) {
+          unpaidLeaveDays += Number(leave.duration || 0);
+        } else {
+          paidLeaveDays += Number(leave.duration || 0);
+        }
+      }
+
       // Run Pure Computation Engine
       const calculation = computeEmployeePayslip({
         employee: {
@@ -373,6 +397,8 @@ export const computePayrun = async (req: Request, res: Response): Promise<void> 
         periodStart: payrun.periodStart,
         periodEnd: payrun.periodEnd,
         attendances,
+        unpaidLeaveDays,
+        paidLeaveDays,
         rules: structureRules
       });
 

@@ -131,4 +131,36 @@ describe('Salary Computation Engine', () => {
     const inactiveWarning = result.warnings.find(w => w.message.includes('not Active'));
     expect(inactiveWarning).toBeDefined();
   });
+
+  it('computes unpaid leave deductions and overtime pay correctly using built-in variables', () => {
+    const rulesWithUnpaidAndOvertime: RuleDefinition[] = [
+      { id: 'r1', name: 'Basic Salary', code: 'BASIC', category: RuleCategory.Basic, sequence: 1, computeType: ComputeType.Fixed, value: 30000 },
+      { id: 'r2', name: 'Overtime Pay', code: 'OVERTIME', category: RuleCategory.Allowance, sequence: 2, computeType: ComputeType.Formula, formula: 'OVERTIME_HOURS * (BASIC / 160) * 1.5' },
+      { id: 'r3', name: 'Gross Pay', code: 'GROSS', category: RuleCategory.Gross, sequence: 3, computeType: ComputeType.Formula, formula: 'BASIC + OVERTIME' },
+      { id: 'r4', name: 'Unpaid Leave Deduction', code: 'UNPAID_LEAVE', category: RuleCategory.Deduction, sequence: 4, computeType: ComputeType.Formula, formula: 'UNPAID_LEAVE_DAYS * (BASIC / 30)' },
+      { id: 'r5', name: 'Net Pay', code: 'NET', category: RuleCategory.Net, sequence: 5, computeType: ComputeType.Formula, formula: 'GROSS - UNPAID_LEAVE' }
+    ];
+
+    const result = computeEmployeePayslip({
+      employee: { id: 'emp1', name: 'Kevin', department: 'Engineering', jobPosition: 'Developer' },
+      contract: { ...dummyContract, wage: 30000 },
+      periodStart: new Date('2026-09-01'),
+      periodEnd: new Date('2026-09-30'),
+      attendances: [
+        { id: 'a1', employeeId: 'emp1', checkIn: new Date('2026-09-01T09:00:00Z'), checkOut: new Date('2026-09-01T20:30:00Z'), workedHours: 10.5, status: 'Overtime' }
+      ],
+      unpaidLeaveDays: 2,
+      rules: rulesWithUnpaidAndOvertime
+    });
+
+    // Overtime: 2.5 hours * (30000 / 160) * 1.5 = 2.5 * 187.5 * 1.5 = 703.125 -> 703.13
+    // Gross: 30000 + 703.13 = 30703.13
+    // Unpaid Leave: 2 * (30000 / 30) = 2000
+    // Net: 30703.13 - 2000 = 28703.13
+    expect(result.computedValues['UNPAID_LEAVE_DAYS']).toBe(2);
+    expect(result.computedValues['OVERTIME_HOURS']).toBe(2.5);
+    expect(result.computedValues['OVERTIME']).toBe(703.13);
+    expect(result.computedValues['UNPAID_LEAVE']).toBe(2000);
+    expect(result.netTotal).toBe(28703.13);
+  });
 });
