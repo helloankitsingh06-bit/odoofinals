@@ -142,9 +142,10 @@ export const createEmployee = async (req: Request, res: Response): Promise<void>
       return;
     }
 
+    let managerRecord: any = null;
     if (managerId && !isTopLevel) {
-      const manager = await prisma.employee.findUnique({ where: { id: managerId } });
-      if (!manager) {
+      managerRecord = await prisma.employee.findUnique({ where: { id: managerId } });
+      if (!managerRecord) {
         res.status(404).json({ error: 'Reporting manager not found' });
         return;
       }
@@ -165,6 +166,7 @@ export const createEmployee = async (req: Request, res: Response): Promise<void>
         department: department.trim(),
         jobPosition: jobPosition.trim(),
         managerId: isTopLevel ? null : (managerId || null),
+        managerName: isTopLevel ? null : (managerRecord?.name || null),
         workingScheduleId: workingScheduleId || null,
         status
       },
@@ -289,11 +291,21 @@ export const updateEmployee = async (req: Request, res: Response): Promise<void>
       }
     }
 
-    if (managerId) {
-      const manager = await prisma.employee.findUnique({ where: { id: managerId } });
-      if (!manager) {
-        res.status(404).json({ error: 'Reporting manager not found' });
-        return;
+    let resolvedManagerId: string | null | undefined = undefined;
+    let resolvedManagerName: string | null | undefined = undefined;
+
+    if (managerId !== undefined) {
+      if (isTopLevel || !managerId) {
+        resolvedManagerId = null;
+        resolvedManagerName = null;
+      } else {
+        const mgr = await prisma.employee.findUnique({ where: { id: managerId } });
+        if (!mgr) {
+          res.status(404).json({ error: 'Reporting manager not found' });
+          return;
+        }
+        resolvedManagerId = managerId;
+        resolvedManagerName = mgr.name;
       }
     }
 
@@ -312,7 +324,8 @@ export const updateEmployee = async (req: Request, res: Response): Promise<void>
         email: email !== undefined ? (email ? email.trim() : null) : undefined,
         department: department !== undefined ? department.trim() : undefined,
         jobPosition: jobPosition !== undefined ? jobPosition.trim() : undefined,
-        managerId: managerId !== undefined ? (isTopLevel ? null : (managerId || null)) : undefined,
+        managerId: resolvedManagerId,
+        managerName: resolvedManagerName,
         workingScheduleId: workingScheduleId !== undefined ? workingScheduleId : undefined,
         status
       },
@@ -321,6 +334,14 @@ export const updateEmployee = async (req: Request, res: Response): Promise<void>
         workingSchedule: true
       }
     });
+
+    // If employee name changed, sync managerName for all subordinates reporting to this employee
+    if (name !== undefined && name.trim() !== existing.name) {
+      await prisma.employee.updateMany({
+        where: { managerId: id },
+        data: { managerName: name.trim() }
+      });
+    }
 
     // Auto-link user account if email was set or updated, and keep the
     // system role (ISSUE 4) in sync with what the form selected.

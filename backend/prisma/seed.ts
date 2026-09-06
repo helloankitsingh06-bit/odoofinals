@@ -151,6 +151,7 @@ async function main() {
       department: 'Human Resources',
       jobPosition: 'Head of People & Culture',
       managerId: empCEO.id,
+      managerName: empCEO.name,
       workingScheduleId: standardSchedule.id,
       status: 'Active'
     }
@@ -163,6 +164,7 @@ async function main() {
       department: 'Finance & Payroll',
       jobPosition: 'Payroll Director',
       managerId: empCEO.id,
+      managerName: empCEO.name,
       workingScheduleId: standardSchedule.id,
       status: 'Active'
     }
@@ -175,6 +177,7 @@ async function main() {
       department: 'Engineering',
       jobPosition: 'Principal Staff Engineer',
       managerId: empCEO.id,
+      managerName: empCEO.name,
       workingScheduleId: standardSchedule.id,
       status: 'Active'
     }
@@ -187,6 +190,7 @@ async function main() {
       department: 'Engineering',
       jobPosition: 'Senior Full Stack Engineer',
       managerId: empSeniorDev.id,
+      managerName: empSeniorDev.name,
       workingScheduleId: standardSchedule.id,
       status: 'Active'
     }
@@ -199,6 +203,7 @@ async function main() {
       department: 'Engineering',
       jobPosition: 'Frontend Architect',
       managerId: empSeniorDev.id,
+      managerName: empSeniorDev.name,
       workingScheduleId: standardSchedule.id,
       status: 'Active'
     }
