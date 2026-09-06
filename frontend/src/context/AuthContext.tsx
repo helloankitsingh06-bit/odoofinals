@@ -37,7 +37,7 @@ const DEMO_USERS: Record<UserRole, { email: string; name: string }> = {
   HRManager: { email: 'hrmanager@peoplepay360.com', name: 'HR Manager' },
   HRPayrollUser: { email: 'payrolluser@peoplepay360.com', name: 'HR Payroll User' },
   HRPayrollManager: { email: 'payrollmgr@peoplepay360.com', name: 'HR Payroll Manager' },
-  Admin: { email: 'admin@peoplepay360.com', name: 'System Administrator' }
+  Admin: { email: 'admin@peoplepay360.com', name: 'Admin' }
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

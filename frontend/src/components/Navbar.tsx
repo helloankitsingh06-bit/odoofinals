@@ -23,11 +23,11 @@ interface NavbarProps {
 }
 
 const ROLE_DISPLAY_NAMES: Record<UserRole, string> = {
-  Employee: 'Self-Service',
+  Employee: 'Employee',
   HRManager: 'HR Manager',
-  HRPayrollUser: 'Payroll Ops',
-  HRPayrollManager: 'Payroll Director',
-  Admin: 'Administrator'
+  HRPayrollUser: 'HR Payroll User',
+  HRPayrollManager: 'HR Payroll Manager',
+  Admin: 'Admin'
 };
 
 export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {

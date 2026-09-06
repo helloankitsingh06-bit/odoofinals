@@ -193,11 +193,11 @@ export const LoginPage: React.FC = () => {
   const demoRoles: RoleCard[] = [
     {
       role: 'Employee',
-      title: 'Employee Portal',
+      title: 'Employee',
       name: 'Devon Hayes',
       email: 'employee@peoplepay360.com',
-      desc: 'Self-service dashboard, punch clock, time-off requests & personal payslips',
-      badge: 'Self-Service',
+      desc: 'View own employee details, view own contract, create & view attendance, request time off & balances',
+      badge: 'Employee',
       gradient: 'from-purple-500/20 to-purple-950/10 hover:border-purple-400/60',
       icon: <UserCheck className="text-purple-600 dark:text-purple-300" size={18} />
     },
@@ -206,38 +206,38 @@ export const LoginPage: React.FC = () => {
       title: 'HR Manager',
       name: 'Marcus Sterling',
       email: 'hrmanager@peoplepay360.com',
-      desc: 'Employee directory CRUD, contract management, time-off approvals & schedules',
-      badge: 'HR Admin',
+      desc: 'Full CRUD access to Employees, Contracts, Attendance & Time Off; approve/refuse time off requests',
+      badge: 'HR Manager',
       gradient: 'from-amber-500/20 to-yellow-950/10 hover:border-amber-400/60',
       icon: <Sliders className="text-amber-600 dark:text-amber-300" size={18} />
     },
     {
       role: 'HRPayrollUser',
-      title: 'Payroll Specialist',
+      title: 'HR Payroll User',
       name: 'Jordan Reed',
       email: 'payrolluser@peoplepay360.com',
-      desc: 'Execute payruns, compute salary rule lines, inspect attendance audit warnings',
-      badge: 'Payroll Ops',
+      desc: 'All HR Manager permissions + generate & validate Payslips; read-only access to Salary Rules & Structures',
+      badge: 'HR Payroll User',
       gradient: 'from-purple-500/20 to-violet-950/10 hover:border-purple-400/60',
       icon: <Calculator className="text-purple-600 dark:text-purple-300" size={18} />
     },
     {
       role: 'HRPayrollManager',
-      title: 'Payroll Director',
+      title: 'HR Payroll Manager',
       name: 'Sophia Chen',
       email: 'payrollmgr@peoplepay360.com',
-      desc: 'Full payroll lifecycle, structure rules configuration, mark as Paid & PDF dispatch',
-      badge: 'Full Payroll',
+      desc: 'All HR Payroll User permissions + create/edit Salary Rules, Structures, Packages; full HR & Payroll control',
+      badge: 'HR Payroll Manager',
       gradient: 'from-amber-500/25 to-yellow-950/10 hover:border-amber-400/70',
       icon: <Crown className="text-amber-600 dark:text-amber-400" size={18} />
     },
     {
       role: 'Admin',
-      title: 'System Administrator',
+      title: 'Admin',
       name: 'Root Admin',
       email: 'admin@peoplepay360.com',
-      desc: 'Unrestricted master access, RBAC management, audit trails & security governance',
-      badge: 'SuperAdmin',
+      desc: 'Full system control, unrestricted master access across all modules, RBAC management & security governance',
+      badge: 'Admin',
       gradient: 'from-purple-600/25 to-amber-500/15 hover:border-purple-400/60',
       icon: <ShieldCheck className="text-amber-600 dark:text-amber-300" size={18} />
     }
@@ -561,9 +561,9 @@ export const LoginPage: React.FC = () => {
                     >
                       <option value="Employee">Employee</option>
                       <option value="HRManager">HR Manager</option>
-                      <option value="HRPayrollUser">Payroll Specialist</option>
-                      <option value="HRPayrollManager">Payroll Director</option>
-                      <option value="Admin">System Administrator</option>
+                      <option value="HRPayrollUser">HR Payroll User</option>
+                      <option value="HRPayrollManager">HR Payroll Manager</option>
+                      <option value="Admin">Admin</option>
                     </select>
                   </div>
 
