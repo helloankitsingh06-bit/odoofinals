@@ -22,6 +22,8 @@ export const SalaryStructuresPage: React.FC = () => {
   const [showEditRuleModal, setShowEditRuleModal] = useState<boolean>(false);
   const [editingRuleId, setEditingRuleId] = useState<string | null>(null);
   const [showStructureModal, setShowStructureModal] = useState<boolean>(false);
+  const [showEditStructureModal, setShowEditStructureModal] = useState<boolean>(false);
+  const [editingStructureId, setEditingStructureId] = useState<string | null>(null);
 
   const [ruleForm, setRuleForm] = useState({
     name: '',
@@ -48,8 +50,16 @@ export const SalaryStructuresPage: React.FC = () => {
     ruleIds: [] as string[]
   });
 
+  const [editStructureForm, setEditStructureForm] = useState({
+    name: '',
+    ruleIds: [] as string[]
+  });
+
   const [validationResult, setValidationResult] = useState<{ valid: boolean; errors: string[] } | null>(null);
   const [validating, setValidating] = useState<boolean>(false);
+
+  const [editStructureValidationResult, setEditStructureValidationResult] = useState<{ valid: boolean; errors: string[] } | null>(null);
+  const [editStructureValidating, setEditStructureValidating] = useState<boolean>(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -125,6 +135,17 @@ export const SalaryStructuresPage: React.FC = () => {
     }
   };
 
+  const openEditStructureModal = (st: any) => {
+    setEditingStructureId(st.id);
+    const existingRuleIds = st.rules ? st.rules.map((r: any) => r.salaryRuleId || r.salaryRule?.id).filter(Boolean) : [];
+    setEditStructureForm({
+      name: st.name || '',
+      ruleIds: existingRuleIds
+    });
+    setEditStructureValidationResult(null);
+    setShowEditStructureModal(true);
+  };
+
   const handleDeleteStructure = async (id: string, name: string) => {
     if (!window.confirm(`Are you sure you want to delete structure "${name}"?`)) return;
     try {
@@ -154,6 +175,25 @@ export const SalaryStructuresPage: React.FC = () => {
     }
   };
 
+  const handleDryRunValidateEdit = async () => {
+    if (editStructureForm.ruleIds.length === 0) {
+      setEditStructureValidationResult({ valid: false, errors: ['Please select at least one rule'] });
+      return;
+    }
+    setEditStructureValidating(true);
+    try {
+      const result = await apiRequest('/salary-structures/validate', {
+        method: 'POST',
+        body: JSON.stringify({ ruleIds: editStructureForm.ruleIds })
+      });
+      setEditStructureValidationResult(result);
+    } catch (err: any) {
+      setEditStructureValidationResult({ valid: false, errors: [err.message] });
+    } finally {
+      setEditStructureValidating(false);
+    }
+  };
+
   const handleCreateStructure = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -170,6 +210,25 @@ export const SalaryStructuresPage: React.FC = () => {
       fetchData();
     } catch (err: any) {
       alert(err.message || 'Failed to save structure');
+    }
+  };
+
+  const handleUpdateStructure = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingStructureId) return;
+    try {
+      await apiRequest(`/salary-structures/structures/${editingStructureId}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          name: editStructureForm.name,
+          ruleIds: editStructureForm.ruleIds
+        })
+      });
+      setShowEditStructureModal(false);
+      setEditStructureValidationResult(null);
+      fetchData();
+    } catch (err: any) {
+      alert(err.message || 'Failed to update structure');
     }
   };
 
@@ -221,9 +280,29 @@ export const SalaryStructuresPage: React.FC = () => {
             <div key={st.id} className="bg-white dark:bg-[#0b0914]/80 border border-purple-100 dark:border-purple-900/40 hover:border-amber-400/60 p-5 rounded-3xl shadow-sm hover:shadow-md dark:shadow-xl transition-all duration-300">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-bold text-slate-900 dark:text-white text-base">{st.name}</h3>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-200 border border-purple-200 dark:border-purple-500/30">
-                  {st.rules?.length || 0} Ordered Rules
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-200 border border-purple-200 dark:border-purple-500/30">
+                    {st.rules?.length || 0} Ordered Rules
+                  </span>
+                  {!isReadOnly && (
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => openEditStructureModal(st)}
+                        className="p-1.5 rounded-lg bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-amber-400/20 text-purple-700 dark:text-purple-300 hover:text-amber-700 dark:hover:text-amber-300 border border-purple-200 dark:border-purple-900/50 transition font-bold cursor-pointer"
+                        title="Edit Salary Structure"
+                      >
+                        <Edit2 size={12} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteStructure(st.id, st.name)}
+                        className="p-1.5 rounded-lg bg-rose-50 dark:bg-purple-950/60 hover:bg-rose-100 dark:hover:bg-rose-500/20 text-rose-600 dark:text-purple-300 hover:text-rose-700 dark:hover:text-rose-400 border border-rose-200 dark:border-purple-900/50 transition font-bold cursor-pointer"
+                        title="Delete Salary Structure"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-2 mt-4">
@@ -682,6 +761,119 @@ export const SalaryStructuresPage: React.FC = () => {
                   className="px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 disabled:opacity-50 text-slate-950 rounded-xl font-black shadow-md shadow-amber-500/20 cursor-pointer"
                 >
                   Save Structure
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Structure Modal with Live Dry-Run Validation */}
+      {showEditStructureModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-md p-4">
+          <div className="bg-white dark:bg-[#090712] border border-purple-200 dark:border-purple-800/60 rounded-3xl w-full max-w-xl p-6 shadow-2xl transition-colors duration-300">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+              <Edit2 size={18} className="text-amber-500 dark:text-amber-400" />
+              Edit Salary Structure
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-purple-300/60 mb-4 font-medium">
+              Update structure name, add/remove salary rules, and validate calculation sequence.
+            </p>
+
+            <form onSubmit={handleUpdateStructure} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Structure Name</label>
+                <input
+                  type="text"
+                  required
+                  value={editStructureForm.name}
+                  onChange={(e) => setEditStructureForm({ ...editStructureForm, name: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 font-medium"
+                  placeholder="e.g. Executive Compensation Package"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Ordered Rule Sequence:</label>
+                <div className="space-y-2 max-h-48 overflow-y-auto p-2.5 bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-2xl">
+                  {rules.map((r) => {
+                    const isChecked = editStructureForm.ruleIds.includes(r.id);
+                    return (
+                      <label
+                        key={r.id}
+                        className={`flex items-center justify-between p-2.5 rounded-xl cursor-pointer transition ${
+                          isChecked ? 'bg-purple-100 dark:bg-purple-950/60 border border-amber-500/40 dark:border-amber-400/40 shadow-sm' : 'bg-white dark:bg-[#08070e] opacity-70 border border-slate-200 dark:border-transparent'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setEditStructureForm(prev => ({ ...prev, ruleIds: [...prev.ruleIds, r.id] }));
+                              } else {
+                                setEditStructureForm(prev => ({ ...prev, ruleIds: prev.ruleIds.filter(id => id !== r.id) }));
+                              }
+                            }}
+                            className="rounded text-amber-500"
+                          />
+                          <span className="font-semibold text-slate-900 dark:text-white">{r.name}</span>
+                          <span className="text-[10px] text-amber-700 dark:text-amber-300 font-mono font-bold">[{r.code}]</span>
+                        </div>
+                        <span className="text-[10px] text-slate-500 dark:text-purple-400/70 font-mono font-medium">{r.computeType}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Dry-run Validator Feedback */}
+              <div className="p-3.5 bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-2xl">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-800 dark:text-purple-200">Dry-Run Dependency Check</span>
+                  <button
+                    type="button"
+                    onClick={handleDryRunValidateEdit}
+                    disabled={editStructureValidating}
+                    className="px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-[11px] font-bold shadow-sm cursor-pointer"
+                  >
+                    {editStructureValidating ? 'Checking...' : 'Run Dry Validation'}
+                  </button>
+                </div>
+
+                {editStructureValidationResult && (
+                  <div className={`mt-2.5 p-3 rounded-xl text-[11px] ${
+                    editStructureValidationResult.valid ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30' : 'bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-500/40'
+                  }`}>
+                    {editStructureValidationResult.valid ? (
+                      <div className="flex items-center gap-1.5 font-bold">
+                        <Check size={14} className="text-amber-600 dark:text-amber-400" /> Structure rules sequence is mathematically sound with 0 forward reference errors!
+                      </div>
+                    ) : (
+                      <div>
+                        <strong className="block font-bold">Validation Errors:</strong>
+                        {editStructureValidationResult.errors.map((err, i) => <div key={i}>• {err}</div>)}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 border-t border-purple-100 dark:border-purple-900/40">
+                <button
+                  type="button"
+                  onClick={() => setShowEditStructureModal(false)}
+                  className="px-4 py-2 bg-slate-100 dark:bg-purple-950/60 border border-slate-200 dark:border-purple-900/50 text-slate-600 dark:text-purple-300 rounded-xl hover:bg-slate-200 dark:hover:bg-purple-900/40 font-bold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editStructureValidationResult?.valid === false}
+                  className="px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:from-yellow-400 hover:to-amber-500 disabled:opacity-50 text-slate-950 rounded-xl font-black shadow-md shadow-amber-500/20 cursor-pointer"
+                >
+                  Update Structure
                 </button>
               </div>
             </form>
