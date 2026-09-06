@@ -177,13 +177,19 @@ export function validateSalaryStructureRules(rules: RuleDefinition[]): {
   errors: string[];
 } {
   const errors: string[] = [];
-  const knownCodes = new Set<string>();
+  const knownCodes = new Set<string>([
+    'WAGE',
+    'WORKED_DAYS',
+    'OVERTIME_HOURS',
+    'OVERTIME_DAYS',
+    'TOTAL_HOURS'
+  ]);
 
   for (let i = 0; i < rules.length; i++) {
     const rule = rules[i];
     const code = rule.code.toUpperCase();
 
-    if (knownCodes.has(code)) {
+    if (knownCodes.has(code) && !['WAGE', 'WORKED_DAYS', 'OVERTIME_HOURS', 'OVERTIME_DAYS', 'TOTAL_HOURS'].includes(code)) {
       errors.push(`Duplicate rule code '${rule.code}' found in structure`);
     }
 
@@ -258,14 +264,27 @@ export function computeEmployeePayslip(input: ComputationInput): ComputationResu
     });
   }
 
-  // 2. Attendance & Worked Days Computation
+  // 2. Attendance & Worked Days / Overtime Computation
   let workedDays = 0;
   let missingCheckoutCount = 0;
+  let overtimeHours = 0;
+  let overtimeDays = 0;
+  let totalWorkedHours = 0;
 
   for (const att of attendances) {
     const status = att.status;
-    if (status === 'Present' || status === 'Overtime') {
+    const hours = att.workedHours || 0;
+    totalWorkedHours += hours;
+
+    if (status === 'Overtime') {
       workedDays += 1.0;
+      overtimeDays += 1;
+      overtimeHours += Math.max(0, hours > 8 ? hours - 8 : hours);
+    } else if (status === 'Present') {
+      workedDays += 1.0;
+      if (hours > 8) {
+        overtimeHours += (hours - 8);
+      }
     } else if (status === 'Late') {
       workedDays += 0.9; // count worked with slight late consideration or 1.0
     } else if (status === 'MissingCheckout') {
@@ -290,9 +309,12 @@ export function computeEmployeePayslip(input: ComputationInput): ComputationResu
     workedDays = 22; // Standard default worked days
   }
 
-  // Initialize Base Wage in scope
+  // Initialize Built-in Variables in scope
   computedValues['WAGE'] = contract.wage;
   computedValues['WORKED_DAYS'] = workedDays;
+  computedValues['OVERTIME_HOURS'] = Math.round(overtimeHours * 10) / 10;
+  computedValues['OVERTIME_DAYS'] = overtimeDays;
+  computedValues['TOTAL_HOURS'] = Math.round(totalWorkedHours * 10) / 10;
 
   // 3. Sequential Rule Execution
   for (const rule of rules) {
