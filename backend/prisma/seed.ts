@@ -496,29 +496,74 @@ async function main() {
     });
   }
 
-  // 9. Attendance Records (June 1, 2026 to Sept 5, 2026)
+  // 9. Attendance Records (June 1, 2026 to Sept 5, 2026 with Overtime, Late, Missing Check-outs, Manual Edits)
   const attendanceStartDate = new Date(2026, 5, 1); // June 1, 2026
   const attendanceEndDate = new Date(2026, 8, 5);   // Sept 5, 2026
 
   let curDate = new Date(attendanceStartDate);
   let totalAttendanceCount = 0;
+  let dayIndex = 0;
+  const statusCounts = { Present: 0, Overtime: 0, Late: 0, MissingCheckout: 0, manualEdits: 0 };
 
   while (curDate <= attendanceEndDate) {
     const dayOfWeek = curDate.getDay();
     if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Monday to Friday
-      for (const emp of allEmployees) {
-        const checkIn = new Date(curDate);
-        checkIn.setHours(9, 0, 0, 0);
-        const checkOut = new Date(curDate);
-        checkOut.setHours(18, 0, 0, 0);
+      dayIndex++;
+      for (let empIdx = 0; empIdx < allEmployees.length; empIdx++) {
+        const emp = allEmployees[empIdx];
+        let status = AttendanceStatus.Present;
+        let checkIn = new Date(curDate);
+        let checkOut: Date | null = new Date(curDate);
+        let workedHours = 8.0;
+        let isManualEdit = false;
+
+        // Missing checkouts (~14 occurrences)
+        if ((dayIndex + empIdx * 7) % 35 === 13) {
+          status = AttendanceStatus.MissingCheckout;
+          checkIn.setHours(9, 0, 0, 0);
+          checkOut = null;
+          workedHours = 0.0;
+          statusCounts.MissingCheckout++;
+        }
+        // Overtime (~43 occurrences)
+        else if ((dayIndex + empIdx * 3) % 11 === 2) {
+          status = AttendanceStatus.Overtime;
+          checkIn.setHours(9, 0, 0, 0);
+          checkOut.setHours(20, 30, 0, 0);
+          workedHours = 10.5;
+          statusCounts.Overtime++;
+        }
+        // Late arrivals (~25 occurrences)
+        else if ((dayIndex + empIdx * 5) % 17 === 3) {
+          status = AttendanceStatus.Late;
+          checkIn.setHours(9, 45, 0, 0);
+          checkOut.setHours(18, 0, 0, 0);
+          workedHours = 7.25;
+          statusCounts.Late++;
+        }
+        // Standard Present
+        else {
+          status = AttendanceStatus.Present;
+          checkIn.setHours(9, 0, 0, 0);
+          checkOut.setHours(18, 0, 0, 0);
+          workedHours = 8.0;
+          statusCounts.Present++;
+        }
+
+        // Manual HR Edits (~13 occurrences)
+        if ((dayIndex + empIdx * 11) % 37 === 5) {
+          isManualEdit = true;
+          statusCounts.manualEdits++;
+        }
 
         await prisma.attendance.create({
           data: {
             employeeId: emp.id,
             checkIn,
             checkOut,
-            workedHours: 8.0,
-            status: AttendanceStatus.Present
+            workedHours,
+            status,
+            isManualEdit
           }
         });
         totalAttendanceCount++;
@@ -527,7 +572,12 @@ async function main() {
     curDate.setDate(curDate.getDate() + 1);
   }
 
-  console.log(`✅ Created ${totalAttendanceCount} attendance records from June 1, 2026 to September 5, 2026.`);
+  console.log(`✅ Created ${totalAttendanceCount} attendance records from June 1, 2026 to September 5, 2026:`);
+  console.log(`   • Present (On-Time):    ${statusCounts.Present}`);
+  console.log(`   • Overtime Worked:      ${statusCounts.Overtime}`);
+  console.log(`   • Late Arrivals:        ${statusCounts.Late}`);
+  console.log(`   • Missing Check-Outs:   ${statusCounts.MissingCheckout}`);
+  console.log(`   • Manual HR Edits:      ${statusCounts.manualEdits}`);
   console.log('✅ Seeding completed successfully! (No pre-computed payruns - ready for wizard run)');
   console.log('🔑 Demo Login Credentials:');
   console.log('   • krish@gmail.com / Password123! (CEO / Admin)');
