@@ -272,7 +272,7 @@ export const SalaryStructuresPage: React.FC = () => {
               <th className="px-5 py-4">Code</th>
               <th className="px-5 py-4">Category</th>
               <th className="px-5 py-4">Computation Type</th>
-              <th className="px-5 py-4">Value / Expression</th>
+              <th className="px-5 py-4 text-center">Value / Expression</th>
               <th className="px-5 py-4 text-right">Actions</th>
             </tr>
           </thead>
@@ -304,10 +304,10 @@ export const SalaryStructuresPage: React.FC = () => {
                 <td className="px-5 py-4 text-slate-700 dark:text-purple-300/70 font-semibold">
                   {rule.computeType}
                 </td>
-                <td className="px-5 py-4 font-mono font-black text-right text-amber-600 dark:text-amber-300">
+                <td className="px-5 py-4 font-mono font-bold text-center text-amber-600 dark:text-amber-300">
                   {rule.computeType === 'Fixed' && (rule.value ? `₹${rule.value}` : 'Contract Wage')}
                   {rule.computeType === 'Percentage' && `${rule.value}% of ${rule.formula || 'BASIC'}`}
-                  {rule.computeType === 'Formula' && <span className="text-purple-700 dark:text-purple-300">{rule.formula}</span>}
+                  {rule.computeType === 'Formula' && <span className="text-purple-700 dark:text-purple-300 font-bold">{rule.formula}</span>}
                 </td>
                 <td className="px-5 py-4 text-right">
                   {!isReadOnly && (
