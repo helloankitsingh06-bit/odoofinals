@@ -480,18 +480,10 @@ export const LoginPage: React.FC = () => {
                             {role.icon}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className={`text-sm font-bold transition-colors ${isHovered ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'
-                                }`}>
-                                {role.title}
-                              </span>
-                              <span className="text-[10px] px-2 py-0.5 rounded bg-purple-100 dark:bg-slate-800 text-purple-700 dark:text-slate-400 font-mono font-semibold">
-                                {role.badge}
-                              </span>
-                            </div>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
-                              {role.desc}
-                            </p>
+                            <span className={`text-sm font-bold transition-colors ${isHovered ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'
+                              }`}>
+                              {role.title}
+                            </span>
                           </div>
                           <div className={`w-8 h-8 rounded-lg bg-white dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex items-center justify-center text-slate-400 dark:text-slate-500 transition-all duration-300 ${isHovered ? 'text-amber-600 dark:text-amber-400 border-amber-500/40 bg-amber-50 dark:bg-amber-500/10 scale-110' : ''
                             }`}>
