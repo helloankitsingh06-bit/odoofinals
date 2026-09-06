@@ -7,7 +7,6 @@ import {
   ArrowRight,
   Lock,
   Mail,
-  User,
   Eye,
   EyeOff,
   UserCheck,
@@ -15,8 +14,6 @@ import {
   Sliders,
   Zap,
   CheckCircle2,
-  UserPlus,
-  LogIn,
   Crown,
   Building2,
   Award,
@@ -41,23 +38,12 @@ interface RoleCard {
 }
 
 export const LoginPage: React.FC = () => {
-  const { login, register, switchRoleQuick, isLoading } = useAuth();
-
-  // Tab state: 'login' | 'signup'
-  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const { login, switchRoleQuick, isLoading } = useAuth();
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState('payrollmgr@peoplepay360.com');
   const [loginPassword, setLoginPassword] = useState('Password123!');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
-
-  // Sign up form state
-  const [signupName, setSignupName] = useState('');
-  const [signupEmail, setSignupEmail] = useState('');
-  const [signupPassword, setSignupPassword] = useState('');
-  const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
-  const [signupRole, setSignupRole] = useState<UserRole>('Employee');
-  const [showSignupPassword, setShowSignupPassword] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -129,7 +115,6 @@ export const LoginPage: React.FC = () => {
     if (forgotEmail) setLoginEmail(forgotEmail);
     if (forgotNewPassword) setLoginPassword(forgotNewPassword);
     setIsForgotModalOpen(false);
-    setAuthMode('login');
     setSuccessMessage('Password reset complete. You can now sign in.');
   };
 
@@ -148,33 +133,6 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  // Handle Sign Up
-  const handleSignupSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setSuccessMessage(null);
-
-    if (signupPassword !== signupConfirmPassword) {
-      setError('Passwords do not match. Please re-enter.');
-      return;
-    }
-
-    if (signupPassword.length < 6) {
-      setError('Password must be at least 6 characters.');
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      await register(signupName, signupEmail, signupPassword, signupRole);
-      setSuccessMessage('Account created successfully in database! Logging you in...');
-    } catch (err: any) {
-      setError(err.message || 'Registration failed. User may already exist in database.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleRoleQuickLogin = async (role: UserRole) => {
     setError(null);
     setSuccessMessage(null);
@@ -182,9 +140,7 @@ export const LoginPage: React.FC = () => {
     try {
       await switchRoleQuick(role);
     } catch (err: any) {
-      setError(
-        'Database has been reset and this pre-seeded demo user does not exist. Please click the "Register" tab above to create a fresh user account.'
-      );
+      setError('Unable to authenticate with this demo role. Please sign in with your credentials.');
     } finally {
       setLoadingRole(null);
     }
@@ -318,30 +274,6 @@ export const LoginPage: React.FC = () => {
       <div className="w-full lg:w-1/2 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
         <div className="w-full max-w-md">
 
-          {/* Tab Switcher */}
-          <div className="flex bg-slate-200/60 dark:bg-slate-900/50 rounded-2xl p-1 border border-purple-100 dark:border-slate-800/50 mb-8">
-            <button
-              onClick={() => { setAuthMode('login'); setError(null); setSuccessMessage(null); }}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${authMode === 'login'
-                  ? 'bg-gradient-to-r from-amber-500 to-purple-600 text-white shadow-lg shadow-amber-500/25'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                }`}
-            >
-              <LogIn size={16} />
-              Sign In
-            </button>
-            <button
-              onClick={() => { setAuthMode('signup'); setError(null); setSuccessMessage(null); }}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${authMode === 'signup'
-                  ? 'bg-gradient-to-r from-purple-600 to-amber-500 text-white shadow-lg shadow-purple-500/25'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                }`}
-            >
-              <UserPlus size={16} />
-              Register
-            </button>
-          </div>
-
           {/* ===== GLASS CARD ===== */}
           <div className="bg-white/90 dark:bg-slate-900/40 backdrop-blur-xl rounded-3xl p-6 sm:p-8 border border-purple-100 dark:border-slate-800/50 shadow-xl dark:shadow-2xl relative overflow-hidden transition-colors duration-300">
 
@@ -374,263 +306,130 @@ export const LoginPage: React.FC = () => {
             )}
 
             {/* ===== SIGN IN FORM ===== */}
-            {authMode === 'login' ? (
-              <div>
-                <div className="mb-8">
-                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Welcome Back</h2>
-                  <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Sign in to access your dashboard</p>
-                </div>
-
-                <form onSubmit={handleLoginSubmit} className="space-y-5">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                      Email Address
-                    </label>
-                    <div className="relative">
-                      <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
-                      <input
-                        type="email"
-                        required
-                        value={loginEmail}
-                        onChange={(e) => setLoginEmail(e.target.value)}
-                        className="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700/60 rounded-xl pl-11 pr-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20 transition-all font-medium"
-                        placeholder="you@company.com"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                        Password
-                      </label>
-                      <button
-                        type="button"
-                        onClick={handleOpenForgotPassword}
-                        className="text-xs text-amber-600 dark:text-amber-400 hover:text-amber-500 hover:underline font-semibold cursor-pointer transition-colors"
-                      >
-                        Forgot?
-                      </button>
-                    </div>
-                    <div className="relative">
-                      <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
-                      <input
-                        type={showLoginPassword ? 'text' : 'password'}
-                        required
-                        value={loginPassword}
-                        onChange={(e) => setLoginPassword(e.target.value)}
-                        className="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700/60 rounded-xl pl-11 pr-11 py-3 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20 transition-all font-medium"
-                        placeholder="••••••••"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowLoginPassword(!showLoginPassword)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition cursor-pointer"
-                      >
-                        {showLoginPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={isSubmitting || !!loadingRole}
-                    className="relative w-full py-3.5 px-4 bg-gradient-to-r from-amber-500 to-purple-600 hover:from-amber-400 hover:to-purple-500 text-white font-bold rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-amber-500/25 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2 cursor-pointer shadow-md"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        <span>Signing in...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>Sign In</span>
-                        <ArrowRight size={18} />
-                      </>
-                    )}
-                  </button>
-                </form>
-
-                {/* Quick Role Access */}
-                <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800/50">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                      <Users size={14} className="text-amber-500 dark:text-amber-400" />
-                      Quick Access Roles
-                    </span>
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400">Pre-seeded accounts</span>
-                  </div>
-
-                  <div className="space-y-2.5">
-                    {demoRoles.map((role) => {
-                      const isHovered = hoveredRole === role.role;
-                      const isThisLoading = loadingRole === role.role;
-
-                      return (
-                        <button
-                          key={role.role}
-                          onClick={() => handleRoleQuickLogin(role.role)}
-                          onMouseEnter={() => setHoveredRole(role.role)}
-                          onMouseLeave={() => setHoveredRole(null)}
-                          className={`w-full p-3 bg-purple-50/50 dark:bg-slate-900/60 hover:bg-white dark:hover:bg-slate-900/80 rounded-xl border border-purple-100 dark:border-slate-800/60 hover:border-purple-300 dark:hover:border-slate-700/80 transition-all duration-300 group text-left flex items-center gap-3 cursor-pointer shadow-sm hover:shadow-md ${isHovered ? 'scale-[1.01]' : ''
-                            }`}
-                        >
-                          <div className={`p-2 rounded-lg bg-white dark:bg-slate-800/60 border border-purple-100 dark:border-transparent transition-all duration-300 ${isHovered ? 'scale-110 rotate-6 shadow-sm' : ''
-                            }`}>
-                            {role.icon}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <span className={`text-sm font-bold transition-colors ${isHovered ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'
-                              }`}>
-                              {role.title}
-                            </span>
-                          </div>
-                          <div className={`w-8 h-8 rounded-lg bg-white dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex items-center justify-center text-slate-400 dark:text-slate-500 transition-all duration-300 ${isHovered ? 'text-amber-600 dark:text-amber-400 border-amber-500/40 bg-amber-50 dark:bg-amber-500/10 scale-110' : ''
-                            }`}>
-                            {isThisLoading ? (
-                              <div className="w-4 h-4 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
-                            ) : (
-                              <ArrowRight size={14} className={`transition-transform ${isHovered ? 'translate-x-0.5' : ''}`} />
-                            )}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+            <div>
+              <div className="mb-8">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Welcome Back</h2>
+                <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Sign in to access your dashboard</p>
               </div>
-            ) : (
-              /* ===== SIGN UP FORM ===== */
-              <div>
-                <div className="mb-8">
-                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Create Account</h2>
-                  <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Register a new user in the database</p>
+
+              <form onSubmit={handleLoginSubmit} className="space-y-5">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                    <input
+                      type="email"
+                      required
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                      className="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700/60 rounded-xl pl-11 pr-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20 transition-all font-medium"
+                      placeholder="you@company.com"
+                    />
+                  </div>
                 </div>
 
-                <form onSubmit={handleSignupSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                      Full Name
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                      Password
                     </label>
-                    <div className="relative">
-                      <User size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
-                      <input
-                        type="text"
-                        required
-                        value={signupName}
-                        onChange={(e) => setSignupName(e.target.value)}
-                        className="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700/60 rounded-xl pl-11 pr-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/20 transition-all font-medium"
-                        placeholder="John Doe"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                      Email Address
-                    </label>
-                    <div className="relative">
-                      <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
-                      <input
-                        type="email"
-                        required
-                        value={signupEmail}
-                        onChange={(e) => setSignupEmail(e.target.value)}
-                        className="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700/60 rounded-xl pl-11 pr-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/20 transition-all font-medium"
-                        placeholder="john@company.com"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                      Role
-                    </label>
-                    <select
-                      value={signupRole}
-                      onChange={(e) => setSignupRole(e.target.value as UserRole)}
-                      className="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700/60 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/20 transition-all font-medium cursor-pointer"
-                    >
-                      <option value="Employee">Employee</option>
-                      <option value="HRManager">HR Manager</option>
-                      <option value="HRPayrollUser">HR Payroll User</option>
-                      <option value="HRPayrollManager">HR Payroll Manager</option>
-                      <option value="Admin">Admin</option>
-                    </select>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                        Password
-                      </label>
-                      <div className="relative">
-                        <input
-                          type={showSignupPassword ? 'text' : 'password'}
-                          required
-                          value={signupPassword}
-                          onChange={(e) => setSignupPassword(e.target.value)}
-                          className="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700/60 rounded-xl px-4 pr-10 py-3 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/20 transition-all font-medium"
-                          placeholder="••••••••"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowSignupPassword(!showSignupPassword)}
-                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition cursor-pointer"
-                        >
-                          {showSignupPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                        Confirm
-                      </label>
-                      <input
-                        type={showSignupPassword ? 'text' : 'password'}
-                        required
-                        value={signupConfirmPassword}
-                        onChange={(e) => setSignupConfirmPassword(e.target.value)}
-                        className="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700/60 rounded-xl px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/20 transition-all font-medium"
-                        placeholder="••••••••"
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="relative w-full py-3.5 px-4 bg-gradient-to-r from-purple-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-bold rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/25 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2 cursor-pointer shadow-md"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        <span>Creating account...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>Create Account</span>
-                        <ArrowRight size={18} />
-                      </>
-                    )}
-                  </button>
-                </form>
-
-                <div className="mt-6 text-center">
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Already have an account?{' '}
                     <button
                       type="button"
-                      onClick={() => setAuthMode('login')}
-                      className="text-amber-600 dark:text-amber-400 hover:underline transition font-bold cursor-pointer"
+                      onClick={handleOpenForgotPassword}
+                      className="text-xs text-amber-600 dark:text-amber-400 hover:text-amber-500 hover:underline font-semibold cursor-pointer transition-colors"
                     >
-                      Sign In
+                      Forgot?
                     </button>
-                  </p>
+                  </div>
+                  <div className="relative">
+                    <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                    <input
+                      type={showLoginPassword ? 'text' : 'password'}
+                      required
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      className="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700/60 rounded-xl pl-11 pr-11 py-3 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20 transition-all font-medium"
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowLoginPassword(!showLoginPassword)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition cursor-pointer"
+                    >
+                      {showLoginPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting || !!loadingRole}
+                  className="relative w-full py-3.5 px-4 bg-gradient-to-r from-amber-500 to-purple-600 hover:from-amber-400 hover:to-purple-500 text-white font-bold rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-amber-500/25 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2 cursor-pointer shadow-md"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Signing in...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Sign In</span>
+                      <ArrowRight size={18} />
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {/* Quick Role Access */}
+              <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800/50">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                    <Users size={14} className="text-amber-500 dark:text-amber-400" />
+                    Quick Access Roles
+                  </span>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400">Pre-seeded accounts</span>
+                </div>
+
+                <div className="space-y-2.5">
+                  {demoRoles.map((role) => {
+                    const isHovered = hoveredRole === role.role;
+                    const isThisLoading = loadingRole === role.role;
+
+                    return (
+                      <button
+                        key={role.role}
+                        onClick={() => handleRoleQuickLogin(role.role)}
+                        onMouseEnter={() => setHoveredRole(role.role)}
+                        onMouseLeave={() => setHoveredRole(null)}
+                        className={`w-full p-3 bg-purple-50/50 dark:bg-slate-900/60 hover:bg-white dark:hover:bg-slate-900/80 rounded-xl border border-purple-100 dark:border-slate-800/60 hover:border-purple-300 dark:hover:border-slate-700/80 transition-all duration-300 group text-left flex items-center gap-3 cursor-pointer shadow-sm hover:shadow-md ${isHovered ? 'scale-[1.01]' : ''
+                          }`}
+                      >
+                        <div className={`p-2 rounded-lg bg-white dark:bg-slate-800/60 border border-purple-100 dark:border-transparent transition-all duration-300 ${isHovered ? 'scale-110 rotate-6 shadow-sm' : ''
+                          }`}>
+                          {role.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className={`text-sm font-bold transition-colors ${isHovered ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'
+                            }`}>
+                            {role.title}
+                          </span>
+                        </div>
+                        <div className={`w-8 h-8 rounded-lg bg-white dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex items-center justify-center text-slate-400 dark:text-slate-500 transition-all duration-300 ${isHovered ? 'text-amber-600 dark:text-amber-400 border-amber-500/40 bg-amber-50 dark:bg-amber-500/10 scale-110' : ''
+                          }`}>
+                          {isThisLoading ? (
+                            <div className="w-4 h-4 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
+                          ) : (
+                            <ArrowRight size={14} className={`transition-transform ${isHovered ? 'translate-x-0.5' : ''}`} />
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-            )}
+            </div>
 
           </div>
 
