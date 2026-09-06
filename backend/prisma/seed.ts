@@ -5,9 +5,9 @@ import { Role, AttendanceStatus, TimeOffStatus } from '../src/types';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Starting database seeding for PeoplePay360...');
+  console.log('🌱 Starting comprehensive database seeding for PeoplePay360 (100+ Users & Rich Relational Data)...');
 
-  // Clean existing tables
+  // 0. Clean existing tables cleanly in dependency order
   await prisma.payslipWarning.deleteMany();
   await prisma.payslipRuleLine.deleteMany();
   await prisma.payslip.deleteMany();
@@ -62,6 +62,23 @@ async function main() {
     }
   });
 
+  const flexSchedule = await prisma.workingSchedule.create({
+    data: {
+      name: 'Flexible Engineering (40h/week)',
+      type: 'Flexible',
+      totalWeeklyHours: 40.0,
+      days: {
+        create: [
+          { day: 'Monday', startTime: '10:00', endTime: '19:00', breakMins: 60 },
+          { day: 'Tuesday', startTime: '10:00', endTime: '19:00', breakMins: 60 },
+          { day: 'Wednesday', startTime: '10:00', endTime: '19:00', breakMins: 60 },
+          { day: 'Thursday', startTime: '10:00', endTime: '19:00', breakMins: 60 },
+          { day: 'Friday', startTime: '10:00', endTime: '19:00', breakMins: 60 }
+        ]
+      }
+    }
+  });
+
   // 2. Salary Rules
   const rBasic = await prisma.salaryRule.create({
     data: { name: 'Basic Salary', code: 'BASIC', category: 'Basic', sequence: 1, computeType: 'Fixed', value: 0 }
@@ -79,32 +96,64 @@ async function main() {
     data: { name: 'Special Executive Allowance', code: 'EXEC_ALLOW', category: 'Allowance', sequence: 4, computeType: 'Fixed', value: 1200 }
   });
 
+  const rTravel = await prisma.salaryRule.create({
+    data: { name: 'Field Travel Allowance', code: 'TRAVEL_ALLOW', category: 'Allowance', sequence: 5, computeType: 'Fixed', value: 800 }
+  });
+
+  const rShift = await prisma.salaryRule.create({
+    data: { name: 'Night Shift Differential', code: 'SHIFT_ALLOW', category: 'Allowance', sequence: 6, computeType: 'Fixed', value: 500 }
+  });
+
   const rOvertime = await prisma.salaryRule.create({
-    data: { name: 'Overtime Pay', code: 'OVERTIME', category: 'Allowance', sequence: 5, computeType: 'Formula', formula: 'OVERTIME_HOURS * (BASIC / 160) * 1.5' }
+    data: { name: 'Overtime Pay', code: 'OVERTIME', category: 'Allowance', sequence: 7, computeType: 'Formula', formula: 'OVERTIME_HOURS * (BASIC / 160) * 1.5' }
   });
 
   const rGross = await prisma.salaryRule.create({
-    data: { name: 'Gross Salary', code: 'GROSS', category: 'Gross', sequence: 6, computeType: 'Formula', formula: 'BASIC + HRA + CONVEYANCE + OVERTIME' }
+    data: { name: 'Gross Salary', code: 'GROSS', category: 'Gross', sequence: 8, computeType: 'Formula', formula: 'BASIC + HRA + CONVEYANCE + OVERTIME' }
+  });
+
+  const rGrossExec = await prisma.salaryRule.create({
+    data: { name: 'Executive Gross Salary', code: 'GROSS_EXEC', category: 'Gross', sequence: 9, computeType: 'Formula', formula: 'BASIC + HRA + EXEC_ALLOW + CONVEYANCE' }
+  });
+
+  const rGrossSales = await prisma.salaryRule.create({
+    data: { name: 'Sales Gross Salary', code: 'GROSS_SALES', category: 'Gross', sequence: 10, computeType: 'Formula', formula: 'BASIC + HRA + TRAVEL_ALLOW' }
+  });
+
+  const rGrossSupport = await prisma.salaryRule.create({
+    data: { name: 'Support Gross Salary', code: 'GROSS_SUPPORT', category: 'Gross', sequence: 11, computeType: 'Formula', formula: 'BASIC + HRA + SHIFT_ALLOW + OVERTIME' }
   });
 
   const rPf = await prisma.salaryRule.create({
-    data: { name: 'Provident Fund (PF)', code: 'PF', category: 'Deduction', sequence: 7, computeType: 'Percentage', value: 12, formula: 'BASIC' }
+    data: { name: 'Provident Fund (PF)', code: 'PF', category: 'Deduction', sequence: 12, computeType: 'Percentage', value: 12, formula: 'BASIC' }
   });
 
   const rHealth = await prisma.salaryRule.create({
-    data: { name: 'Health Insurance', code: 'HEALTH_INS', category: 'Deduction', sequence: 8, computeType: 'Fixed', value: 250 }
+    data: { name: 'Health Insurance', code: 'HEALTH_INS', category: 'Deduction', sequence: 13, computeType: 'Fixed', value: 250 }
   });
 
   const rUnpaidLeave = await prisma.salaryRule.create({
-    data: { name: 'Unpaid Leave Deduction', code: 'UNPAID_LEAVE', category: 'Deduction', sequence: 9, computeType: 'Formula', formula: 'UNPAID_LEAVE_DAYS * (BASIC / 30)' }
+    data: { name: 'Unpaid Leave Deduction', code: 'UNPAID_LEAVE', category: 'Deduction', sequence: 14, computeType: 'Formula', formula: 'UNPAID_LEAVE_DAYS * (BASIC / 30)' }
   });
 
   const rNet = await prisma.salaryRule.create({
-    data: { name: 'Net Salary', code: 'NET', category: 'Net', sequence: 10, computeType: 'Formula', formula: 'GROSS - PF - HEALTH_INS - UNPAID_LEAVE' }
+    data: { name: 'Net Salary', code: 'NET', category: 'Net', sequence: 15, computeType: 'Formula', formula: 'GROSS - PF - HEALTH_INS - UNPAID_LEAVE' }
+  });
+
+  const rNetExec = await prisma.salaryRule.create({
+    data: { name: 'Executive Net Salary', code: 'NET_EXEC', category: 'Net', sequence: 16, computeType: 'Formula', formula: 'GROSS_EXEC - PF - HEALTH_INS - UNPAID_LEAVE' }
+  });
+
+  const rNetSales = await prisma.salaryRule.create({
+    data: { name: 'Sales Net Salary', code: 'NET_SALES', category: 'Net', sequence: 17, computeType: 'Formula', formula: 'GROSS_SALES - PF - HEALTH_INS - UNPAID_LEAVE' }
+  });
+
+  const rNetSupport = await prisma.salaryRule.create({
+    data: { name: 'Support Net Salary', code: 'NET_SUPPORT', category: 'Net', sequence: 18, computeType: 'Formula', formula: 'GROSS_SUPPORT - PF - HEALTH_INS - UNPAID_LEAVE' }
   });
 
   // 3. Salary Structures
-  const techStructure = await prisma.salaryStructure.create({
+  const engStructure = await prisma.salaryStructure.create({
     data: {
       name: 'Engineering & Product Structure',
       status: 'Active',
@@ -119,6 +168,65 @@ async function main() {
           { salaryRuleId: rHealth.id, position: 7 },
           { salaryRuleId: rUnpaidLeave.id, position: 8 },
           { salaryRuleId: rNet.id, position: 9 }
+        ]
+      }
+    }
+  });
+
+  const execStructure = await prisma.salaryStructure.create({
+    data: {
+      name: 'Executive & Leadership Structure',
+      status: 'Active',
+      rules: {
+        create: [
+          { salaryRuleId: rBasic.id, position: 1 },
+          { salaryRuleId: rHra.id, position: 2 },
+          { salaryRuleId: rSpecial.id, position: 3 },
+          { salaryRuleId: rConveyance.id, position: 4 },
+          { salaryRuleId: rGrossExec.id, position: 5 },
+          { salaryRuleId: rPf.id, position: 6 },
+          { salaryRuleId: rHealth.id, position: 7 },
+          { salaryRuleId: rUnpaidLeave.id, position: 8 },
+          { salaryRuleId: rNetExec.id, position: 9 }
+        ]
+      }
+    }
+  });
+
+  const salesStructure = await prisma.salaryStructure.create({
+    data: {
+      name: 'Sales & Marketing Structure',
+      status: 'Active',
+      rules: {
+        create: [
+          { salaryRuleId: rBasic.id, position: 1 },
+          { salaryRuleId: rHra.id, position: 2 },
+          { salaryRuleId: rTravel.id, position: 3 },
+          { salaryRuleId: rGrossSales.id, position: 4 },
+          { salaryRuleId: rPf.id, position: 5 },
+          { salaryRuleId: rHealth.id, position: 6 },
+          { salaryRuleId: rUnpaidLeave.id, position: 8 },
+          { salaryRuleId: rNetSales.id, position: 9 }
+        ]
+      }
+    }
+  });
+
+  const supportStructure = await prisma.salaryStructure.create({
+    data: {
+      name: 'Support & Operations Structure',
+      status: 'Active',
+      rules: {
+        create: [
+          { salaryRuleId: rBasic.id, position: 1 },
+          { salaryRuleId: rHra.id, position: 2 },
+          { salaryRuleId: rShift.id, position: 3 },
+          { salaryRuleId: rOvertime.id, position: 4 },
+          { salaryRuleId: rGrossSupport.id, position: 5 },
+          { salaryRuleId: rPf.id, position: 6 },
+          { salaryRuleId: rHealth.id, position: 7 },
+          { salaryRuleId: rUnpaidLeave.id, position: 8 },
+          { salaryRuleId: rNetSupport.id, position: 9 }
         ]
       }
     }
@@ -141,7 +249,10 @@ async function main() {
     data: { name: 'Unpaid Leave', unit: 'Days', requiresAllocation: false, requiresApproval: true, payrollIntegrated: true }
   });
 
-  // 5. Employees in hierarchy
+  // 5. Build Comprehensive Employee Hierarchy (Core 7 + ~98 Generated Employees)
+  const passwordHash = await bcrypt.hash('Password123!', 10);
+
+  // --- Core 7 Leadership ---
   const empKrish = await prisma.employee.create({
     data: {
       name: 'Krish D R',
@@ -202,7 +313,7 @@ async function main() {
       jobPosition: 'Software Engineer',
       managerId: empAnna.id,
       managerName: empAnna.name,
-      workingScheduleId: standardSchedule.id,
+      workingScheduleId: flexSchedule.id,
       status: 'Active'
     }
   });
@@ -228,247 +339,356 @@ async function main() {
       jobPosition: 'Software Developer',
       managerId: empKT.id,
       managerName: empKT.name,
-      workingScheduleId: standardSchedule.id,
+      workingScheduleId: flexSchedule.id,
       status: 'Active'
     }
   });
 
-  const allEmployees = [empKrish, empAnkit, empDiya, empAnna, empKT, empSrikar, empKevin];
+  // Track all employees in list
+  interface EmpRecord {
+    id: string;
+    name: string;
+    email: string;
+    department: string;
+    jobPosition: string;
+    role: string;
+    wage: number;
+    structureId: string;
+    scheduleId: string;
+    startDate: Date;
+    endDate?: Date | null;
+  }
 
-  // 6. Contracts matching exact specification
-  await prisma.contract.create({
-    data: {
-      employeeId: empKevin.id,
-      startDate: new Date('2026-08-01T00:00:00Z'),
-      endDate: null,
-      wage: 15000.0,
-      salaryStructureId: techStructure.id,
-      department: 'Engineering',
-      jobPosition: 'Software Developer',
-      status: 'Active'
-    }
-  });
-
-  await prisma.contract.create({
-    data: {
-      employeeId: empSrikar.id,
-      startDate: new Date('2026-07-01T00:00:00Z'),
-      endDate: null,
-      wage: 25000.0,
-      salaryStructureId: techStructure.id,
-      department: 'Human Resources',
-      jobPosition: 'Assistant',
-      status: 'Active'
-    }
-  });
-
-  await prisma.contract.create({
-    data: {
-      employeeId: empKrish.id,
-      startDate: new Date('2026-01-01T00:00:00Z'),
-      endDate: new Date('2027-08-31T23:59:59Z'),
-      wage: 135000.0,
-      salaryStructureId: techStructure.id,
+  const allEmployeeList: EmpRecord[] = [
+    {
+      id: empKrish.id,
+      name: empKrish.name,
+      email: 'krish@gmail.com',
       department: 'Executive',
       jobPosition: 'CEO',
-      status: 'Active'
-    }
-  });
-
-  await prisma.contract.create({
-    data: {
-      employeeId: empAnkit.id,
+      role: Role.Admin,
+      wage: 135000.0,
+      structureId: engStructure.id,
+      scheduleId: standardSchedule.id,
       startDate: new Date('2026-01-01T00:00:00Z'),
-      endDate: new Date('2027-08-31T23:59:59Z'),
-      wage: 100000.0,
-      salaryStructureId: techStructure.id,
+      endDate: new Date('2027-08-31T23:59:59Z')
+    },
+    {
+      id: empAnkit.id,
+      name: empAnkit.name,
+      email: 'ankit@gmail.com',
       department: 'Finance & Payroll',
       jobPosition: 'Head',
-      status: 'Active'
-    }
-  });
-
-  await prisma.contract.create({
-    data: {
-      employeeId: empDiya.id,
+      role: Role.HRPayrollManager,
+      wage: 100000.0,
+      structureId: engStructure.id,
+      scheduleId: standardSchedule.id,
       startDate: new Date('2026-01-01T00:00:00Z'),
-      endDate: new Date('2027-08-31T23:59:59Z'),
-      wage: 95000.0,
-      salaryStructureId: techStructure.id,
+      endDate: new Date('2027-08-31T23:59:59Z')
+    },
+    {
+      id: empDiya.id,
+      name: empDiya.name,
+      email: 'diya@gmail.com',
       department: 'Human Resources',
       jobPosition: 'Head',
-      status: 'Active'
-    }
-  });
-
-  await prisma.contract.create({
-    data: {
-      employeeId: empAnna.id,
+      role: Role.HRManager,
+      wage: 95000.0,
+      structureId: engStructure.id,
+      scheduleId: standardSchedule.id,
       startDate: new Date('2026-01-01T00:00:00Z'),
-      endDate: new Date('2027-08-31T23:59:59Z'),
-      wage: 85000.0,
-      salaryStructureId: techStructure.id,
+      endDate: new Date('2027-08-31T23:59:59Z')
+    },
+    {
+      id: empAnna.id,
+      name: empAnna.name,
+      email: 'anna@gmail.com',
       department: 'Engineering',
       jobPosition: 'System Engineer',
-      status: 'Active'
-    }
-  });
-
-  await prisma.contract.create({
-    data: {
-      employeeId: empKT.id,
+      role: Role.Employee,
+      wage: 85000.0,
+      structureId: engStructure.id,
+      scheduleId: standardSchedule.id,
       startDate: new Date('2026-01-01T00:00:00Z'),
-      endDate: null,
-      wage: 65000.0,
-      salaryStructureId: techStructure.id,
+      endDate: new Date('2027-08-31T23:59:59Z')
+    },
+    {
+      id: empKT.id,
+      name: empKT.name,
+      email: 'kt@gmail.com',
       department: 'Engineering',
       jobPosition: 'Software Engineer',
-      status: 'Active'
-    }
-  });
-
-  // 7. Users (Password: Password123!)
-  const passwordHash = await bcrypt.hash('Password123!', 10);
-
-  // Direct accounts for all 7 employees
-  await prisma.user.create({
-    data: {
-      name: 'Krish D R',
-      email: 'krish@gmail.com',
-      passwordHash,
-      role: Role.Admin,
-      employeeId: empKrish.id,
-      status: 'Active'
-    }
-  });
-
-  await prisma.user.create({
-    data: {
-      name: 'Diya Ann Dennis',
-      email: 'diya@gmail.com',
-      passwordHash,
-      role: Role.HRManager,
-      employeeId: empDiya.id,
-      status: 'Active'
-    }
-  });
-
-  await prisma.user.create({
-    data: {
-      name: 'Ankit Singh',
-      email: 'ankit@gmail.com',
-      passwordHash,
-      role: Role.HRPayrollManager,
-      employeeId: empAnkit.id,
-      status: 'Active'
-    }
-  });
-
-  await prisma.user.create({
-    data: {
-      name: 'Srikar',
+      role: Role.Employee,
+      wage: 65000.0,
+      structureId: engStructure.id,
+      scheduleId: flexSchedule.id,
+      startDate: new Date('2026-01-01T00:00:00Z'),
+      endDate: null
+    },
+    {
+      id: empSrikar.id,
+      name: empSrikar.name,
       email: 'srikar@gmail.com',
-      passwordHash,
+      department: 'Human Resources',
+      jobPosition: 'Assistant',
       role: Role.HRPayrollUser,
-      employeeId: empSrikar.id,
-      status: 'Active'
-    }
-  });
-
-  await prisma.user.create({
-    data: {
-      name: 'Kevin',
+      wage: 25000.0,
+      structureId: engStructure.id,
+      scheduleId: standardSchedule.id,
+      startDate: new Date('2026-07-01T00:00:00Z'),
+      endDate: null
+    },
+    {
+      id: empKevin.id,
+      name: empKevin.name,
       email: 'kevin@gmail.com',
-      passwordHash,
+      department: 'Engineering',
+      jobPosition: 'Software Developer',
       role: Role.Employee,
-      employeeId: empKevin.id,
-      status: 'Active'
+      wage: 15000.0,
+      structureId: engStructure.id,
+      scheduleId: flexSchedule.id,
+      startDate: new Date('2026-08-01T00:00:00Z'),
+      endDate: null
     }
-  });
+  ];
 
+  // --- Procedural Generation of 98 Additional Realistic Employees ---
+  const firstNames = [
+    'Aarav', 'Vivaan', 'Aditya', 'Vihaan', 'Arjun', 'Sai', 'Reyansh', 'Ayaan', 'Krishna', 'Ishaan',
+    'Shaurya', 'Atharv', 'Advik', 'Pranav', 'Advaith', 'Kabir', 'Ananya', 'Diya', 'Gauri', 'Aadhya',
+    'Pari', 'Anika', 'Navya', 'Angel', 'Riya', 'Myra', 'Ira', 'Avani', 'Sara', 'Prisha',
+    'Dev', 'Rohan', 'Amit', 'Priya', 'Sneha', 'Vikram', 'Tanya', 'Rahul', 'Pooja', 'Meera',
+    'Siddharth', 'Neha', 'Rajesh', 'Karthik', 'Kavita', 'Varun', 'Sanjay', 'Deepika', 'Manish', 'Nisha',
+    'Gaurav', 'Swati', 'Alok', 'Bhavna', 'Chetan', 'Divya', 'Eshaan', 'Farhan', 'Gayatri', 'Harsh',
+    'Indu', 'Jatin', 'Kiran', 'Lokesh', 'Madhuri', 'Nikhil', 'Omkar', 'Pallavi', 'Qasim', 'Rashmi',
+    'Sameer', 'Tarun', 'Urvashi', 'Vikas', 'Wasim', 'Yash', 'Zoya', 'Tanvi', 'Abhishek', 'Shweta',
+    'Ramesh', 'Suresh', 'Preeti', 'Sunil', 'Komal', 'Mohit', 'Payal', 'Sachin', 'Sonali', 'Rohit',
+    'Akash', 'Shruti', 'Mayank', 'Richa', 'Nitin', 'Shilpa', 'Vipul', 'Ritu'
+  ];
+
+  const lastNames = [
+    'Sharma', 'Verma', 'Patel', 'Reddy', 'Nair', 'Rao', 'Joshi', 'Sen', 'Iyer', 'Pillai',
+    'Roy', 'Kapoor', 'Gupta', 'Sundaram', 'Menon', 'Singhal', 'Bhat', 'Chopra', 'Malhotra', 'Mehta',
+    'Deshmukh', 'Kulkarni', 'Banerjee', 'Chatterjee', 'Dutta', 'Ghosh', 'Das', 'Mukherjee', 'Saxena', 'Pandey',
+    'Mishra', 'Tripathi', 'Trivedi', 'Aggarwal', 'Garg', 'Bansal', 'Jain', 'Shah', 'Patil', 'Pawar',
+    'Shinde', 'Jadhav', 'More', 'Chavan', 'Gowda', 'Shetty', 'Hegde', 'Kamath', 'Pai', 'Shenoy'
+  ];
+
+  const departmentConfigs = [
+    {
+      dept: 'Engineering',
+      managerId: empAnna.id,
+      managerName: empAnna.name,
+      structureId: engStructure.id,
+      scheduleId: flexSchedule.id,
+      positions: [
+        { title: 'Senior Backend Engineer', wage: 82000, role: Role.Employee },
+        { title: 'Full Stack Engineer', wage: 72000, role: Role.Employee },
+        { title: 'Frontend Developer', wage: 62000, role: Role.Employee },
+        { title: 'DevOps & Cloud Engineer', wage: 78000, role: Role.Employee },
+        { title: 'QA Automation Engineer', wage: 58000, role: Role.Employee },
+        { title: 'Site Reliability Engineer', wage: 75000, role: Role.Employee },
+        { title: 'Data Engineer', wage: 74000, role: Role.Employee },
+        { title: 'Mobile App Developer', wage: 65000, role: Role.Employee },
+        { title: 'Junior Software Engineer', wage: 42000, role: Role.Employee },
+        { title: 'Security Engineer', wage: 80000, role: Role.Employee }
+      ]
+    },
+    {
+      dept: 'Product & Design',
+      managerId: empKrish.id,
+      managerName: empKrish.name,
+      structureId: engStructure.id,
+      scheduleId: standardSchedule.id,
+      positions: [
+        { title: 'Principal Product Manager', wage: 115000, role: Role.Admin },
+        { title: 'Senior Product Manager', wage: 92000, role: Role.Employee },
+        { title: 'Lead UI/UX Designer', wage: 84000, role: Role.Employee },
+        { title: 'Product Designer', wage: 68000, role: Role.Employee },
+        { title: 'Design System Specialist', wage: 62000, role: Role.Employee },
+        { title: 'Technical Product Owner', wage: 78000, role: Role.Employee }
+      ]
+    },
+    {
+      dept: 'Finance & Payroll',
+      managerId: empAnkit.id,
+      managerName: empAnkit.name,
+      structureId: execStructure.id,
+      scheduleId: standardSchedule.id,
+      positions: [
+        { title: 'Senior Payroll Manager', wage: 88000, role: Role.HRPayrollManager },
+        { title: 'Lead Financial Analyst', wage: 82000, role: Role.HRPayrollManager },
+        { title: 'Senior Accountant', wage: 65000, role: Role.HRPayrollUser },
+        { title: 'Payroll Specialist', wage: 52000, role: Role.HRPayrollUser },
+        { title: 'Internal Audit Associate', wage: 54000, role: Role.HRPayrollUser },
+        { title: 'Accounts Payable Clerk', wage: 38000, role: Role.HRPayrollUser }
+      ]
+    },
+    {
+      dept: 'Human Resources',
+      managerId: empDiya.id,
+      managerName: empDiya.name,
+      structureId: execStructure.id,
+      scheduleId: standardSchedule.id,
+      positions: [
+        { title: 'Senior HR Business Partner', wage: 82000, role: Role.HRManager },
+        { title: 'Talent Acquisition Lead', wage: 76000, role: Role.HRManager },
+        { title: 'Technical Recruiter', wage: 58000, role: Role.HRPayrollUser },
+        { title: 'HR Operations Specialist', wage: 48000, role: Role.HRPayrollUser },
+        { title: 'People & Culture Associate', wage: 44000, role: Role.HRPayrollUser },
+        { title: 'Learning & Development Lead', wage: 68000, role: Role.HRManager }
+      ]
+    },
+    {
+      dept: 'Sales & Marketing',
+      managerId: empKrish.id,
+      managerName: empKrish.name,
+      structureId: salesStructure.id,
+      scheduleId: standardSchedule.id,
+      positions: [
+        { title: 'VP of Global Sales', wage: 130000, role: Role.Admin },
+        { title: 'Enterprise Account Executive', wage: 90000, role: Role.Employee },
+        { title: 'Senior Marketing Manager', wage: 85000, role: Role.Employee },
+        { title: 'Growth Specialist', wage: 62000, role: Role.Employee },
+        { title: 'Business Development Rep', wage: 45000, role: Role.Employee },
+        { title: 'Content & Social Lead', wage: 52000, role: Role.Employee }
+      ]
+    },
+    {
+      dept: 'Customer Support & Operations',
+      managerId: empKrish.id,
+      managerName: empKrish.name,
+      structureId: supportStructure.id,
+      scheduleId: shiftSchedule.id,
+      positions: [
+        { title: 'Operations Director', wage: 105000, role: Role.Admin },
+        { title: 'Customer Support Lead', wage: 65000, role: Role.Employee },
+        { title: 'Technical Support Specialist', wage: 48000, role: Role.Employee },
+        { title: 'Operations Coordinator', wage: 42000, role: Role.Employee },
+        { title: 'Customer Success Manager', wage: 58000, role: Role.Employee },
+        { title: 'Support Representative', wage: 32000, role: Role.Employee }
+      ]
+    },
+    {
+      dept: 'Legal & Compliance',
+      managerId: empKrish.id,
+      managerName: empKrish.name,
+      structureId: execStructure.id,
+      scheduleId: standardSchedule.id,
+      positions: [
+        { title: 'Chief Legal Counsel', wage: 140000, role: Role.Admin },
+        { title: 'Senior Compliance Officer', wage: 86000, role: Role.HRManager },
+        { title: 'Data Privacy Specialist', wage: 72000, role: Role.Employee }
+      ]
+    }
+  ];
+
+  let nameIndex = 0;
+  let targetTotal = 105; // 7 core + 98 generated = 105 total
+
+  for (let i = 0; i < 98; i++) {
+    const fn = firstNames[nameIndex % firstNames.length];
+    const ln = lastNames[(nameIndex + Math.floor(nameIndex / firstNames.length)) % lastNames.length];
+    nameIndex++;
+
+    const fullName = `${fn} ${ln}`;
+    const email = `${fn.toLowerCase()}.${ln.toLowerCase()}${i > 40 ? i : ''}@peoplepay360.com`;
+
+    const deptConfig = departmentConfigs[i % departmentConfigs.length];
+    const pos = deptConfig.positions[i % deptConfig.positions.length];
+
+    // Stagger start dates: some in 2025, some in Jan 2026, some in March/June 2026
+    const startMonths = [0, 1, 2, 4, 5];
+    const startMonth = startMonths[i % startMonths.length];
+    const startYear = i % 5 === 0 ? 2025 : 2026;
+    const startDate = new Date(startYear, startMonth, 1);
+
+    const emp = await prisma.employee.create({
+      data: {
+        name: fullName,
+        email,
+        department: deptConfig.dept,
+        jobPosition: pos.title,
+        managerId: deptConfig.managerId,
+        managerName: deptConfig.managerName,
+        workingScheduleId: deptConfig.scheduleId,
+        status: 'Active'
+      }
+    });
+
+    allEmployeeList.push({
+      id: emp.id,
+      name: fullName,
+      email,
+      department: deptConfig.dept,
+      jobPosition: pos.title,
+      role: pos.role,
+      wage: pos.wage,
+      structureId: deptConfig.structureId,
+      scheduleId: deptConfig.scheduleId,
+      startDate,
+      endDate: null
+    });
+  }
+
+  console.log(`✅ Created ${allEmployeeList.length} employees across all departments.`);
+
+  // 6. Create Contracts for All Employees
+  for (const item of allEmployeeList) {
+    await prisma.contract.create({
+      data: {
+        employeeId: item.id,
+        startDate: item.startDate,
+        endDate: item.endDate || null,
+        wage: item.wage,
+        salaryStructureId: item.structureId,
+        department: item.department,
+        jobPosition: item.jobPosition,
+        status: 'Active'
+      }
+    });
+  }
+  console.log(`✅ Created ${allEmployeeList.length} active employment contracts.`);
+
+  // 7. Create User Accounts for All Employees
+  for (const item of allEmployeeList) {
+    await prisma.user.create({
+      data: {
+        name: item.name,
+        email: item.email,
+        passwordHash,
+        role: item.role,
+        employeeId: item.id,
+        status: 'Active'
+      }
+    });
+  }
+
+  // Generic Demo Role Accounts (unlinked to allow independent role testing)
   await prisma.user.create({
-    data: {
-      name: 'Anna Theresa',
-      email: 'anna@gmail.com',
-      passwordHash,
-      role: Role.Employee,
-      employeeId: empAnna.id,
-      status: 'Active'
-    }
+    data: { name: 'System Administrator', email: 'admin@peoplepay360.com', passwordHash, role: Role.Admin, employeeId: null, status: 'Active' }
   });
-
   await prisma.user.create({
-    data: {
-      name: 'KT',
-      email: 'kt@gmail.com',
-      passwordHash,
-      role: Role.Employee,
-      employeeId: empKT.id,
-      status: 'Active'
-    }
+    data: { name: 'HR Manager', email: 'hrmanager@peoplepay360.com', passwordHash, role: Role.HRManager, employeeId: null, status: 'Active' }
   });
-
-  // Generic role demo accounts (employeeId: null to avoid unique constraint collisions)
   await prisma.user.create({
-    data: {
-      name: 'System Administrator',
-      email: 'admin@peoplepay360.com',
-      passwordHash,
-      role: Role.Admin,
-      employeeId: null,
-      status: 'Active'
-    }
+    data: { name: 'HR Payroll Manager', email: 'payrollmgr@peoplepay360.com', passwordHash, role: Role.HRPayrollManager, employeeId: null, status: 'Active' }
   });
-
   await prisma.user.create({
-    data: {
-      name: 'HR Manager',
-      email: 'hrmanager@peoplepay360.com',
-      passwordHash,
-      role: Role.HRManager,
-      employeeId: null,
-      status: 'Active'
-    }
+    data: { name: 'HR Payroll User', email: 'payrolluser@peoplepay360.com', passwordHash, role: Role.HRPayrollUser, employeeId: null, status: 'Active' }
   });
-
   await prisma.user.create({
-    data: {
-      name: 'HR Payroll Manager',
-      email: 'payrollmgr@peoplepay360.com',
-      passwordHash,
-      role: Role.HRPayrollManager,
-      employeeId: null,
-      status: 'Active'
-    }
+    data: { name: 'Employee', email: 'employee@peoplepay360.com', passwordHash, role: Role.Employee, employeeId: null, status: 'Active' }
   });
 
-  await prisma.user.create({
-    data: {
-      name: 'HR Payroll User',
-      email: 'payrolluser@peoplepay360.com',
-      passwordHash,
-      role: Role.HRPayrollUser,
-      employeeId: null,
-      status: 'Active'
-    }
-  });
+  console.log(`✅ Created ${allEmployeeList.length + 5} user accounts with password 'Password123!'.`);
 
-  await prisma.user.create({
-    data: {
-      name: 'Employee',
-      email: 'employee@peoplepay360.com',
-      passwordHash,
-      role: Role.Employee,
-      employeeId: null,
-      status: 'Active'
-    }
-  });
-
-  // 8. Leave Allocations
+  // 8. Time Off Allocations for All Employees
   const yearStart = new Date(2026, 0, 1);
   const nextYear = new Date(2027, 11, 31);
 
-  for (const emp of allEmployees) {
+  for (const emp of allEmployeeList) {
     await prisma.allocation.create({
       data: {
         employeeId: emp.id,
@@ -495,8 +715,47 @@ async function main() {
       }
     });
   }
+  console.log(`✅ Created ${allEmployeeList.length * 2} leave allocations (Annual & Sick Leaves).`);
 
-  // 9. Attendance Records (June 1, 2026 to Sept 5, 2026 with Overtime, Late, Missing Check-outs, Manual Edits)
+  // 9. Time Off Requests (Realistic Spread of Paid, Sick, and Unpaid Leaves)
+  const sampleRequestTemplates = [
+    { typeId: annualLeave.id, days: 2, status: TimeOffStatus.Approved, reason: 'Family vacation and rest', month: 6, startDay: 10 },
+    { typeId: sickLeave.id, days: 1, status: TimeOffStatus.Approved, reason: 'Doctor appointment and fever recovery', month: 6, startDay: 22 },
+    { typeId: unpaidLeave.id, days: 2, status: TimeOffStatus.Approved, reason: 'Personal emergency leave', month: 7, startDay: 14 },
+    { typeId: annualLeave.id, days: 3, status: TimeOffStatus.Approved, reason: 'Summer trip with family', month: 7, startDay: 25 },
+    { typeId: unpaidLeave.id, days: 1, status: TimeOffStatus.Approved, reason: 'Extended relocation travel', month: 8, startDay: 6 },
+    { typeId: sickLeave.id, days: 2, status: TimeOffStatus.Approved, reason: 'Viral infection medical rest', month: 8, startDay: 18 },
+    { typeId: annualLeave.id, days: 4, status: TimeOffStatus.Pending, reason: 'Upcoming festival celebration', month: 8, startDay: 28 },
+    { typeId: unpaidLeave.id, days: 3, status: TimeOffStatus.Pending, reason: 'Unpaid personal sabbatical request', month: 9, startDay: 2 },
+    { typeId: otherLeave.id, days: 1, status: TimeOffStatus.Refused, reason: 'Short notice personal leave', month: 7, startDay: 5 }
+  ];
+
+  let totalRequests = 0;
+  for (let idx = 0; idx < allEmployeeList.length; idx++) {
+    // Generate ~1-2 requests per 2-3 employees
+    if (idx % 2 === 0) {
+      const tmpl = sampleRequestTemplates[(idx * 3) % sampleRequestTemplates.length];
+      const sDate = new Date(2026, tmpl.month - 1, tmpl.startDay);
+      const eDate = new Date(sDate);
+      eDate.setDate(eDate.getDate() + tmpl.days - 1);
+
+      await prisma.timeOffRequest.create({
+        data: {
+          employeeId: allEmployeeList[idx].id,
+          timeOffTypeId: tmpl.typeId,
+          startDate: sDate,
+          endDate: eDate,
+          duration: tmpl.days,
+          status: tmpl.status,
+          reason: tmpl.reason
+        }
+      });
+      totalRequests++;
+    }
+  }
+  console.log(`✅ Created ${totalRequests} realistic time off requests.`);
+
+  // 10. Attendance Records (June 1, 2026 to Sept 5, 2026 across all employees)
   const attendanceStartDate = new Date(2026, 5, 1); // June 1, 2026
   const attendanceEndDate = new Date(2026, 8, 5);   // Sept 5, 2026
 
@@ -505,36 +764,42 @@ async function main() {
   let dayIndex = 0;
   const statusCounts = { Present: 0, Overtime: 0, Late: 0, MissingCheckout: 0, manualEdits: 0 };
 
+  const attendanceBatch: any[] = [];
+
   while (curDate <= attendanceEndDate) {
     const dayOfWeek = curDate.getDay();
     if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Monday to Friday
       dayIndex++;
-      for (let empIdx = 0; empIdx < allEmployees.length; empIdx++) {
-        const emp = allEmployees[empIdx];
+      for (let empIdx = 0; empIdx < allEmployeeList.length; empIdx++) {
+        const emp = allEmployeeList[empIdx];
+
+        // If employee contract starts after this date, skip
+        if (emp.startDate > curDate) continue;
+
         let status = AttendanceStatus.Present;
         let checkIn = new Date(curDate);
         let checkOut: Date | null = new Date(curDate);
         let workedHours = 8.0;
         let isManualEdit = false;
 
-        // Missing checkouts (~14 occurrences)
-        if ((dayIndex + empIdx * 7) % 35 === 13) {
+        // Missing checkouts (~2.5%)
+        if ((dayIndex + empIdx * 7) % 37 === 13) {
           status = AttendanceStatus.MissingCheckout;
           checkIn.setHours(9, 0, 0, 0);
           checkOut = null;
           workedHours = 0.0;
           statusCounts.MissingCheckout++;
         }
-        // Overtime (~43 occurrences)
-        else if ((dayIndex + empIdx * 3) % 11 === 2) {
+        // Overtime (~7.5%)
+        else if ((dayIndex + empIdx * 3) % 13 === 2) {
           status = AttendanceStatus.Overtime;
           checkIn.setHours(9, 0, 0, 0);
           checkOut.setHours(20, 30, 0, 0);
           workedHours = 10.5;
           statusCounts.Overtime++;
         }
-        // Late arrivals (~25 occurrences)
-        else if ((dayIndex + empIdx * 5) % 17 === 3) {
+        // Late arrivals (~4.5%)
+        else if ((dayIndex + empIdx * 5) % 23 === 4) {
           status = AttendanceStatus.Late;
           checkIn.setHours(9, 45, 0, 0);
           checkOut.setHours(18, 0, 0, 0);
@@ -550,27 +815,34 @@ async function main() {
           statusCounts.Present++;
         }
 
-        // Manual HR Edits (~13 occurrences)
-        if ((dayIndex + empIdx * 11) % 37 === 5) {
+        // Manual HR Edits (~2%)
+        if ((dayIndex + empIdx * 11) % 47 === 5) {
           isManualEdit = true;
           statusCounts.manualEdits++;
         }
 
-        await prisma.attendance.create({
-          data: {
-            employeeId: emp.id,
-            checkIn,
-            checkOut,
-            workedHours,
-            status,
-            isManualEdit
-          }
+        attendanceBatch.push({
+          employeeId: emp.id,
+          checkIn,
+          checkOut,
+          workedHours,
+          status,
+          isManualEdit
         });
-        totalAttendanceCount++;
       }
     }
     curDate.setDate(curDate.getDate() + 1);
   }
+
+  // Insert attendances in chunks for optimal performance
+  const chunkSize = 500;
+  for (let c = 0; c < attendanceBatch.length; c += chunkSize) {
+    const chunk = attendanceBatch.slice(c, c + chunkSize);
+    await prisma.attendance.createMany({
+      data: chunk
+    });
+  }
+  totalAttendanceCount = attendanceBatch.length;
 
   console.log(`✅ Created ${totalAttendanceCount} attendance records from June 1, 2026 to September 5, 2026:`);
   console.log(`   • Present (On-Time):    ${statusCounts.Present}`);
@@ -578,15 +850,15 @@ async function main() {
   console.log(`   • Late Arrivals:        ${statusCounts.Late}`);
   console.log(`   • Missing Check-Outs:   ${statusCounts.MissingCheckout}`);
   console.log(`   • Manual HR Edits:      ${statusCounts.manualEdits}`);
-  console.log('✅ Seeding completed successfully! (No pre-computed payruns - ready for wizard run)');
-  console.log('🔑 Demo Login Credentials:');
-  console.log('   • krish@gmail.com / Password123! (CEO / Admin)');
-  console.log('   • ankit@gmail.com / Password123! (Finance Head / Payroll Manager)');
-  console.log('   • diya@gmail.com / Password123! (HR Head / HR Manager)');
-  console.log('   • srikar@gmail.com / Password123! (HR Assistant / Payroll User)');
-  console.log('   • kevin@gmail.com / Password123! (Dev / Employee)');
-  console.log('   • anna@gmail.com / Password123! (Engineer / Employee)');
-  console.log('   • kt@gmail.com / Password123! (Engineer / Employee)');
+  console.log('✅ Seeding completed successfully! (Clean Payruns ready for wizard execution)');
+  console.log('🔑 Primary Leadership Login Credentials (All Password: Password123!):');
+  console.log('   • krish@gmail.com (CEO / Admin)');
+  console.log('   • ankit@gmail.com (Finance Head / HRPayrollManager)');
+  console.log('   • diya@gmail.com (HR Head / HRManager)');
+  console.log('   • srikar@gmail.com (HR Assistant / HRPayrollUser)');
+  console.log('   • kevin@gmail.com (Dev / Employee)');
+  console.log('   • anna@gmail.com (System Engineer / Employee)');
+  console.log('   • kt@gmail.com (Software Engineer / Employee)');
 }
 
 main()
