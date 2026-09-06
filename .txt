@@ -8,3 +8,132 @@ npm run dev           # Starts Vite dev server on http://localhost:5174
 
 cd backend
 npx prisma studio     # Starts Prisma Studio on http://localhost:5555
+
+
+1. Manager-assignment requirement
+
+The problem it solves (one sentence)
+
+It stops anyone from creating a "floating" employee that no one is responsible for — every employee must sit somewhere in the reporting hierarchy, unless they're deliberately marked as a top-level position.
+
+The code (plain language)
+
+File: backend/src/controllers/employeeController.ts, function createEmployee (and the same check is repeated in updateEmployee).
+When a new employee comes in, before it writes anything to the database it checks: "was a reporting manager chosen, OR did the admin explicitly tick the top-level box?" If neither, it rejects the request with a 400 error and the message "A reporting manager must be assigned before creating this employee." The frontend form (EmployeesPage.tsx) does the same check for a friendlier pop-up, but the backend is the real gate — so it holds even if someone calls the API directly.
+
+Live demo steps
+
+1. Log in as Admin → Employees → Add Employee.
+2. Type a name, an email, a job position, pick a System Role — but leave "Reporting Manager" blank and don't tick the checkbox.
+3. Click Save Employee → you get blocked: "A reporting manager must be assigned before creating this employee."
+4. Now either pick someone from the Reporting Manager dropdown or tick "This is a top-level position (no manager)" → Save succeeds.
+
+3 likely evaluator questions
+
+- "What about the CEO who has no manager?" → "There's a checkbox, 'This is a top-level position (no manager)'. Ticking it waives the rule for that one record. It has to be a deliberate choice, not an accidental blank."
+- "Is this only in the form, or is it actually enforced?" → "It's enforced in the backend controller. Hit the API with no manager and no top-level flag and you get a 400. The form check is just nicer UX layered on top."
+- "What happens to someone's reports if I delete their manager?" → "The delete flow unlinks them — their managerId becomes null, they aren't deleted. They stay in the system, temporarily without a manager, until someone reassigns them."
+
+"Why this way instead of just allowing blank managers?"
+
+"I enforced it server-side because a judge will try the API directly, and a rule that only lives in the UI isn't a real rule — and I used an explicit checkbox so 'no manager' is a conscious decision, not a forgotten field."
+
+---
+
+2. Admin-generated temp password + forced password change
+
+The problem it solves (one sentence)
+
+It lets an admin onboard someone in seconds with a one-time password, while guaranteeing that password can't stay in use — the new hire is forced to set their own before they can touch anything.
+
+The code (plain language)
+
+Backend: In createEmployee, once the employee record is made, the system generates a random 10-character password (generateTempPassword in backend/src/types/index.ts — it deliberately avoids look-alike characters like 0/O and 1/l), hashes it with bcrypt, and creates the linked login account with a flag mustChangePassword: true (a new column on the User table). It sends the plaintext password back to the admin once, in the response, so it can be shown on screen.
+Login: the login function includes that mustChangePassword flag in the token and the response.
+Frontend: App.tsx checks one thing at the very top — if user.mustChangePassword is true, the only thing it renders is the ChangePasswordPage. Every other screen is unreachable. That page calls POST /api/auth/change-password, which verifies the temp password, saves the new hashed one, flips the flag to false, and hands back a fresh token — after which the app renders normally.
+
+Live demo steps
+
+1. Admin → Employees → Add Employee. Fill everything in, pick a manager, and use a fresh email like demo.hire@example.com.
+2. Click Save Employee → a confirmation modal appears: "Employee created … TEMPORARY LOGIN — SHARE SECURELY — Email: demo.hire@example.com / Password: (10 characters)". Click Copy.
+3. Sign out. On the login page, type that email and the temp password → Sign In.
+4. You land immediately on a "Set a new password" screen — no navbar, nothing else. It says "…you must change your temporary password before continuing."
+5. Enter the temp password under "Temporary password", type a new password twice, click Change password & continue → you're now in the app as that person.
+6. (Optional) Sign out, sign back in with the new password → straight in, no prompt. The flag is now off.
+
+3 likely evaluator questions
+
+- "Is the temp password stored in plaintext anywhere?" → "No. It's shown once to the admin on screen. The database only ever holds the bcrypt hash. If the admin loses it, they use 'Forgot password' to reset."
+- "Can the user click past the forced-change screen?" → "No. The check is at the app's root — if the flag is set, the change-password screen is the only component that renders. There's no route to skip to."
+- "What if a login already exists for that email?" → "Then we don't generate a temp password. We link that existing account to the new employee and align its role, and the confirmation modal tells the admin that instead of showing credentials."
+
+"Why generate + show the password instead of emailing a signup link?"
+
+"There's no mail server in the demo, and showing the credential on screen keeps the entire onboarding flow visible and testable in one place — and I put the enforcement at the app root rather than per-page so no screen can leak through unprotected."
+
+---
+
+3. Role vs Job Position separation
+
+The problem it solves (one sentence)
+
+It separates what someone is called from what someone is allowed to do, so a fancy job title can never accidentally hand out system access.
+
+The code (plain language)
+
+"Job Position" is free text (e.g. "Senior Analyst") and lives on the Employee record — it's just a label. "System Role" is a required dropdown with exactly five fixed values (Employee, HR Manager, HR Payroll User, HR Payroll Manager, Admin) and lives on the User record's role field. That role field is the same field the permission middleware reads on every API request — there's no second copy, one source of truth. createEmployee sets the new user's role from the dropdown; updateEmployee keeps the linked account's role in sync if you change it. In the directory, EmployeesPage.tsx renders a shield badge with the role next to the briefcase job-title, and the list view has separate "System Role" and "Job Position" columns.
+
+Live demo steps
+
+1. Admin → Employees → Add Employee. Point at the form: "Job Position" is a free text box; "System Role" is a required dropdown — two different things.
+2. Create an employee with Job Position "Senior Analyst" and System Role "HR Payroll User" (pick a manager, save — you'll also see the temp-password modal from feature 2).
+3. Back on the directory (grid view): the card shows a shield badge "HR Payroll User" and the title "Senior Analyst" — side by side, clearly separate.
+4. Toggle to list view (icon near "Add Employee") → there's a "System Role" column and a separate "Job Position" column.
+5. Click the employee → Open Hub → Overview shows "Job Position (title): Senior Analyst" and "System Role (permissions): HR Payroll User" on their own lines.
+
+3 likely evaluator questions
+
+- "Why not just use the job title for permissions?" → "Job titles are free text and inconsistent — 'Lead', 'Head of', 'Senior'. Permissions need a small predictable set the system can reason about, so role is its own dropdown with five fixed values."
+- "Where is role actually used for access control?" → "It's on the User's role field, and that's the exact field the permission middleware checks on every request. No duplication."
+- "Can I change someone's role later?" → "Yes — the Edit Employee form has the same dropdown. Saving updates the linked account, so their access changes on their next login."
+
+"Why a fixed dropdown instead of deriving role from the title?"
+
+"Permissions have to be predictable and auditable, and free-text titles never are — so role is an explicit, constrained choice, deliberately decoupled from the descriptive title."
+
+---
+
+4. Timezone display fix
+
+The problem it solves (one sentence)
+
+It makes every date and time on screen show the user's actual local time (IST) instead of the raw UTC value from the database, which was rendering times about 5½ hours off.
+
+The code (plain language)
+
+The database correctly stores timestamps in UTC — that part was never wrong and I didn't touch it. The bug was purely display: the UI was formatting dates with toISOString(), which always prints UTC, so an employee created at 9:00 PM IST showed up as "15:28". I added one shared helper file, frontend/src/utils/datetime.ts, with functions like formatDateIST, formatDateTimeIST, formatTimeIST — each one forces the Asia/Kolkata timezone and the en-IN locale. Then I swept every page (Employees, Contracts, Attendance, Payslips, Time Off) and replaced the raw ISO/UTC formatting calls with these helpers. Storage layer untouched; only the display layer changed.
+
+Live demo steps
+
+1. Admin → Employees → Add Employee → create anyone (valid form).
+2. Open that employee → Open Hub → Overview → look at "Created:" — it shows today's date and the current wall-clock time in IST, labelled "IST".
+3. Say: "The raw value in the database is UTC — about 5½ hours behind — but every screen converts to IST."
+4. (Optional) Show Contracts (dates as DD/MM/YYYY), Attendance (check-in / check-out times), Payslips (pay periods) — all consistently IST.
+
+3 likely evaluator questions
+
+- "Did you change how dates are stored?" → "No. The database still stores UTC, which is correct practice. I only changed the formatting layer that renders them."
+- "What was actually broken before?" → "The UI used toISOString(), which always outputs UTC. A 9 PM IST timestamp displayed as 3:30 PM. Now every user-facing date passes through a helper that forces Asia/Kolkata."
+- "What if the product is used outside India later?" → "The timezone is a single constant in one file. Making it per-user is a one-line change — read it from the user's profile instead of the constant."
+
+"Why a shared helper instead of fixing each date inline?"
+
+"One shared helper means one place to change the behaviour and zero risk of missing a spot or fixing it inconsistently across pages — and I pinned it to IST rather than the browser's timezone so it's still correct even if a demo machine or the server is set to UTC."
+
+---
+
+Suggested 5-minute demo order
+
+1. Add Employee form → show the Job Position text box vs the System Role dropdown (feature 3), leave manager blank → blocked (feature 1), tick top-level or pick a manager → save → temp-password modal (feature 2).
+2. Sign out → log in as the new hire with the temp password → forced "Set a new password" screen → change it → you're in (feature 2 finished).
+3. Back as Admin, open that employee's Hub → Overview: role badge separate from title (feature 3), and "Created: … IST" (feature 4).
