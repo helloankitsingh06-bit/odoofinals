@@ -137,7 +137,16 @@ export const SalaryStructuresPage: React.FC = () => {
 
   const openEditStructureModal = (st: any) => {
     setEditingStructureId(st.id);
-    const existingRuleIds = st.rules ? st.rules.map((r: any) => r.salaryRuleId || r.salaryRule?.id).filter(Boolean) : [];
+    const existingRuleIds = st.rules
+      ? st.rules
+          .map((r: any) => r.salaryRuleId || r.salaryRule?.id)
+          .filter(Boolean)
+          .sort((a: string, b: string) => {
+            const ruleA = rules.find(x => x.id === a);
+            const ruleB = rules.find(x => x.id === b);
+            return (ruleA?.sequence || 0) - (ruleB?.sequence || 0);
+          })
+      : [];
     setEditStructureForm({
       name: st.name || '',
       ruleIds: existingRuleIds
@@ -683,7 +692,7 @@ export const SalaryStructuresPage: React.FC = () => {
               <div>
                 <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Ordered Rule Sequence:</label>
                 <div className="space-y-2 max-h-48 overflow-y-auto p-2.5 bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-2xl">
-                  {rules.map((r) => {
+                  {rules.slice().sort((a, b) => (a.sequence || 0) - (b.sequence || 0)).map((r) => {
                     const isChecked = structureForm.ruleIds.includes(r.id);
                     return (
                       <label
@@ -697,11 +706,15 @@ export const SalaryStructuresPage: React.FC = () => {
                             type="checkbox"
                             checked={isChecked}
                             onChange={(e) => {
-                              if (e.target.checked) {
-                                setStructureForm(prev => ({ ...prev, ruleIds: [...prev.ruleIds, r.id] }));
-                              } else {
-                                setStructureForm(prev => ({ ...prev, ruleIds: prev.ruleIds.filter(id => id !== r.id) }));
-                              }
+                              const nextIds = e.target.checked
+                                ? [...structureForm.ruleIds, r.id]
+                                : structureForm.ruleIds.filter(id => id !== r.id);
+                              nextIds.sort((a, b) => {
+                                const ruleA = rules.find(x => x.id === a);
+                                const ruleB = rules.find(x => x.id === b);
+                                return (ruleA?.sequence || 0) - (ruleB?.sequence || 0);
+                              });
+                              setStructureForm(prev => ({ ...prev, ruleIds: nextIds }));
                             }}
                             className="rounded text-amber-500"
                           />
@@ -796,7 +809,7 @@ export const SalaryStructuresPage: React.FC = () => {
               <div>
                 <label className="block text-slate-700 dark:text-purple-300/80 mb-1 font-semibold">Ordered Rule Sequence:</label>
                 <div className="space-y-2 max-h-48 overflow-y-auto p-2.5 bg-slate-50 dark:bg-[#06050b] border border-slate-200 dark:border-purple-900/50 rounded-2xl">
-                  {rules.map((r) => {
+                  {rules.slice().sort((a, b) => (a.sequence || 0) - (b.sequence || 0)).map((r) => {
                     const isChecked = editStructureForm.ruleIds.includes(r.id);
                     return (
                       <label
@@ -810,11 +823,15 @@ export const SalaryStructuresPage: React.FC = () => {
                             type="checkbox"
                             checked={isChecked}
                             onChange={(e) => {
-                              if (e.target.checked) {
-                                setEditStructureForm(prev => ({ ...prev, ruleIds: [...prev.ruleIds, r.id] }));
-                              } else {
-                                setEditStructureForm(prev => ({ ...prev, ruleIds: prev.ruleIds.filter(id => id !== r.id) }));
-                              }
+                              const nextIds = e.target.checked
+                                ? [...editStructureForm.ruleIds, r.id]
+                                : editStructureForm.ruleIds.filter(id => id !== r.id);
+                              nextIds.sort((a, b) => {
+                                const ruleA = rules.find(x => x.id === a);
+                                const ruleB = rules.find(x => x.id === b);
+                                return (ruleA?.sequence || 0) - (ruleB?.sequence || 0);
+                              });
+                              setEditStructureForm(prev => ({ ...prev, ruleIds: nextIds }));
                             }}
                             className="rounded text-amber-500"
                           />

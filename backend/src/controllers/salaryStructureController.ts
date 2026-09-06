@@ -170,7 +170,7 @@ export const validateStructure = async (req: Request, res: Response): Promise<vo
       where: { id: { in: ruleIds } }
     });
 
-    // Map according to given ordered array
+    // Map and sort according to rule sequence
     const orderedRules: RuleDefinition[] = [];
     for (let i = 0; i < ruleIds.length; i++) {
       const r = rules.find(x => x.id === ruleIds[i]);
@@ -190,6 +190,10 @@ export const validateStructure = async (req: Request, res: Response): Promise<vo
         position: i + 1
       });
     }
+
+    // Sort by sequence so calculation dependencies (e.g. Allowances/Deductions before NET) execute in correct order
+    orderedRules.sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
+    orderedRules.forEach((r, idx) => { r.position = idx + 1; });
 
     const validation = validateSalaryStructureRules(orderedRules);
     res.json(validation);
@@ -232,6 +236,10 @@ export const createSalaryStructure = async (req: Request, res: Response): Promis
       });
     }
 
+    // Sort by sequence so calculation dependencies execute in correct order
+    orderedRules.sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
+    orderedRules.forEach((r, idx) => { r.position = idx + 1; });
+
     // Dry-run validate
     const validation = validateSalaryStructureRules(orderedRules);
     if (!validation.valid) {
@@ -247,8 +255,8 @@ export const createSalaryStructure = async (req: Request, res: Response): Promis
         name,
         status,
         rules: {
-          create: ruleIds.map((ruleId: string, idx: number) => ({
-            salaryRuleId: ruleId,
+          create: orderedRules.map((r: RuleDefinition, idx: number) => ({
+            salaryRuleId: r.id,
             position: idx + 1
           }))
         }
@@ -295,6 +303,10 @@ export const updateSalaryStructure = async (req: Request, res: Response): Promis
           });
         }
 
+        // Sort by sequence so calculation dependencies execute in correct order
+        orderedRules.sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
+        orderedRules.forEach((r, idx) => { r.position = idx + 1; });
+
         const validation = validateSalaryStructureRules(orderedRules);
         if (!validation.valid) {
           throw new Error(`Structure validation failed: ${validation.errors.join('; ')}`);
@@ -306,11 +318,11 @@ export const updateSalaryStructure = async (req: Request, res: Response): Promis
         });
 
         // Insert new ordered positions
-        for (let idx = 0; idx < ruleIds.length; idx++) {
+        for (let idx = 0; idx < orderedRules.length; idx++) {
           await tx.salaryStructureRule.create({
             data: {
               salaryStructureId: id,
-              salaryRuleId: ruleIds[idx],
+              salaryRuleId: orderedRules[idx].id,
               position: idx + 1
             }
           });
