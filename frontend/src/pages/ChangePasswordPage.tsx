@@ -9,13 +9,14 @@ import { KeyRound, Lock, Eye, EyeOff, ArrowRight, AlertCircle, LogOut } from 'lu
  * app renders until the temporary password has been replaced.
  */
 export const ChangePasswordPage: React.FC = () => {
-  const { user, changePassword, logout, isLoading } = useAuth();
+  const { user, changePassword, logout } = useAuth();
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,11 +35,14 @@ export const ChangePasswordPage: React.FC = () => {
       return;
     }
 
+    setSubmitting(true);
     try {
       await changePassword(currentPassword, newPassword);
       // On success the context clears mustChangePassword and the app renders normally.
     } catch (err: any) {
       setError(err.message || 'Could not change password. Check your current password and try again.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -119,10 +123,10 @@ export const ChangePasswordPage: React.FC = () => {
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={submitting}
             className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-purple-600 hover:from-amber-400 hover:to-purple-500 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
           >
-            {isLoading ? 'Updating…' : <>Change password &amp; continue <ArrowRight size={16} /></>}
+            {submitting ? 'Updating…' : <>Change password &amp; continue <ArrowRight size={16} /></>}
           </button>
         </form>
 

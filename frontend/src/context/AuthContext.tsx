@@ -66,33 +66,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [token]);
 
   const login = async (email: string, password = 'Password123!') => {
-    setIsLoading(true);
-    try {
-      const data = await apiRequest('/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ email, password })
-      });
-      localStorage.setItem('peoplepay360_token', data.token);
-      setToken(data.token);
-      setUser(data.user);
-    } finally {
-      setIsLoading(false);
-    }
+    const data = await apiRequest('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password })
+    });
+    localStorage.setItem('peoplepay360_token', data.token);
+    setToken(data.token);
+    setUser(data.user);
   };
 
   const register = async (name: string, email: string, password: string, role: UserRole = 'Employee') => {
-    setIsLoading(true);
-    try {
-      const data = await apiRequest('/auth/register', {
-        method: 'POST',
-        body: JSON.stringify({ name, email, password, role })
-      });
-      localStorage.setItem('peoplepay360_token', data.token);
-      setToken(data.token);
-      setUser(data.user);
-    } finally {
-      setIsLoading(false);
-    }
+    const data = await apiRequest('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ name, email, password, role })
+    });
+    localStorage.setItem('peoplepay360_token', data.token);
+    setToken(data.token);
+    setUser(data.user);
   };
 
   const logout = () => {
@@ -109,20 +99,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const changePassword = async (currentPassword: string, newPassword: string) => {
-    setIsLoading(true);
-    try {
-      const data = await apiRequest('/auth/change-password', {
-        method: 'POST',
-        body: JSON.stringify({ currentPassword, newPassword })
-      });
-      if (data.token) {
-        localStorage.setItem('peoplepay360_token', data.token);
-        setToken(data.token);
-      }
-      setUser(data.user);
-    } finally {
-      setIsLoading(false);
+    const data = await apiRequest('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword })
+    });
+    if (data.token) {
+      localStorage.setItem('peoplepay360_token', data.token);
+      setToken(data.token);
     }
+    setUser(data.user);
   };
 
   return (

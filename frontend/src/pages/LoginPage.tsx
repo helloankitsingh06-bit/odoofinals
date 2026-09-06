@@ -142,7 +142,7 @@ export const LoginPage: React.FC = () => {
     try {
       await login(loginEmail, loginPassword);
     } catch (err: any) {
-      setError('Invalid credentials');
+      setError(err.message || 'Invalid email or password. Please check your credentials.');
     } finally {
       setIsSubmitting(false);
     }
@@ -359,22 +359,17 @@ export const LoginPage: React.FC = () => {
             )}
 
             {error && (
-              <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-600 dark:text-rose-400 text-xs sm:text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full bg-rose-500 animate-ping shrink-0" />
-                  <span className="font-medium leading-relaxed">{error}</span>
-                </div>
-                {authMode === 'login' && (
-                  <button
-                    onClick={() => {
-                      setError(null);
-                      setAuthMode('signup');
-                    }}
-                    className="shrink-0 px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition shadow-sm cursor-pointer"
-                  >
-                    Register Account →
-                  </button>
-                )}
+              <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/25 rounded-2xl text-rose-600 dark:text-rose-400 text-xs sm:text-sm flex items-start gap-3 shadow-sm animate-fadeIn">
+                <AlertCircle size={18} className="text-rose-500 shrink-0 mt-0.5" />
+                <div className="flex-1 font-semibold leading-relaxed">{error}</div>
+                <button
+                  type="button"
+                  onClick={() => setError(null)}
+                  className="text-rose-400 hover:text-rose-600 dark:hover:text-rose-300 p-0.5 rounded cursor-pointer transition"
+                  title="Dismiss"
+                >
+                  <X size={15} />
+                </button>
               </div>
             )}
 
